@@ -1,0 +1,19 @@
+# .NET build artifacts
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.log
+*.vs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# CodeGraph index (regenerated)
+.codegraph/
+
+# IDE
+.idea/
+.vscode/
