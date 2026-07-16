@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SmeAccounting.Domain.Entities;
 using SmeAccounting.Domain.GeneralLedger;
 using SmeAccounting.Domain.Interfaces;
+using SmeAccounting.Domain.Security;
 
 namespace SmeAccounting.Infrastructure.Persistence;
 
@@ -19,6 +20,12 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
     public DbSet<Account> Accounts => Set<Account>();
     public DbSet<JournalEntry> JournalEntries => Set<JournalEntry>();
     public DbSet<JournalEntryLine> JournalEntryLines => Set<JournalEntryLine>();
+    public DbSet<Feature> Features => Set<Feature>();
+    public DbSet<FeaturePermission> FeaturePermissions => Set<FeaturePermission>();
+    public DbSet<OrganizationUnit> OrganizationUnits => Set<OrganizationUnit>();
+    public DbSet<UserOrganizationUnit> UserOrganizationUnits => Set<UserOrganizationUnit>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<LoginAttempt> LoginAttempts => Set<LoginAttempt>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -32,5 +39,11 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
         modelBuilder.ApplyConfiguration(new Configurations.AccountConfiguration());
         modelBuilder.ApplyConfiguration(new Configurations.JournalEntryConfiguration());
         modelBuilder.ApplyConfiguration(new Configurations.JournalEntryLineConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.FeatureConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.FeaturePermissionConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.OrganizationUnitConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.UserOrganizationUnitConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.RefreshTokenConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.LoginAttemptConfiguration());
     }
 }
