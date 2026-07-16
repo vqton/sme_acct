@@ -4,7 +4,7 @@ using SmeAccounting.Domain.Interfaces;
 
 namespace SmeAccounting.Application.Security.Commands.ChangePassword;
 
-public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordCommand, Result>
+public sealed class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordCommand, Result>
 {
     private readonly IUserRepository _userRepo;
     private readonly IPasswordHasher _passwordHasher;

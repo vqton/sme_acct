@@ -6,15 +6,19 @@ public record Money(decimal Amount, string CurrencyCode)
 
     public Money Add(Money other)
     {
-        if (CurrencyCode != other.CurrencyCode)
-            throw new InvalidOperationException($"Currency mismatch: {CurrencyCode} vs {other.CurrencyCode}");
+        if (other is null)
+            throw new ArgumentNullException(nameof(other));
+        if (!string.Equals(CurrencyCode, other.CurrencyCode, StringComparison.Ordinal))
+            throw new ArgumentException($"Currency mismatch: {CurrencyCode} vs {other.CurrencyCode}", nameof(other));
         return this with { Amount = Amount + other.Amount };
     }
 
     public Money Subtract(Money other)
     {
-        if (CurrencyCode != other.CurrencyCode)
-            throw new InvalidOperationException($"Currency mismatch: {CurrencyCode} vs {other.CurrencyCode}");
+        if (other is null)
+            throw new ArgumentNullException(nameof(other));
+        if (!string.Equals(CurrencyCode, other.CurrencyCode, StringComparison.Ordinal))
+            throw new ArgumentException($"Currency mismatch: {CurrencyCode} vs {other.CurrencyCode}", nameof(other));
         return this with { Amount = Amount - other.Amount };
     }
 

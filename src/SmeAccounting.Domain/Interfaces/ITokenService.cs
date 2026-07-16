@@ -1,6 +1,6 @@
 namespace SmeAccounting.Domain.Interfaces;
 
-public record TokenResult(string AccessToken, string RefreshToken, DateTime ExpiresAt);
+public record TokenResult(string AccessToken, string RefreshToken, DateTime ExpiresAt, DateTime RefreshTokenExpiresAt);
 
 public interface ITokenService
 {

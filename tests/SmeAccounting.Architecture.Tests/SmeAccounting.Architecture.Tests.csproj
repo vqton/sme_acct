@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <PackageReference Include="FluentAssertions" Version="7.2.0" />
+    <PackageReference Include="NetArchTest.Rules" Version="1.3.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="FluentAssertions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SmeAccounting.Domain\SmeAccounting.Domain.csproj" />
+    <ProjectReference Include="..\..\src\SmeAccounting.Application\SmeAccounting.Application.csproj" />
+    <ProjectReference Include="..\..\src\SmeAccounting.Infrastructure\SmeAccounting.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\SmeAccounting.Web\SmeAccounting.Web.csproj" />
+  </ItemGroup>
+</Project>

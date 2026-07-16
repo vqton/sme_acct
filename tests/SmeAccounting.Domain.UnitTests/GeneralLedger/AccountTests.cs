@@ -2,7 +2,7 @@ using SmeAccounting.Domain.Enums;
 using SmeAccounting.Domain.GeneralLedger;
 using FluentAssertions;
 
-namespace SmeAccounting.Tests.Domain;
+namespace SmeAccounting.Domain.UnitTests.GeneralLedger;
 
 public class AccountTests
 {

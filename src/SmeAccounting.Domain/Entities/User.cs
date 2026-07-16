@@ -10,7 +10,7 @@ public class User : BaseEntity
     public string PasswordHash { get; private set; } = string.Empty;
     public string FirstName { get; private set; } = string.Empty;
     public string LastName { get; private set; } = string.Empty;
-    public bool IsAdmin { get; private set; }
+    public bool IsAdmin { get; }
     public bool IsActive { get; private set; }
     public DateTime? LastLogin { get; private set; }
     public DateTime? LockoutEnd { get; private set; }
@@ -43,7 +43,7 @@ public class User : BaseEntity
         PasswordHash = newHash;
     }
 
-    public bool IsPasswordReused(string newHash) => _previousPasswordHashes.Contains(newHash) || PasswordHash == newHash;
+    public bool IsPasswordReused(string newHash) => _previousPasswordHashes.Contains(newHash) || string.Equals(PasswordHash, newHash, StringComparison.Ordinal);
     public void Enable() { IsActive = true; }
     public void Disable() { IsActive = false; }
     public void SetLastLogin() { LastLogin = DateTime.UtcNow; FailedLoginAttempts = 0; LockoutEnd = null; }
@@ -55,9 +55,9 @@ public class User : BaseEntity
     }
     public bool IsLockedOut() => LockoutEnd.HasValue && LockoutEnd > DateTime.UtcNow;
     public void Unlock() { LockoutEnd = null; FailedLoginAttempts = 0; }
-    public void AddRole(Role role) { if (!Roles.Contains(role)) Roles.Add(role); }
+    public void AddRole(Role role) => Roles.Add(role);
     public void RemoveRole(Role role) { Roles.Remove(role); }
-    public bool HasRole(string roleName) => Roles.Any(r => r.Name == roleName);
+    public bool HasRole(string roleName) => Roles.Any(r => string.Equals(r.Name, roleName, StringComparison.Ordinal));
     public string FullName => $"{FirstName} {LastName}";
     public void EnableMfa(string secret) { MfaEnabled = true; MfaSecret = secret; }
     public void DisableMfa() { MfaEnabled = false; MfaSecret = null; }

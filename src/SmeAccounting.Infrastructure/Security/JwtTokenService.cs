@@ -41,8 +41,10 @@ public class JwtTokenService : ITokenService
         claims.AddRange(permissions.Select(p => new Claim("permission", p)));
 
         var expiresAt = DateTime.UtcNow.AddMinutes(_accessTokenExpiryMinutes);
+        var refreshExpiresAt = DateTime.UtcNow.AddDays(_refreshTokenExpiryDays);
         var token = new JwtSecurityToken(
             _issuer, _audience, claims,
+            notBefore: DateTime.UtcNow,
             expires: expiresAt,
             signingCredentials: new SigningCredentials(_signingKey, SecurityAlgorithms.HmacSha256)
         );
@@ -50,7 +52,8 @@ public class JwtTokenService : ITokenService
         return new TokenResult(
             new JwtSecurityTokenHandler().WriteToken(token),
             GenerateRefreshToken(),
-            expiresAt
+            expiresAt,
+            refreshExpiresAt
         );
     }
 

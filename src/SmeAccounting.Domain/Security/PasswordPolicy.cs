@@ -17,6 +17,8 @@ public record PasswordPolicy
 
     public ValidationResult Validate(string password)
     {
+        if (password is null)
+            throw new ArgumentNullException(nameof(password));
         var errors = new List<string>();
         if (password.Length < MinLength) errors.Add($"Min length: {MinLength}");
         if (password.Length > MaxLength) errors.Add($"Max length: {MaxLength}");

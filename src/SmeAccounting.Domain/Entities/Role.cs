@@ -10,7 +10,7 @@ public class Role : BaseEntity
     public Role? ParentRole { get; private set; }
     public HashSet<Permission> Permissions { get; private set; } = new();
 
-    public ICollection<User> Users { get; set; } = new HashSet<User>();
+    public ICollection<User> Users { get; private set; } = new HashSet<User>();
 
     private Role() { }
 

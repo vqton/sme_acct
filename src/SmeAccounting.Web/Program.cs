@@ -3,14 +3,19 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using SmeAccounting.Application;
+using SmeAccounting.Application.Common.Interfaces;
 using SmeAccounting.Infrastructure;
 using SmeAccounting.Web.Authorization;
 using SmeAccounting.Web.Components;
+using SmeAccounting.Web.Middleware;
+using SmeAccounting.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 var jwtSecret = builder.Configuration["Jwt:Secret"]
     ?? throw new InvalidOperationException("Jwt:Secret not configured");
@@ -59,6 +64,8 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 
 app.UseAuthentication();
+app.UseMiddleware<SessionValidationMiddleware>();
+app.UseMiddleware<IpRestrictionMiddleware>();
 app.UseAuthorization();
 app.UseAntiforgery();
 

@@ -6,7 +6,7 @@ using SmeAccounting.Domain.Interfaces;
 
 namespace SmeAccounting.Application.GeneralLedger.Commands.CreateJournalEntry;
 
-public class CreateJournalEntryCommandHandler : IRequestHandler<CreateJournalEntryCommand, Result<Guid>>
+public sealed class CreateJournalEntryCommandHandler : IRequestHandler<CreateJournalEntryCommand, Result<Guid>>
 {
     private readonly IJournalEntryRepository _repository;
     private readonly IUnitOfWork _unitOfWork;

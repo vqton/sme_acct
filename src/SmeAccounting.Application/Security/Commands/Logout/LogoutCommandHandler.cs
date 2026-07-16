@@ -4,7 +4,7 @@ using SmeAccounting.Domain.Interfaces;
 
 namespace SmeAccounting.Application.Security.Commands.Logout;
 
-public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result>
+public sealed class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result>
 {
     private readonly IUserRepository _userRepo;
     private readonly IUnitOfWork _unitOfWork;

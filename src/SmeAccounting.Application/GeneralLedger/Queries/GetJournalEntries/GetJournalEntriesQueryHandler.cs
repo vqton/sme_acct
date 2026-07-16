@@ -5,7 +5,7 @@ using SmeAccounting.Domain.Interfaces;
 
 namespace SmeAccounting.Application.GeneralLedger.Queries.GetJournalEntries;
 
-public class GetJournalEntriesQueryHandler : IRequestHandler<GetJournalEntriesQuery, Result<List<JournalEntryDto>>>
+public sealed class GetJournalEntriesQueryHandler : IRequestHandler<GetJournalEntriesQuery, Result<List<JournalEntryDto>>>
 {
     private readonly IJournalEntryRepository _repository;
 

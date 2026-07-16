@@ -5,7 +5,7 @@ using SmeAccounting.Domain.Interfaces;
 
 namespace SmeAccounting.Application.Security.Queries.GetCurrentUser;
 
-public class GetCurrentUserQueryHandler : IRequestHandler<GetCurrentUserQuery, Result<UserDto>>
+public sealed class GetCurrentUserQueryHandler : IRequestHandler<GetCurrentUserQuery, Result<UserDto>>
 {
     private readonly IUserRepository _userRepo;
     private readonly IRoleRepository _roleRepo;

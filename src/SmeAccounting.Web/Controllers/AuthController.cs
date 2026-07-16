@@ -54,7 +54,10 @@ public class AuthController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> Me()
     {
-        var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (userIdClaim is null)
+            return Unauthorized(new { error = "Invalid token: missing user identifier" });
+        var userId = Guid.Parse(userIdClaim.Value);
         var result = await _mediator.Send(new GetCurrentUserQuery(userId));
 
         if (result.IsFailed)
@@ -67,7 +70,10 @@ public class AuthController : ControllerBase
     [HttpPost("change-password")]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
-        var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (userIdClaim is null)
+            return Unauthorized(new { error = "Invalid token: missing user identifier" });
+        var userId = Guid.Parse(userIdClaim.Value);
         var command = new ChangePasswordCommand(userId, request.CurrentPassword, request.NewPassword);
         var result = await _mediator.Send(command);
 

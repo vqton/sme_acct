@@ -4,7 +4,7 @@ using SmeAccounting.Domain.Interfaces;
 
 namespace SmeAccounting.Application.Accounts.Queries.GetAccounts;
 
-public class GetAccountsQueryHandler : IRequestHandler<GetAccountsQuery, Result<List<AccountDto>>>
+public sealed class GetAccountsQueryHandler : IRequestHandler<GetAccountsQuery, Result<List<AccountDto>>>
 {
     private readonly IAccountRepository _repository;
 

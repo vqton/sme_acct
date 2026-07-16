@@ -3,6 +3,8 @@ using SmeAccounting.Domain.Entities;
 using SmeAccounting.Domain.GeneralLedger;
 using SmeAccounting.Domain.Interfaces;
 using SmeAccounting.Domain.Security;
+using SmeAccounting.Domain.Rules;
+using SmeAccounting.Domain.Workflow;
 
 namespace SmeAccounting.Infrastructure.Persistence;
 
@@ -26,6 +28,11 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
     public DbSet<UserOrganizationUnit> UserOrganizationUnits => Set<UserOrganizationUnit>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<LoginAttempt> LoginAttempts => Set<LoginAttempt>();
+    public DbSet<SessionSettings> SessionSettings => Set<SessionSettings>();
+    public DbSet<CompanyPasswordPolicy> CompanyPasswordPolicies => Set<CompanyPasswordPolicy>();
+    public DbSet<IpWhitelistEntry> IpWhitelistEntries => Set<IpWhitelistEntry>();
+    public DbSet<ApprovalWorkflow> ApprovalWorkflows => Set<ApprovalWorkflow>();
+    public DbSet<RegulatoryRule> RegulatoryRules => Set<RegulatoryRule>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -45,5 +52,10 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
         modelBuilder.ApplyConfiguration(new Configurations.UserOrganizationUnitConfiguration());
         modelBuilder.ApplyConfiguration(new Configurations.RefreshTokenConfiguration());
         modelBuilder.ApplyConfiguration(new Configurations.LoginAttemptConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.SessionSettingsConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.CompanyPasswordPolicyConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.IpWhitelistEntryConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.ApprovalWorkflowConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.RegulatoryRuleConfiguration());
     }
 }

@@ -5,7 +5,7 @@ using SmeAccounting.Domain.Interfaces;
 
 namespace SmeAccounting.Application.Security.Commands.RefreshToken;
 
-public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, Result<TokenResponse>>
+public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, Result<TokenResponse>>
 {
     private readonly IUserRepository _userRepo;
     private readonly IRoleRepository _roleRepo;
@@ -47,7 +47,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
         _userRepo.RevokeRefreshToken(stored);
 
         var newRefreshToken = new Domain.Security.RefreshToken(tokens.RefreshToken, Guid.NewGuid().ToString(), user.Id,
-            tokens.ExpiresAt.AddDays(7), stored.DeviceInfo, stored.IpAddress);
+            tokens.RefreshTokenExpiresAt, stored.DeviceInfo, stored.IpAddress);
         _userRepo.AddRefreshToken(newRefreshToken);
 
         await _unitOfWork.SaveChangesAsync(ct);

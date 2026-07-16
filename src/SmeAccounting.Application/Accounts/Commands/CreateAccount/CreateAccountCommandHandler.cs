@@ -5,7 +5,7 @@ using SmeAccounting.Domain.Interfaces;
 
 namespace SmeAccounting.Application.Accounts.Commands.CreateAccount;
 
-public class CreateAccountCommandHandler : IRequestHandler<CreateAccountCommand, Result<Guid>>
+public sealed class CreateAccountCommandHandler : IRequestHandler<CreateAccountCommand, Result<Guid>>
 {
     private readonly IAccountRepository _repository;
     private readonly IUnitOfWork _unitOfWork;
