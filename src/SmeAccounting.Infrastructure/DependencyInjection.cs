@@ -25,9 +25,8 @@ public static class DependencyInjection
         services.AddScoped<AuditSaveChangesInterceptor>();
 
         services.AddDbContext<ApplicationDbContext>((sp, options) =>
-            options.UseMySql(
-                configuration.GetConnectionString("DefaultConnection"),
-                ServerVersion.AutoDetect(configuration.GetConnectionString("DefaultConnection"))
+            options.UseMySQL(
+                configuration.GetConnectionString("DefaultConnection")
             ).AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>()));
 
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());

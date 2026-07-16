@@ -13,12 +13,14 @@ public class ApprovalWorkflowConfiguration : IEntityTypeConfiguration<ApprovalWo
         builder.Property(w => w.Status).HasConversion<int>().IsRequired();
         builder.Property(w => w.ThresholdAmount).HasColumnType("decimal(18,2)");
         builder.HasIndex(w => w.EntityId).IsUnique();
+        builder.Ignore(w => w.DomainEvents);
 
         builder.OwnsMany(w => w.Steps, steps =>
         {
             steps.WithOwner().HasForeignKey("WorkflowId");
             steps.HasKey(s => s.Id);
             steps.Property(s => s.Comment).HasMaxLength(500);
+            steps.Ignore(s => s.DomainEvents);
         });
     }
 }

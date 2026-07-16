@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SmeAccounting.Domain.DomainEvents;
 using SmeAccounting.Domain.Entities;
 using SmeAccounting.Domain.GeneralLedger;
 using SmeAccounting.Domain.Interfaces;
@@ -36,6 +37,7 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Ignore<DomainEvent>();
         modelBuilder.ApplyConfiguration(new Configurations.CompanyConfiguration());
         modelBuilder.ApplyConfiguration(new Configurations.FiscalYearConfiguration());
         modelBuilder.ApplyConfiguration(new Configurations.FiscalPeriodConfiguration());

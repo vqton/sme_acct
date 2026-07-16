@@ -17,7 +17,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(e => e.FirstName).HasMaxLength(100).IsRequired();
         builder.Property(e => e.LastName).HasMaxLength(100).IsRequired();
         builder.Property(e => e.MfaSecret).HasMaxLength(200);
-        builder.Property(e => e.FullName).HasComputedColumnSql("CONCAT(FirstName, ' ', LastName)");
+        builder.Ignore(e => e.FullName);
         builder.Ignore(e => e.PreviousPasswordHashes);
         builder.HasMany(e => e.Roles).WithMany(e => e.Users);
         builder.HasIndex(e => e.CompanyId);
