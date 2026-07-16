@@ -59,6 +59,12 @@ public class User : BaseEntity
     public void RemoveRole(Role role) { Roles.Remove(role); }
     public bool HasRole(string roleName) => Roles.Any(r => string.Equals(r.Name, roleName, StringComparison.Ordinal));
     public string FullName => $"{FirstName} {LastName}";
+    public void UpdateProfile(string firstName, string lastName, string email)
+    {
+        FirstName = firstName;
+        LastName = lastName;
+        Email = email;
+    }
     public void EnableMfa(string secret) { MfaEnabled = true; MfaSecret = secret; }
     public void DisableMfa() { MfaEnabled = false; MfaSecret = null; }
 }

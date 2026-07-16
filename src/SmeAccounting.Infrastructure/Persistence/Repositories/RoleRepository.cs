@@ -44,4 +44,5 @@ public class RoleRepository : IRoleRepository
     public void Update(Role role) => _context.Roles.Update(role);
     public void AddPermission(FeaturePermission permission) => _context.FeaturePermissions.Add(permission);
     public void RemovePermission(FeaturePermission permission) => _context.FeaturePermissions.Remove(permission);
+    public void Remove(Role role) => _context.Roles.Remove(role);
 }

@@ -23,6 +23,9 @@ public class UserRepository : IUserRepository
     public async Task<List<User>> GetByCompanyAsync(Guid companyId, CancellationToken ct = default) =>
         await _context.Users.Where(u => u.CompanyId == companyId).Include(u => u.Roles).ToListAsync(ct);
 
+    public async Task<List<User>> GetAllAsync(CancellationToken ct = default) =>
+        await _context.Users.Include(u => u.Roles).OrderBy(u => u.Username).ToListAsync(ct);
+
     public async Task<bool> UsernameExistsAsync(string username, CancellationToken ct = default) =>
         await _context.Users.AnyAsync(u => u.Username == username, ct);
 

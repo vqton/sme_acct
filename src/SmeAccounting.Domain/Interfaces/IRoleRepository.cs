@@ -14,4 +14,5 @@ public interface IRoleRepository
     void Update(Role role);
     void AddPermission(FeaturePermission permission);
     void RemovePermission(FeaturePermission permission);
+    void Remove(Role role);
 }

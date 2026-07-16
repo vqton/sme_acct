@@ -1,0 +1,86 @@
+@page "/admin/users"
+@attribute [Authorize]
+@using SmeAccounting.Application.Admin.Users.Queries
+@inject IMediator Mediator
+@inject NavigationManager Navigation
+
+<h3>User Management</h3>
+
+<div class="mb-3">
+    <input @bind="search" placeholder="Search by username, email, or name..." class="form-control d-inline" style="width:300px" />
+    <button class="btn btn-primary ms-2" @onclick="LoadUsers">Search</button>
+    <button class="btn btn-success ms-2" @onclick="GoCreate">Create User</button>
+</div>
+
+@if (loading)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Full Name</th>
+            <th>Active</th>
+            <th>Roles</th>
+            <th>Last Login</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var user in result?.Items ?? new())
+        {
+            <tr>
+                <td>@user.Username</td>
+                <td>@user.Email</td>
+                <td>@user.FullName</td>
+                <td>
+                    @if (user.IsActive)
+                    {
+                        <span class="badge bg-success">Active</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">Inactive</span>
+                    }
+                </td>
+                <td>@string.Join(", ", user.Roles)</td>
+                <td>@user.LastLogin?.ToString("g")</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" @onclick='() => GoUser(user.Id)'>View</button>
+                    <button class="btn btn-sm btn-outline-secondary" @onclick='() => GoEdit(user.Id)'>Edit</button>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    private string? search;
+    private PaginatedUsersResult? result;
+    private bool loading;
+
+    protected override async Task OnInitializedAsync() => await LoadUsers();
+
+    private async Task LoadUsers()
+    {
+        loading = true;
+        try
+        {
+            var r = await Mediator.Send(new ListUsersQuery(Search: search));
+            if (r.IsSuccess) result = r.Value;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void GoCreate() => Navigation.NavigateTo("/admin/users/create");
+    private void GoUser(Guid id) => Navigation.NavigateTo($"/admin/users/{id}");
+    private void GoEdit(Guid id) => Navigation.NavigateTo($"/admin/users/{id}/edit");
+}

@@ -1,0 +1,71 @@
+@page "/admin/roles"
+@attribute [Authorize]
+@using SmeAccounting.Application.Admin.Roles.Queries
+@inject IMediator Mediator
+@inject NavigationManager Navigation
+
+<h3>Role Management</h3>
+
+<div class="mb-3">
+    <button class="btn btn-success" @onclick="GoCreate">Create Role</button>
+</div>
+
+@if (loading)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>System</th>
+            <th>Users</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var role in roles ?? new())
+        {
+            <tr>
+                <td>@role.Name</td>
+                <td>@role.Description</td>
+                <td>
+                    @if (role.IsSystem)
+                    {
+                        <span class="badge bg-info">System</span>
+                    }
+                </td>
+                <td>@role.UserCount</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" @onclick='() => GoRole(role.Id)'>Edit</button>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<RoleListItemDto>? roles;
+    private bool loading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        try
+        {
+            var r = await Mediator.Send(new ListRolesQuery());
+            if (r.IsSuccess) roles = r.Value;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void GoCreate() => Navigation.NavigateTo("/admin/roles/create");
+    private void GoRole(Guid id) => Navigation.NavigateTo($"/admin/roles/{id}");
+}

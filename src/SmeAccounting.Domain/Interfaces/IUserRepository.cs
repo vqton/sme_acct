@@ -9,6 +9,7 @@ public interface IUserRepository
     Task<User?> GetByUsernameAsync(string username, CancellationToken ct = default);
     Task<User?> GetByEmailAsync(string email, CancellationToken ct = default);
     Task<List<User>> GetByCompanyAsync(Guid companyId, CancellationToken ct = default);
+    Task<List<User>> GetAllAsync(CancellationToken ct = default);
     Task<bool> UsernameExistsAsync(string username, CancellationToken ct = default);
     Task<bool> EmailExistsAsync(string email, CancellationToken ct = default);
     void Add(User user);

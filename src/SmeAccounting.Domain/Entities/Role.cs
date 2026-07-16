@@ -22,6 +22,12 @@ public class Role : BaseEntity
         IsSystem = isSystem;
     }
 
+    public void UpdateInfo(string name, string? description)
+    {
+        Name = name;
+        Description = description;
+    }
+
     public void SetParent(Guid? parentRoleId)
     {
         if (parentRoleId == Id) return;

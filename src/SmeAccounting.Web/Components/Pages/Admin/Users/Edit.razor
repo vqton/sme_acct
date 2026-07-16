@@ -1,0 +1,93 @@
+@page "/admin/users/create"
+@page "/admin/users/{Id:guid}/edit"
+@attribute [Authorize]
+@using SmeAccounting.Application.Admin.Users.Commands
+@using SmeAccounting.Application.Admin.Users.Queries
+@inject IMediator Mediator
+@inject NavigationManager Navigation
+
+<h3>@(IsCreate ? "Create User" : "Edit User")</h3>
+
+<EditForm Model="model" OnValidSubmit="Save">
+    <div class="mb-3">
+        <label class="form-label">Username</label>
+        <InputText @bind-Value="model.Username" class="form-control" disabled="@(!IsCreate)" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <InputText @bind-Value="model.Email" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">First Name</label>
+        <InputText @bind-Value="model.FirstName" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Last Name</label>
+        <InputText @bind-Value="model.LastName" class="form-control" />
+    </div>
+    @if (IsCreate)
+    {
+        <div class="mb-3">
+            <label class="form-label">Password</label>
+            <InputText @bind-Value="model.Password" class="form-control" type="password" />
+        </div>
+    }
+    <div class="mb-3 form-check">
+        <InputCheckbox @bind-Value="model.IsActive" class="form-check-input" disabled="@IsCreate" />
+        <label class="form-check-label">Active</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Save</button>
+    <button class="btn btn-secondary ms-2" @onclick="GoBack">Cancel</button>
+</EditForm>
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private bool IsCreate => !Id.HasValue || Id == Guid.Empty;
+    private UserEditModel model = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!IsCreate)
+        {
+            var r = await Mediator.Send(new GetUserQuery(Id!.Value));
+            if (r.IsSuccess)
+            {
+                var u = r.Value;
+                model.Username = u.Username;
+                model.Email = u.Email;
+                model.FirstName = u.FirstName;
+                model.LastName = u.LastName;
+                model.IsActive = u.IsActive;
+            }
+        }
+    }
+
+    private async Task Save()
+    {
+        if (IsCreate)
+        {
+            var cmd = new CreateUserCommand(model.Username, model.Email, model.Password!, model.FirstName, model.LastName, Guid.Empty);
+            var r = await Mediator.Send(cmd);
+            if (r.IsSuccess) GoBack();
+        }
+        else
+        {
+            var cmd = new UpdateUserCommand(Id!.Value, model.Email, model.FirstName, model.LastName, model.IsActive);
+            var r = await Mediator.Send(cmd);
+            if (r.IsSuccess) GoBack();
+        }
+    }
+
+    private void GoBack() => Navigation.NavigateTo("/admin/users");
+
+    private class UserEditModel
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string? Password { get; set; }
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
+    }
+}
