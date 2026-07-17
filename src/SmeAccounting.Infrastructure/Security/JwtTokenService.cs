@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using SmeAccounting.Domain.Interfaces;
 
@@ -15,7 +16,7 @@ public class JwtTokenService : ITokenService
     private readonly int _accessTokenExpiryMinutes;
     private readonly int _refreshTokenExpiryDays;
 
-    public JwtTokenService(IConfiguration configuration)
+    public JwtTokenService(IConfiguration configuration, ILogger<JwtTokenService> logger)
     {
         var secret = configuration["Jwt:Secret"] ?? throw new InvalidOperationException("Jwt:Secret not configured");
         _issuer = configuration["Jwt:Issuer"] ?? "SmeAccounting";
@@ -23,6 +24,7 @@ public class JwtTokenService : ITokenService
         _signingKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(secret));
         _accessTokenExpiryMinutes = int.TryParse(configuration["Jwt:AccessTokenExpiryMinutes"], out var a) ? a : 15;
         _refreshTokenExpiryDays = int.TryParse(configuration["Jwt:RefreshTokenExpiryDays"], out var r) ? r : 7;
+        _logger = logger;
     }
 
     public TokenResult GenerateTokens(Guid userId, string username, string email, IReadOnlyCollection<string> roles, IReadOnlyCollection<string> permissions)
@@ -64,11 +66,14 @@ public class JwtTokenService : ITokenService
         return Convert.ToBase64String(bytes);
     }
 
+    private readonly ILogger<JwtTokenService> _logger;
+
     public Guid? ValidateToken(string token)
     {
         try
         {
             var handler = new JwtSecurityTokenHandler();
+            handler.InboundClaimTypeMap.Clear();
             var result = handler.ValidateToken(token, new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
@@ -81,10 +86,16 @@ public class JwtTokenService : ITokenService
                 ClockSkew = TimeSpan.Zero
             }, out _);
             var sub = result.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            if (sub is null)
+            {
+                var allClaims = string.Join(", ", result.Claims.Select(c => $"'{c.Type}'='{c.Value}'"));
+                _logger.LogWarning("No 'sub' claim found. Available claims: {Claims}", allClaims);
+            }
             return sub != null ? Guid.Parse(sub) : null;
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "JWT validation failed for token: {TokenPrefix}", token[..Math.Min(50, token.Length)]);
             return null;
         }
     }

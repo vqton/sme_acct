@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SmeAccounting.Application.Common.Interfaces;
 using SmeAccounting.Domain.Interfaces;
 using SmeAccounting.Infrastructure.Audit;
 using SmeAccounting.Infrastructure.BackgroundJobs;
@@ -10,6 +11,7 @@ using SmeAccounting.Infrastructure.Persistence;
 using SmeAccounting.Infrastructure.Persistence.Interceptors;
 using SmeAccounting.Infrastructure.Persistence.Repositories;
 using SmeAccounting.Infrastructure.Security;
+using SmeAccounting.Infrastructure.Services;
 using SmeAccounting.Infrastructure.Biometric;
 using SmeAccounting.Infrastructure.Rules;
 using SmeAccounting.Infrastructure.TaxAuthority;
@@ -30,6 +32,7 @@ public static class DependencyInjection
             ).AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>()));
 
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
+        services.AddScoped<IDashboardDataSource, DashboardDataSource>();
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<IJournalEntryRepository, JournalEntryRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
@@ -42,6 +45,7 @@ public static class DependencyInjection
 
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<ITokenService, JwtTokenService>();
+        services.AddScoped<ITotpService, TotpService>();
 
         services.AddScoped<IVNeIDService, MockVNeIDService>();
         services.AddScoped<IDigitalSignatureService, MockESignerService>();
@@ -54,6 +58,8 @@ public static class DependencyInjection
         services.AddScoped<ITaxService, TaxService>();
         services.AddScoped<TaxXmlBuilder>();
         services.AddScoped<RegulatoryRuleEngine>();
+
+        services.AddScoped<DbSeeder>();
 
         services.AddHttpClient<IVNeIDService, VNeIDService>()
             .ConfigureHttpClient(c => c.BaseAddress = new Uri(configuration.GetSection(VNeIDOptions.SectionName)["BaseUrl"] ?? "https://api.vneid.gov.vn"));

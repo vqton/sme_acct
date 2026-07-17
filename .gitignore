@@ -17,3 +17,12 @@ Thumbs.db
 # IDE
 .idea/
 .vscode/
+
+# Node (Foundation CMS via npm)
+node_modules/
+
+# Business docs (BRDs, security docs)
+docs/
+
+# Domain glossary
+UBIQUITOUS_LANGUAGE.md

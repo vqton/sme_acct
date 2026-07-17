@@ -34,6 +34,8 @@ public sealed class ChangePasswordCommandHandler : IRequestHandler<ChangePasswor
 
         user.SetPassword(_passwordHasher.Hash(command.NewPassword));
         _userRepo.Update(user);
+
+        await _userRepo.RevokeAllUserRefreshTokensAsync(user.Id, ct);
         await _unitOfWork.SaveChangesAsync(ct);
 
         return Result.Ok();

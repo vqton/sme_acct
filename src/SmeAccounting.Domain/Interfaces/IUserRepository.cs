@@ -19,6 +19,7 @@ public interface IUserRepository
     Task<List<RefreshToken>> GetActiveRefreshTokensAsync(Guid userId, CancellationToken ct = default);
     void AddRefreshToken(RefreshToken token);
     void RevokeRefreshToken(RefreshToken token);
+    Task RevokeAllUserRefreshTokensAsync(Guid userId, CancellationToken ct = default);
 
     Task<int> GetFailedAttemptsAsync(string username, TimeSpan within, CancellationToken ct = default);
     void AddLoginAttempt(LoginAttempt attempt);

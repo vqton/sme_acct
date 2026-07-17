@@ -38,6 +38,22 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Ignore<DomainEvent>();
+
+        var dateOnlyConverter = new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateOnly, DateTime>(
+            v => v.ToDateTime(TimeOnly.MinValue),
+            v => DateOnly.FromDateTime(v));
+
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var property in entityType.GetProperties())
+            {
+                if (property.ClrType == typeof(DateOnly))
+                    property.SetValueConverter(dateOnlyConverter);
+                else if (property.ClrType == typeof(DateOnly?))
+                    property.SetValueConverter(dateOnlyConverter);
+            }
+        }
+
         modelBuilder.ApplyConfiguration(new Configurations.CompanyConfiguration());
         modelBuilder.ApplyConfiguration(new Configurations.FiscalYearConfiguration());
         modelBuilder.ApplyConfiguration(new Configurations.FiscalPeriodConfiguration());

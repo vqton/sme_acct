@@ -65,8 +65,20 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, Result<T
             return Result.Fail("Invalid username or password");
         }
 
+        if (user.MfaEnabled)
+        {
+            LogAttempt(command.Username, LoginResult.MfaRequired, command, user.Id);
+            return Result.Ok(new TokenResponse(user.Id.ToString(), null!, DateTime.MinValue));
+        }
+
+        return await CompleteLoginAsync(user, command, ct);
+    }
+
+    private async Task<Result<TokenResponse>> CompleteLoginAsync(User user, LoginCommand command, CancellationToken ct)
+    {
         user.SetLastLogin();
         _userRepo.Update(user);
+        await _unitOfWork.SaveChangesAsync(ct);
 
         var roleNames = user.Roles.Select(r => r.Name).ToList();
         var permissions = await _roleRepo.GetUserEffectivePermissionsAsync(user.Id, ct);

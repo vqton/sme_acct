@@ -56,4 +56,13 @@ public class UserRepository : IUserRepository
     }
 
     public void AddLoginAttempt(LoginAttempt attempt) => _context.LoginAttempts.Add(attempt);
+
+    public async Task RevokeAllUserRefreshTokensAsync(Guid userId, CancellationToken ct = default)
+    {
+        var activeTokens = await _context.RefreshTokens
+            .Where(rt => rt.UserId == userId && rt.IsActive)
+            .ToListAsync(ct);
+        foreach (var token in activeTokens)
+            token.Revoke();
+    }
 }

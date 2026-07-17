@@ -1,12 +1,17 @@
+using System.Security.Claims;
 using MediatR;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SmeAccounting.Application.Security.Commands.ChangePassword;
 using SmeAccounting.Application.Security.Commands.Login;
 using SmeAccounting.Application.Security.Commands.Logout;
 using SmeAccounting.Application.Security.Commands.RefreshToken;
+using SmeAccounting.Application.Security.Commands.VerifyMfa;
 using SmeAccounting.Application.Security.Common;
 using SmeAccounting.Application.Security.Queries.GetCurrentUser;
+using SmeAccounting.Domain.Interfaces;
 
 namespace SmeAccounting.Web.Controllers;
 
@@ -15,8 +20,98 @@ namespace SmeAccounting.Web.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly ITokenService _tokenService;
+    private readonly IUserRepository _userRepo;
+    private readonly IRoleRepository _roleRepo;
 
-    public AuthController(IMediator mediator) => _mediator = mediator;
+    public AuthController(IMediator mediator, ITokenService tokenService, IUserRepository userRepo, IRoleRepository roleRepo)
+    {
+        _mediator = mediator;
+        _tokenService = tokenService;
+        _userRepo = userRepo;
+        _roleRepo = roleRepo;
+    }
+
+    private Guid? userIdFromToken(string accessToken)
+    {
+        try
+        {
+            return _tokenService.ValidateToken(accessToken);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    [HttpPost("login-cookie")]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> LoginCookie()
+    {
+        var username = Request.Form["username"].FirstOrDefault();
+        var password = Request.Form["password"].FirstOrDefault();
+
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+            return Redirect("/login?error=invalid");
+
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var result = await _mediator.Send(new LoginCommand(username, password, "Blazor Server", ip));
+
+        if (result.IsFailed)
+        {
+            var err = result.Errors.First().Message;
+            var code = err.Contains("locked", StringComparison.OrdinalIgnoreCase) ? "locked"
+                     : err.Contains("inactive", StringComparison.OrdinalIgnoreCase) ? "inactive"
+                     : "invalid";
+            return Redirect($"/login?error={code}");
+        }
+
+        var resp = result.Value;
+
+        // AccessToken is user.Id.ToString() when MFA required — not a real JWT
+        if (resp.RefreshToken is null)
+            return Redirect("/login?error=mfa");
+
+        var userId = userIdFromToken(resp.AccessToken);
+        if (userId is null)
+            return Redirect("/login?error=invalid");
+
+        var user = await _userRepo.GetByIdAsync(userId.Value);
+        if (user is null)
+            return Redirect("/login?error=invalid");
+
+        var roleNames = user.Roles.Select(r => r.Name).ToList();
+        var permissions = await _roleRepo.GetUserEffectivePermissionsAsync(user.Id);
+
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new(ClaimTypes.Name, user.Username),
+            new(ClaimTypes.Email, user.Email ?? ""),
+            new("iat", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString()),
+        };
+
+        foreach (var role in roleNames)
+            claims.Add(new(ClaimTypes.Role, role));
+        foreach (var perm in permissions)
+            claims.Add(new("permission", perm));
+
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = new ClaimsPrincipal(identity);
+
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal,
+            new AuthenticationProperties { IsPersistent = true });
+
+        return Redirect("/");
+    }
+
+    [HttpPost("logout-cookie")]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> LogoutCookie()
+    {
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        return Redirect("/login");
+    }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
@@ -28,7 +123,25 @@ public class AuthController : ControllerBase
         if (result.IsFailed)
             return Unauthorized(new { error = result.Errors.First().Message });
 
-        return Ok(result.Value);
+        var tokenResponse = result.Value;
+
+        if (tokenResponse.AccessToken == null && tokenResponse.RequiresMfa)
+            return Ok(new { requiresMfa = true, userId = tokenResponse.AccessToken });
+
+        return Ok(new { accessToken = tokenResponse.AccessToken, refreshToken = tokenResponse.RefreshToken, expiresAt = tokenResponse.ExpiresAt });
+    }
+
+    [HttpPost("verify-mfa")]
+    public async Task<IActionResult> VerifyMfa([FromBody] VerifyMfaRequest request)
+    {
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var command = new VerifyMfaCommand(request.UserId, request.Code, request.DeviceInfo, ip);
+        var result = await _mediator.Send(command);
+
+        if (result.IsFailed)
+            return Unauthorized(new { error = result.Errors.First().Message });
+
+        return Ok(new { accessToken = result.Value.AccessToken, refreshToken = result.Value.RefreshToken, expiresAt = result.Value.ExpiresAt });
     }
 
     [HttpPost("refresh")]
@@ -40,7 +153,7 @@ public class AuthController : ControllerBase
         if (result.IsFailed)
             return Unauthorized(new { error = result.Errors.First().Message });
 
-        return Ok(result.Value);
+        return Ok(new { accessToken = result.Value.AccessToken, refreshToken = result.Value.RefreshToken, expiresAt = result.Value.ExpiresAt });
     }
 
     [HttpPost("logout")]

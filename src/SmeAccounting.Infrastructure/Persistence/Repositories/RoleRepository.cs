@@ -25,15 +25,9 @@ public class RoleRepository : IRoleRepository
 
     public async Task<HashSet<string>> GetUserEffectivePermissionsAsync(Guid userId, CancellationToken ct = default)
     {
-        var roles = await _context.Users
-            .Where(u => u.Id == userId)
-            .SelectMany(u => u.Roles)
-            .Select(r => r.Id)
-            .ToListAsync(ct);
-
         var perms = await _context.FeaturePermissions
             .Include(fp => fp.Feature)
-            .Where(fp => roles.Contains(fp.RoleId))
+            .Where(fp => fp.Role.Users.Any(u => u.Id == userId))
             .Select(fp => $"{fp.Feature!.Code}:{fp.Access}")
             .ToHashSetAsync(ct);
 

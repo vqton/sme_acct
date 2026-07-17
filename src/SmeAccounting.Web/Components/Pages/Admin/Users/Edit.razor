@@ -9,35 +9,37 @@
 <h3>@(IsCreate ? "Create User" : "Edit User")</h3>
 
 <EditForm Model="model" OnValidSubmit="Save">
-    <div class="mb-3">
-        <label class="form-label">Username</label>
-        <InputText @bind-Value="model.Username" class="form-control" disabled="@(!IsCreate)" />
+    <div class="margin-bottom-2">
+        <label>Username</label>
+        <InputText @bind-Value="model.Username" disabled="@(!IsCreate)" />
     </div>
-    <div class="mb-3">
-        <label class="form-label">Email</label>
-        <InputText @bind-Value="model.Email" class="form-control" />
+    <div class="margin-bottom-2">
+        <label>Email</label>
+        <InputText @bind-Value="model.Email" />
     </div>
-    <div class="mb-3">
-        <label class="form-label">First Name</label>
-        <InputText @bind-Value="model.FirstName" class="form-control" />
+    <div class="margin-bottom-2">
+        <label>First Name</label>
+        <InputText @bind-Value="model.FirstName" />
     </div>
-    <div class="mb-3">
-        <label class="form-label">Last Name</label>
-        <InputText @bind-Value="model.LastName" class="form-control" />
+    <div class="margin-bottom-2">
+        <label>Last Name</label>
+        <InputText @bind-Value="model.LastName" />
     </div>
     @if (IsCreate)
     {
-        <div class="mb-3">
-            <label class="form-label">Password</label>
-            <InputText @bind-Value="model.Password" class="form-control" type="password" />
+        <div class="margin-bottom-2">
+            <label>Password</label>
+            <InputText @bind-Value="model.Password" type="password" />
         </div>
     }
-    <div class="mb-3 form-check">
-        <InputCheckbox @bind-Value="model.IsActive" class="form-check-input" disabled="@IsCreate" />
-        <label class="form-check-label">Active</label>
+    <div class="margin-bottom-2">
+        <label>
+            <InputCheckbox @bind-Value="model.IsActive" disabled="@IsCreate" />
+            Active
+        </label>
     </div>
-    <button type="submit" class="btn btn-primary">Save</button>
-    <button class="btn btn-secondary ms-2" @onclick="GoBack">Cancel</button>
+    <button type="submit" class="button tiny primary">Save</button>
+    <button class="button tiny secondary margin-left-1" @onclick="GoBack">Cancel</button>
 </EditForm>
 
 @code {

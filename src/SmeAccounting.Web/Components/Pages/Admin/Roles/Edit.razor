@@ -10,19 +10,19 @@
 <h3>@(IsCreate ? "Create Role" : "Edit Role")</h3>
 
 <EditForm Model="model" OnValidSubmit="Save">
-    <div class="mb-3">
-        <label class="form-label">Name</label>
-        <InputText @bind-Value="model.Name" class="form-control" />
+    <div class="margin-bottom-2">
+        <label>Name</label>
+        <InputText @bind-Value="model.Name" />
     </div>
-    <div class="mb-3">
-        <label class="form-label">Description</label>
-        <InputText @bind-Value="model.Description" class="form-control" />
+    <div class="margin-bottom-2">
+        <label>Description</label>
+        <InputText @bind-Value="model.Description" />
     </div>
 
     @if (permissions is not null)
     {
-        <h5 class="mt-4">Permissions</h5>
-        <table class="table table-sm">
+        <h5 class="margin-top-3">Permissions</h5>
+        <table class="table">
             <thead>
             <tr><th>Resource</th><th>Action</th><th>Granted</th></tr>
             </thead>
@@ -42,8 +42,8 @@
         </table>
     }
 
-    <button type="submit" class="btn btn-primary">Save</button>
-    <button class="btn btn-secondary ms-2" @onclick="GoBack">Cancel</button>
+    <button type="submit" class="button tiny primary">Save</button>
+    <button class="button tiny secondary margin-left-1" @onclick="GoBack">Cancel</button>
 </EditForm>
 
 @code {

@@ -44,9 +44,9 @@ public class PermissionPolicyProvider : IAuthorizationPolicyProvider
 {
     private readonly DefaultAuthorizationPolicyProvider _fallback;
 
-    public PermissionPolicyProvider(IAuthorizationPolicyProvider fallback)
+    public PermissionPolicyProvider(DefaultAuthorizationPolicyProvider fallback)
     {
-        _fallback = (DefaultAuthorizationPolicyProvider)fallback;
+        _fallback = fallback;
     }
 
     public Task<AuthorizationPolicy?> GetPolicyAsync(string policyName)

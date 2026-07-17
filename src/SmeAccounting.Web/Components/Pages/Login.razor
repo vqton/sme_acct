@@ -1,0 +1,46 @@
+@page "/login"
+@layout LoginLayout
+
+<PageTitle>Sign In - SmeAccounting</PageTitle>
+
+<div class="grid-x align-center margin-top-3">
+    <div class="cell medium-4">
+        <h3 class="text-center margin-bottom-2">SmeAccounting</h3>
+
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <div class="callout alert">@_error</div>
+        }
+
+        <form method="post" action="/api/auth/login-cookie">
+
+            <label for="username">Username
+                <input name="username" id="username" type="text" required autofocus />
+            </label>
+
+            <label for="password">Password
+                <input name="password" id="password" type="password" required />
+            </label>
+
+            <button type="submit" class="button primary expanded">Sign In</button>
+        </form>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] public string? Error { get; set; }
+
+    private string? _error;
+
+    protected override void OnParametersSet()
+    {
+        _error = Error switch
+        {
+            "invalid" => "Invalid username or password",
+            "locked" => "Account is locked. Try again later.",
+            "inactive" => "Account is inactive",
+            "mfa" => "MFA is enabled on this account. Use the API login endpoint.",
+            _ => null
+        };
+    }
+}

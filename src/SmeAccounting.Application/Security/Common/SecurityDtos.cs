@@ -4,6 +4,10 @@ public record LoginRequest(string Username, string Password, string? DeviceInfo 
 public record RefreshTokenRequest(string AccessToken, string RefreshToken);
 public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 
-public record TokenResponse(string AccessToken, string RefreshToken, DateTime ExpiresAt);
+public record TokenResponse(string AccessToken, string RefreshToken, DateTime ExpiresAt)
+{
+    public bool RequiresMfa => AccessToken != null && RefreshToken == null && ExpiresAt == DateTime.MinValue;
+}
+public record VerifyMfaRequest(Guid UserId, string Code, string? DeviceInfo = null, string? IpAddress = null);
 public record UserDto(Guid Id, string Username, string Email, string FirstName, string LastName, bool IsActive, List<string> Roles, HashSet<string> Permissions);
 public record LoginResultDto(bool Success, TokenResponse? Tokens, string? Error, bool RequiresMfa);
