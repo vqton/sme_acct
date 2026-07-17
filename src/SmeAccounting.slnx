@@ -1,6 +1,0 @@
-<Solution>
-  <Project Path="SmeAccounting.Application/SmeAccounting.Application.csproj" />
-  <Project Path="SmeAccounting.Domain/SmeAccounting.Domain.csproj" />
-  <Project Path="SmeAccounting.Infrastructure/SmeAccounting.Infrastructure.csproj" />
-  <Project Path="SmeAccounting.Web/SmeAccounting.Web.csproj" />
-</Solution>
