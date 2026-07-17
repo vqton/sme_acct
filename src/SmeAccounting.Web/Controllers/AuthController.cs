@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using MediatR;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -22,13 +23,15 @@ public class AuthController : ControllerBase
     private readonly ITokenService _tokenService;
     private readonly IUserRepository _userRepo;
     private readonly IRoleRepository _roleRepo;
+    private readonly IAntiforgery _antiforgery;
 
-    public AuthController(IMediator mediator, ITokenService tokenService, IUserRepository userRepo, IRoleRepository roleRepo)
+    public AuthController(IMediator mediator, ITokenService tokenService, IUserRepository userRepo, IRoleRepository roleRepo, IAntiforgery antiforgery)
     {
         _mediator = mediator;
         _tokenService = tokenService;
         _userRepo = userRepo;
         _roleRepo = roleRepo;
+        _antiforgery = antiforgery;
     }
 
     private Guid? userIdFromToken(string accessToken)
@@ -44,9 +47,12 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login-cookie")]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> LoginCookie()
     {
+        if (!await _antiforgery.IsRequestValidAsync(HttpContext))
+            return Redirect("/login?error=invalid");
+
         var username = Request.Form["username"].FirstOrDefault();
         var password = Request.Form["password"].FirstOrDefault();
 
@@ -98,9 +104,12 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("logout-cookie")]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> LogoutCookie()
     {
+        if (!await _antiforgery.IsRequestValidAsync(HttpContext))
+            return Redirect("/login");
+
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return Redirect("/login");
     }
