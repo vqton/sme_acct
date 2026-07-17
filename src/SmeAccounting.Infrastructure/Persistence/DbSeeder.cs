@@ -18,24 +18,24 @@ public sealed class DbSeeder
 
     public async Task SeedAsync(CancellationToken ct = default)
     {
-        if (await _context.Roles.AnyAsync(ct))
-            return;
+        if (!await _context.Roles.AnyAsync(ct))
+        {
+            var permissions = await SeedPermissionsAsync(ct);
+            var features = await SeedFeaturesAsync(ct);
+            var roles = SeedRoles(permissions);
+            _context.Roles.AddRange(roles);
+            await _context.SaveChangesAsync(ct);
+        }
 
-        var permissions = await SeedPermissionsAsync(ct);
-        var features = await SeedFeaturesAsync(ct);
-        var roles = SeedRoles(permissions);
-        _context.Roles.AddRange(roles);
-        await _context.SaveChangesAsync(ct);
-
-        await SeedAdminUserAsync(roles, ct);
+        await SeedAdminUserAsync(ct);
     }
 
-    private async Task SeedAdminUserAsync(List<Role> roles, CancellationToken ct)
+    private async Task SeedAdminUserAsync(CancellationToken ct)
     {
         if (await _context.Users.AnyAsync(u => u.Username == "admin", ct))
             return;
 
-        var adminRole = roles.FirstOrDefault(r => r.Name == "Admin");
+        var adminRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "Admin", ct);
         if (adminRole == null) return;
 
         var admin = new User("admin", "admin@smeaccounting.com", _passwordHasher.Hash("Admin@123456"), "System", "Admin", Guid.Empty);
