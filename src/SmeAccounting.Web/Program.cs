@@ -70,6 +70,21 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     db.Database.EnsureCreated();
 
+    db.Database.ExecuteSqlRaw(@"
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('acc.AspNetUsers') AND name = 'AvatarUrl')
+            ALTER TABLE acc.AspNetUsers ADD AvatarUrl nvarchar(512) NULL;
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('acc.AspNetUsers') AND name = 'DateOfBirth')
+            ALTER TABLE acc.AspNetUsers ADD DateOfBirth datetime2 NULL;
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('acc.AspNetUsers') AND name = 'Gender')
+            ALTER TABLE acc.AspNetUsers ADD Gender nvarchar(20) NULL;
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('acc.AspNetUsers') AND name = 'Address')
+            ALTER TABLE acc.AspNetUsers ADD Address nvarchar(500) NULL;
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('acc.AspNetUsers') AND name = 'Department')
+            ALTER TABLE acc.AspNetUsers ADD Department nvarchar(200) NULL;
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('acc.AspNetUsers') AND name = 'JobTitle')
+            ALTER TABLE acc.AspNetUsers ADD JobTitle nvarchar(200) NULL;
+    ");
+
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 

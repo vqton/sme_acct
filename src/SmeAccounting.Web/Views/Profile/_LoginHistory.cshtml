@@ -1,0 +1,51 @@
+@model List<LoginHistoryEntry>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-white">
+        <strong>Login History</strong>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.Count == 0)
+        {
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-clock-history" style="font-size: 2rem;"></i>
+                <p class="mt-2 mb-0">No login history available.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date/Time</th>
+                            <th>IP Address</th>
+                            <th>Device</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var entry in Model)
+                        {
+                            <tr>
+                                <td class="small">@entry.AttemptedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                                <td class="small">@entry.IpAddress</td>
+                                <td class="small">@entry.DeviceInfo</td>
+                                <td>
+                                    @if (entry.Result == "Success")
+                                    {
+                                        <span class="badge bg-success">Success</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">@entry.Result</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
