@@ -1,0 +1,81 @@
+@page "/login/mfa"
+@layout LoginLayout
+@inject IHttpContextAccessor HttpContextAccessor
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+
+<PageTitle>Two-Factor Authentication - SmeAccounting</PageTitle>
+
+<div class="grid-x align-center margin-top-3">
+    <div class="cell medium-4">
+        <div class="card">
+            <div class="card-divider text-center">
+                <h3 class="margin-bottom-0">Two-Factor Authentication</h3>
+            </div>
+            <div class="card-section">
+
+                @if (!string.IsNullOrEmpty(_error))
+                {
+                    <div class="callout alert" role="alert" aria-live="polite">@_error</div>
+                }
+
+                <p class="text-center">Enter the 6-digit code from your authenticator app.</p>
+
+                <form method="post" action="/api/auth/verify-mfa-cookie" id="mfaForm" onsubmit="handleMfaSubmit()">
+                    <input name="@_formFieldName" type="hidden" value="@_requestToken" />
+
+                    <label for="code">
+                        Verification Code
+                        <input name="code" id="code" type="text" inputmode="numeric"
+                               placeholder="000000" required autofocus
+                               maxlength="6" pattern="[0-9]{6}"
+                               autocomplete="one-time-code" />
+                    </label>
+
+                    <button type="submit" class="button primary expanded" id="submitBtn">
+                        Verify
+                    </button>
+
+                    <p class="text-center margin-top-1">
+                        <a href="/login">Back to sign in</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function handleMfaSubmit() {
+        var btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerHTML = 'Verifying...';
+    }
+</script>
+
+@code {
+    [SupplyParameterFromQuery] public string? Error { get; set; }
+
+    private string? _error;
+    private string? _requestToken;
+    private string _formFieldName = "__RequestVerificationToken";
+
+    protected override void OnParametersSet()
+    {
+        _error = Error switch
+        {
+            "invalid" => "Invalid verification code. Try again.",
+            _ => null
+        };
+    }
+
+    protected override void OnInitialized()
+    {
+        var httpContext = HttpContextAccessor.HttpContext;
+        if (httpContext is not null)
+        {
+            var tokens = Antiforgery.GetAndStoreTokens(httpContext);
+            _requestToken = tokens.RequestToken;
+            _formFieldName = tokens.FormFieldName ?? "__RequestVerificationToken";
+        }
+    }
+}

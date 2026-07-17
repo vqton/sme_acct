@@ -1,46 +1,115 @@
 @page "/login"
 @layout LoginLayout
+@inject IHttpContextAccessor HttpContextAccessor
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 
 <PageTitle>Sign In - SmeAccounting</PageTitle>
 
 <div class="grid-x align-center margin-top-3">
     <div class="cell medium-4">
-        <h3 class="text-center margin-bottom-2">SmeAccounting</h3>
+        <div class="card">
+            <div class="card-divider text-center">
+                <h3 class="margin-bottom-0">SmeAccounting</h3>
+            </div>
+            <div class="card-section">
 
-        @if (!string.IsNullOrEmpty(_error))
-        {
-            <div class="callout alert">@_error</div>
-        }
+                @if (!string.IsNullOrEmpty(_error))
+                {
+                    <div class="callout alert" role="alert" aria-live="polite">@_error</div>
+                }
 
-        <form method="post" action="/api/auth/login-cookie">
+                <form method="post" action="/api/auth/login-cookie" id="loginForm" onsubmit="handleLoginSubmit()">
+                    <input name="@_formFieldName" type="hidden" value="@_requestToken" />
 
-            <label for="username">Username
-                <input name="username" id="username" type="text" required autofocus />
-            </label>
+                    <label for="username">
+                        Username
+                        <input name="username" id="username" type="text"
+                               placeholder="Enter your username" required autofocus
+                               autocomplete="username" />
+                    </label>
 
-            <label for="password">Password
-                <input name="password" id="password" type="password" required />
-            </label>
+                    <label for="password">
+                        Password
+                        <div class="input-group">
+                            <input name="password" id="password" type="password"
+                                   placeholder="Enter your password" required
+                                   autocomplete="current-password" class="input-group-field" />
+                            <span class="input-group-button">
+                                <button type="button" class="button secondary" id="togglePassword"
+                                        aria-label="Show password"
+                                        onclick="togglePasswordVisibility()" tabindex="-1">
+                                    Show
+                                </button>
+                            </span>
+                        </div>
+                    </label>
 
-            <button type="submit" class="button primary expanded">Sign In</button>
-        </form>
+                    <label for="rememberMe">
+                        <input type="checkbox" name="rememberMe" id="rememberMe" value="true" checked />
+                        Remember me
+                    </label>
+
+                    <button type="submit" class="button primary expanded" id="submitBtn">
+                        Sign In
+                    </button>
+
+                    <p class="text-center margin-top-1">
+                        <a href="/forgot-password">Forgot password?</a>
+                    </p>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
+
+<script>
+    function handleLoginSubmit() {
+        var btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerHTML = 'Signing in...';
+    }
+
+    function togglePasswordVisibility() {
+        var pwd = document.getElementById('password');
+        var btn = document.getElementById('togglePassword');
+        if (pwd.type === 'password') {
+            pwd.type = 'text';
+            btn.textContent = 'Hide';
+        } else {
+            pwd.type = 'password';
+            btn.textContent = 'Show';
+        }
+    }
+</script>
 
 @code {
     [SupplyParameterFromQuery] public string? Error { get; set; }
 
     private string? _error;
+    private string? _requestToken;
+    private string _formFieldName = "__RequestVerificationToken";
 
     protected override void OnParametersSet()
     {
         _error = Error switch
         {
-            "invalid" => "Invalid username or password",
-            "locked" => "Account is locked. Try again later.",
-            "inactive" => "Account is inactive",
-            "mfa" => "MFA is enabled on this account. Use the API login endpoint.",
+            "invalid" => "Invalid username or password.",
+            "locked" => "Account is temporarily locked. Try again later.",
+            "inactive" => "Invalid username or password.",
+            "mfa" => "Two-factor authentication code required.",
+            "mfa-invalid" => "Invalid verification code. Try again.",
             _ => null
         };
+    }
+
+    protected override void OnInitialized()
+    {
+        var httpContext = HttpContextAccessor.HttpContext;
+        if (httpContext is not null)
+        {
+            var tokens = Antiforgery.GetAndStoreTokens(httpContext);
+            _requestToken = tokens.RequestToken;
+            _formFieldName = tokens.FormFieldName ?? "__RequestVerificationToken";
+        }
     }
 }

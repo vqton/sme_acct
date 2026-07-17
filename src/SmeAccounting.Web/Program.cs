@@ -44,7 +44,7 @@ builder.Services.AddAuthentication(options =>
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
     options.SlidingExpiration = true;
     options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     options.Cookie.SameSite = SameSiteMode.Strict;
 })
 .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
@@ -114,6 +114,7 @@ app.UseStatusCodePages(async context =>
 app.UseRateLimiter();
 
 app.UseAuthentication();
+app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseMiddleware<SessionValidationMiddleware>();
 app.UseMiddleware<IpRestrictionMiddleware>();
 app.UseAuthorization();

@@ -45,7 +45,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login-cookie")]
-    [IgnoreAntiforgeryToken]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> LoginCookie()
     {
         var username = Request.Form["username"].FirstOrDefault();
@@ -60,9 +60,7 @@ public class AuthController : ControllerBase
         if (result.IsFailed)
         {
             var err = result.Errors.First().Message;
-            var code = err.Contains("locked", StringComparison.OrdinalIgnoreCase) ? "locked"
-                     : err.Contains("inactive", StringComparison.OrdinalIgnoreCase) ? "inactive"
-                     : "invalid";
+            var code = err.Contains("locked", StringComparison.OrdinalIgnoreCase) ? "locked" : "invalid";
             return Redirect($"/login?error={code}");
         }
 
@@ -70,7 +68,18 @@ public class AuthController : ControllerBase
 
         // AccessToken is user.Id.ToString() when MFA required — not a real JWT
         if (resp.RefreshToken is null)
-            return Redirect("/login?error=mfa");
+        {
+            var mfaCookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTimeOffset.UtcNow.AddMinutes(5),
+                IsEssential = true
+            };
+            Response.Cookies.Append("mfa_user_id", resp.AccessToken, mfaCookieOptions);
+            return Redirect("/login/mfa");
+        }
 
         var userId = userIdFromToken(resp.AccessToken);
         if (userId is null)
@@ -106,11 +115,62 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("logout-cookie")]
-    [IgnoreAntiforgeryToken]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> LogoutCookie()
     {
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return Redirect("/login");
+    }
+
+    [HttpPost("verify-mfa-cookie")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> VerifyMfaCookie()
+    {
+        var userIdStr = Request.Cookies["mfa_user_id"];
+        if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+            return Redirect("/login?error=invalid");
+
+        var code = Request.Form["code"].FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(code))
+            return Redirect("/login/mfa?error=invalid");
+
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var command = new VerifyMfaCommand(userId, code, "Blazor Server", ip);
+        var result = await _mediator.Send(command);
+
+        if (result.IsFailed)
+            return Redirect("/login/mfa?error=invalid");
+
+        Response.Cookies.Delete("mfa_user_id");
+
+        var resp = result.Value;
+        var user = await _userRepo.GetByIdAsync(userId);
+        if (user is null)
+            return Redirect("/login?error=invalid");
+
+        var roleNames = user.Roles.Select(r => r.Name).ToList();
+        var permissions = await _roleRepo.GetUserEffectivePermissionsAsync(user.Id);
+
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new(ClaimTypes.Name, user.Username),
+            new(ClaimTypes.Email, user.Email ?? ""),
+            new("iat", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString()),
+        };
+
+        foreach (var role in roleNames)
+            claims.Add(new(ClaimTypes.Role, role));
+        foreach (var perm in permissions)
+            claims.Add(new("permission", perm));
+
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = new ClaimsPrincipal(identity);
+
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal,
+            new AuthenticationProperties { IsPersistent = true });
+
+        return Redirect("/");
     }
 
     [HttpPost("login")]

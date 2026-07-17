@@ -1,5 +1,7 @@
 ﻿@inherits LayoutComponentBase
 @inject AuthenticationStateProvider AuthStateProvider
+@inject IHttpContextAccessor HttpContextAccessor
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 
 <div class="page">
     <div class="sidebar">
@@ -14,6 +16,7 @@
                     <span class="text-muted small margin-right-1">@_user</span>
                 }
                 <form method="post" action="/api/auth/logout-cookie" class="margin-0">
+                    <input name="@_formFieldName" type="hidden" value="@_requestToken" />
                     <button type="submit" class="button secondary hollow tiny">Sign Out</button>
                 </form>
             </div>
@@ -33,10 +36,20 @@
 
 @code {
     private string? _user;
+    private string? _requestToken;
+    private string _formFieldName = "__RequestVerificationToken";
 
     protected override async Task OnInitializedAsync()
     {
         var state = await AuthStateProvider.GetAuthenticationStateAsync();
         _user = state.User.Identity?.Name;
+
+        var httpContext = HttpContextAccessor.HttpContext;
+        if (httpContext is not null)
+        {
+            var tokens = Antiforgery.GetAndStoreTokens(httpContext);
+            _requestToken = tokens.RequestToken;
+            _formFieldName = tokens.FormFieldName ?? "__RequestVerificationToken";
+        }
     }
 }

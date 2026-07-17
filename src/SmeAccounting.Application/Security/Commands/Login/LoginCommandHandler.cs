@@ -38,19 +38,19 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, Result<T
         if (user == null)
         {
             LogAttempt(command.Username, LoginResult.InvalidCredentials, command);
-            return Result.Fail("Invalid username or password");
+            return Result.Fail("Invalid username or password.");
         }
 
         if (!user.IsActive)
         {
             LogAttempt(command.Username, LoginResult.AccountInactive, command, user.Id);
-            return Result.Fail("Account is inactive");
+            return Result.Fail("Invalid username or password.");
         }
 
         if (user.IsLockedOut())
         {
             LogAttempt(command.Username, LoginResult.AccountLocked, command, user.Id);
-            return Result.Fail("Account is locked. Try again later.");
+            return Result.Fail("Account is temporarily locked. Try again later.");
         }
 
         var policy = await _policyRepo.GetByCompanyIdAsync(user.CompanyId, ct)
@@ -62,7 +62,7 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, Result<T
             _userRepo.Update(user);
             await _unitOfWork.SaveChangesAsync(ct);
             LogAttempt(command.Username, LoginResult.InvalidCredentials, command, user.Id);
-            return Result.Fail("Invalid username or password");
+            return Result.Fail("Invalid username or password.");
         }
 
         if (user.MfaEnabled)
