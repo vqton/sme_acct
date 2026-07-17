@@ -1,0 +1,155 @@
+@page "/mfa/setup"
+@attribute [Authorize]
+@layout MainLayout
+@inject HttpClient Http
+
+<PageTitle>Two-Factor Authentication - SmeAccounting</PageTitle>
+
+<div class="grid-x align-center margin-top-3">
+    <div class="cell medium-6">
+        <div class="card">
+            <div class="card-divider">
+                <h4 class="margin-bottom-0">Two-Factor Authentication</h4>
+            </div>
+            <div class="card-section">
+
+                @if (_enabled)
+                {
+                    <div class="callout success">Two-factor authentication is enabled for your account.</div>
+                    <form method="post" action="/api/auth/mfa/disable">
+                        <button type="submit" class="button alert">Disable</button>
+                    </form>
+                }
+                else if (_step == EnrollStep.Start)
+                {
+                    <p>Two-factor authentication adds an extra layer of security to your account. You'll need an authenticator app like Google Authenticator or Authy.</p>
+                    <button class="button primary" onclick="@BeginEnroll" disabled="@_loading">Set Up Two-Factor Authentication</button>
+                }
+                else if (_step == EnrollStep.ShowSecret)
+                {
+                    <div class="callout primary">
+                        <h5>Scan this code with your authenticator app</h5>
+                        <p class="text-center margin-top-1">
+                            <a href="@_qrCodeUri" target="_blank" class="button hollow">Open in Authenticator</a>
+                        </p>
+                        <p><strong>Or enter this key manually:</strong></p>
+                        <pre class="text-center" style="font-size:1.2rem;letter-spacing:2px;background:#f4f4f4;padding:0.75rem;">@_secret</pre>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(_error))
+                    {
+                        <div class="callout alert">@_error</div>
+                    }
+
+                    <p>Enter the 6-digit code from your authenticator app to confirm setup.</p>
+
+                    <label for="code">Verification Code
+                        <input name="code" id="code" type="text" inputmode="numeric"
+                               placeholder="000000" maxlength="6" pattern="[0-9]{6}"
+                               autocomplete="one-time-code"
+                               @bind="_code" @bind:event="oninput" />
+                    </label>
+
+                    <button class="button primary expanded" onclick="@VerifyEnroll" disabled="@_loading">
+                        @(_loading ? "Verifying..." : "Verify & Enable")
+                    </button>
+                    <button class="button secondary expanded" onclick="@Reset">Cancel</button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private enum EnrollStep { Start, ShowSecret }
+    private EnrollStep _step = EnrollStep.Start;
+    private string _secret = "";
+    private string _qrCodeUri = "";
+    private string _code = "";
+    private string _error = "";
+    private bool _loading;
+    private bool _enabled;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Check if MFA already enabled via user info
+        var response = await Http.GetAsync("api/auth/me");
+        if (response.IsSuccessStatusCode)
+        {
+            var user = await response.Content.ReadFromJsonAsync<UserInfo>();
+            // We can't determine MFA status from current endpoint — show setup option
+        }
+    }
+
+    private async Task BeginEnroll()
+    {
+        _loading = true;
+        _error = "";
+        try
+        {
+            var response = await Http.PostAsync("api/auth/mfa/enroll", null);
+            var result = await response.Content.ReadFromJsonAsync<MfaEnrollResponse>();
+            if (result is not null)
+            {
+                _secret = result.secret;
+                _qrCodeUri = result.qrCodeUri;
+                _step = EnrollStep.ShowSecret;
+            }
+        }
+        catch
+        {
+            _error = "Failed to start enrollment. Try again.";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task VerifyEnroll()
+    {
+        if (string.IsNullOrWhiteSpace(_code) || _code.Length != 6)
+        {
+            _error = "Enter a 6-digit code.";
+            return;
+        }
+
+        _loading = true;
+        _error = "";
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/auth/mfa/verify-enroll", new { secret = _secret, code = _code });
+            if (response.IsSuccessStatusCode)
+            {
+                _enabled = true;
+                _step = EnrollStep.Start;
+            }
+            else
+            {
+                var err = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+                _error = err?.error ?? "Invalid code. Try again.";
+            }
+        }
+        catch
+        {
+            _error = "Verification failed. Try again.";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void Reset()
+    {
+        _step = EnrollStep.Start;
+        _secret = "";
+        _qrCodeUri = "";
+        _code = "";
+        _error = "";
+    }
+
+    private record MfaEnrollResponse(string secret, string qrCodeUri);
+    private record ErrorResponse(string error);
+    private record UserInfo();
+}

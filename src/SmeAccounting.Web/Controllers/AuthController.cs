@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using SmeAccounting.Application.Security.Commands.ChangePassword;
 using SmeAccounting.Application.Security.Commands.Login;
 using SmeAccounting.Application.Security.Commands.Logout;
+using SmeAccounting.Application.Security.Commands.MfaEnroll;
+using SmeAccounting.Application.Security.Commands.MfaVerifyEnroll;
 using SmeAccounting.Application.Security.Commands.RefreshToken;
 using SmeAccounting.Application.Security.Commands.VerifyMfa;
 using SmeAccounting.Application.Security.Common;
@@ -240,6 +242,29 @@ public class AuthController : ControllerBase
     }
 
     [Authorize]
+    [Authorize]
+    [HttpPost("mfa/enroll")]
+    public async Task<IActionResult> EnrollMfa()
+    {
+        var result = await _mediator.Send(new MfaEnrollCommand());
+        if (result.IsFailed)
+            return BadRequest(new { error = result.Errors.First().Message });
+
+        return Ok(new { secret = result.Value.Secret, qrCodeUri = result.Value.QrCodeUri });
+    }
+
+    [Authorize]
+    [HttpPost("mfa/verify-enroll")]
+    public async Task<IActionResult> VerifyEnrollMfa([FromBody] VerifyEnrollMfaRequest request)
+    {
+        var result = await _mediator.Send(new MfaVerifyEnrollCommand(request.Secret, request.Code));
+        if (result.IsFailed)
+            return BadRequest(new { error = result.Errors.First().Message });
+
+        return Ok();
+    }
+
+    [Authorize]
     [HttpPost("change-password")]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
@@ -258,3 +283,4 @@ public class AuthController : ControllerBase
 }
 
 public record LogoutRequest(string RefreshToken);
+public record VerifyEnrollMfaRequest(string Secret, string Code);
