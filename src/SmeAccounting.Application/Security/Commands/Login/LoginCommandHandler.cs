@@ -38,18 +38,21 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, Result<T
         if (user == null)
         {
             LogAttempt(command.Username, LoginResult.InvalidCredentials, command);
+            await _unitOfWork.SaveChangesAsync(ct);
             return Result.Fail("Invalid username or password.");
         }
 
         if (!user.IsActive)
         {
             LogAttempt(command.Username, LoginResult.AccountInactive, command, user.Id);
+            await _unitOfWork.SaveChangesAsync(ct);
             return Result.Fail("Invalid username or password.");
         }
 
         if (user.IsLockedOut())
         {
             LogAttempt(command.Username, LoginResult.AccountLocked, command, user.Id);
+            await _unitOfWork.SaveChangesAsync(ct);
             return Result.Fail("Account is temporarily locked. Try again later.");
         }
 
@@ -59,9 +62,9 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, Result<T
         if (!_passwordHasher.Verify(command.Password, user.PasswordHash))
         {
             user.RecordFailedAttempt(policy.MaxLoginAttempts, policy.LockoutMinutes);
+            LogAttempt(command.Username, LoginResult.InvalidCredentials, command, user.Id);
             _userRepo.Update(user);
             await _unitOfWork.SaveChangesAsync(ct);
-            LogAttempt(command.Username, LoginResult.InvalidCredentials, command, user.Id);
             return Result.Fail("Invalid username or password.");
         }
 
@@ -71,6 +74,7 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, Result<T
     private async Task<Result<TokenResponse>> CompleteLoginAsync(User user, LoginCommand command, CancellationToken ct)
     {
         user.SetLastLogin();
+        LogAttempt(command.Username, LoginResult.Success, command, user.Id);
         _userRepo.Update(user);
         await _unitOfWork.SaveChangesAsync(ct);
 
@@ -84,7 +88,6 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, Result<T
         _userRepo.AddRefreshToken(refreshToken);
 
         await _unitOfWork.SaveChangesAsync(ct);
-        LogAttempt(command.Username, LoginResult.Success, command, user.Id);
 
         return Result.Ok(new TokenResponse(tokens.AccessToken, tokens.RefreshToken, tokens.ExpiresAt));
     }

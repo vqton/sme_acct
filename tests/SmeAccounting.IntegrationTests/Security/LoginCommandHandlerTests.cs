@@ -49,6 +49,7 @@ public sealed class LoginCommandHandlerTests : IDisposable
 
         result.IsFailed.Should().BeTrue();
         result.Errors.First().Message.Should().Be("Invalid username or password.");
+        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -62,6 +63,7 @@ public sealed class LoginCommandHandlerTests : IDisposable
 
         result.IsFailed.Should().BeTrue();
         result.Errors.First().Message.Should().Be("Invalid username or password.");
+        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -78,6 +80,7 @@ public sealed class LoginCommandHandlerTests : IDisposable
 
         result.IsFailed.Should().BeTrue();
         result.Errors.First().Message.Should().Contain("locked");
+        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -93,6 +96,7 @@ public sealed class LoginCommandHandlerTests : IDisposable
 
         result.IsFailed.Should().BeTrue();
         result.Errors.First().Message.Should().Be("Invalid username or password.");
+        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -186,6 +190,7 @@ public sealed class LoginCommandHandlerTests : IDisposable
 
         user.FailedLoginAttempts.Should().Be(1);
         _userRepo.Received(1).Update(user);
+        _userRepo.Received(1).AddLoginAttempt(Arg.Any<LoginAttempt>());
     }
 
     public void Dispose()
