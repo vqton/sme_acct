@@ -117,19 +117,60 @@ public sealed class LoginCommandHandlerTests : IDisposable
     }
 
     [Fact]
-    public async Task Handle_MfaEnabled_ReturnsMfaResponse()
+    public async Task Handle_MfaEnabled_NowLogsInDirectly()
     {
         var companyId = Guid.NewGuid();
+        var role = new Role("Admin", companyId);
         var user = new User("mfa-user", "mfa@test.com", _passwordHasher.Hash("password"), "Mfa", "User", companyId);
         user.EnableMfa("SECRET");
+        user.AddRole(role);
         _userRepo.GetByUsernameAsync("mfa-user", Arg.Any<CancellationToken>())!.Returns(user);
         var policy = new CompanyPasswordPolicy(companyId);
         _policyRepo.GetByCompanyIdAsync(companyId, Arg.Any<CancellationToken>())!.Returns(policy);
+        _roleRepo.GetUserEffectivePermissionsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(new HashSet<string>());
+        _tokenService.GenerateTokens(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<IReadOnlyCollection<string>>())
+            .Returns(new TokenResult("mfa-token", "refresh", DateTime.UtcNow.AddMinutes(15), DateTime.UtcNow.AddDays(7)));
 
         var result = await _handler.Handle(new LoginCommand("mfa-user", "password"), default);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.RefreshToken.Should().BeNull();
+        result.Value.AccessToken.Should().Be("mfa-token");
+    }
+
+    [Fact]
+    public async Task Handle_AdminCredentials_ValidLogin()
+    {
+        var companyId = Guid.NewGuid();
+        var role = new Role("Admin", companyId);
+        var user = new User("admin", "admin@test.com", _passwordHasher.Hash("Admin@123456"), "System", "Admin", companyId);
+        user.AddRole(role);
+        _userRepo.GetByUsernameAsync("admin", Arg.Any<CancellationToken>())!.Returns(user);
+        var policy = new CompanyPasswordPolicy(companyId);
+        _policyRepo.GetByCompanyIdAsync(companyId, Arg.Any<CancellationToken>())!.Returns(policy);
+        _roleRepo.GetUserEffectivePermissionsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(new HashSet<string>());
+        _tokenService.GenerateTokens(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<IReadOnlyCollection<string>>())
+            .Returns(new TokenResult("admin-token", "refresh", DateTime.UtcNow.AddMinutes(15), DateTime.UtcNow.AddDays(7)));
+
+        var result = await _handler.Handle(new LoginCommand("admin", "Admin@123456"), default);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.AccessToken.Should().Be("admin-token");
+    }
+
+    [Fact]
+    public async Task Handle_AdminWrongPassword_Fails()
+    {
+        var companyId = Guid.NewGuid();
+        var user = new User("admin", "admin@test.com", _passwordHasher.Hash("Admin@123456"), "System", "Admin", companyId);
+        _userRepo.GetByUsernameAsync("admin", Arg.Any<CancellationToken>())!.Returns(user);
+        var policy = new CompanyPasswordPolicy(companyId);
+        _policyRepo.GetByCompanyIdAsync(companyId, Arg.Any<CancellationToken>())!.Returns(policy);
+
+        var result = await _handler.Handle(new LoginCommand("admin", "WrongPassword"), default);
+
+        result.IsFailed.Should().BeTrue();
     }
 
     [Fact]

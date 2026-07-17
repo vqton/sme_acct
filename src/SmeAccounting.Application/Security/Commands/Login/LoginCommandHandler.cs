@@ -65,12 +65,6 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, Result<T
             return Result.Fail("Invalid username or password.");
         }
 
-        if (user.MfaEnabled)
-        {
-            LogAttempt(command.Username, LoginResult.MfaRequired, command, user.Id);
-            return Result.Ok(new TokenResponse(user.Id.ToString(), null!, DateTime.MinValue));
-        }
-
         return await CompleteLoginAsync(user, command, ct);
     }
 

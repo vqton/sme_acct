@@ -1,11 +1,11 @@
 {
     "schema_version": 2,
-    "commit": "eb171dbd01f9150375ca311b169a97a4ec39794a",
-    "indexed_at": "2026-07-17T04:14:12Z",
+    "commit": "4f11375fefd10a7466f1cfd01031e301f67e7eeb",
+    "indexed_at": "2026-07-17T04:15:40Z",
     "project": "home-projects-sme_acct",
     "nodes": 5939,
     "edges": 18845,
     "original_size": 18743296,
-    "compressed_size": 3112222,
+    "compressed_size": 3112220,
     "compression_level": 3
 }

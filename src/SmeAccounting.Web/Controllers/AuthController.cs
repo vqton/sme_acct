@@ -7,10 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using SmeAccounting.Application.Security.Commands.ChangePassword;
 using SmeAccounting.Application.Security.Commands.Login;
 using SmeAccounting.Application.Security.Commands.Logout;
-using SmeAccounting.Application.Security.Commands.MfaEnroll;
-using SmeAccounting.Application.Security.Commands.MfaVerifyEnroll;
 using SmeAccounting.Application.Security.Commands.RefreshToken;
-using SmeAccounting.Application.Security.Commands.VerifyMfa;
 using SmeAccounting.Application.Security.Common;
 using SmeAccounting.Application.Security.Queries.GetCurrentUser;
 using SmeAccounting.Domain.Interfaces;
@@ -67,22 +64,6 @@ public class AuthController : ControllerBase
         }
 
         var resp = result.Value;
-
-        // AccessToken is user.Id.ToString() when MFA required — not a real JWT
-        if (resp.RefreshToken is null)
-        {
-            var mfaCookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTimeOffset.UtcNow.AddMinutes(5),
-                IsEssential = true
-            };
-            Response.Cookies.Append("mfa_user_id", resp.AccessToken, mfaCookieOptions);
-            return Redirect("/login/mfa");
-        }
-
         var userId = userIdFromToken(resp.AccessToken);
         if (userId is null)
             return Redirect("/login?error=invalid");
@@ -124,57 +105,6 @@ public class AuthController : ControllerBase
         return Redirect("/login");
     }
 
-    [HttpPost("verify-mfa-cookie")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> VerifyMfaCookie()
-    {
-        var userIdStr = Request.Cookies["mfa_user_id"];
-        if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
-            return Redirect("/login?error=invalid");
-
-        var code = Request.Form["code"].FirstOrDefault();
-        if (string.IsNullOrWhiteSpace(code))
-            return Redirect("/login/mfa?error=invalid");
-
-        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
-        var command = new VerifyMfaCommand(userId, code, "Blazor Server", ip);
-        var result = await _mediator.Send(command);
-
-        if (result.IsFailed)
-            return Redirect("/login/mfa?error=invalid");
-
-        Response.Cookies.Delete("mfa_user_id");
-
-        var resp = result.Value;
-        var user = await _userRepo.GetByIdAsync(userId);
-        if (user is null)
-            return Redirect("/login?error=invalid");
-
-        var roleNames = user.Roles.Select(r => r.Name).ToList();
-        var permissions = await _roleRepo.GetUserEffectivePermissionsAsync(user.Id);
-
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new(ClaimTypes.Name, user.Username),
-            new(ClaimTypes.Email, user.Email ?? ""),
-            new("iat", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString()),
-        };
-
-        foreach (var role in roleNames)
-            claims.Add(new(ClaimTypes.Role, role));
-        foreach (var perm in permissions)
-            claims.Add(new("permission", perm));
-
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        var principal = new ClaimsPrincipal(identity);
-
-        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal,
-            new AuthenticationProperties { IsPersistent = true });
-
-        return Redirect("/");
-    }
-
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
@@ -186,24 +116,7 @@ public class AuthController : ControllerBase
             return Unauthorized(new { error = result.Errors.First().Message });
 
         var tokenResponse = result.Value;
-
-        if (tokenResponse.AccessToken == null && tokenResponse.RequiresMfa)
-            return Ok(new { requiresMfa = true, userId = tokenResponse.AccessToken });
-
         return Ok(new { accessToken = tokenResponse.AccessToken, refreshToken = tokenResponse.RefreshToken, expiresAt = tokenResponse.ExpiresAt });
-    }
-
-    [HttpPost("verify-mfa")]
-    public async Task<IActionResult> VerifyMfa([FromBody] VerifyMfaRequest request)
-    {
-        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
-        var command = new VerifyMfaCommand(request.UserId, request.Code, request.DeviceInfo, ip);
-        var result = await _mediator.Send(command);
-
-        if (result.IsFailed)
-            return Unauthorized(new { error = result.Errors.First().Message });
-
-        return Ok(new { accessToken = result.Value.AccessToken, refreshToken = result.Value.RefreshToken, expiresAt = result.Value.ExpiresAt });
     }
 
     [HttpPost("refresh")]
@@ -242,29 +155,6 @@ public class AuthController : ControllerBase
     }
 
     [Authorize]
-    [Authorize]
-    [HttpPost("mfa/enroll")]
-    public async Task<IActionResult> EnrollMfa()
-    {
-        var result = await _mediator.Send(new MfaEnrollCommand());
-        if (result.IsFailed)
-            return BadRequest(new { error = result.Errors.First().Message });
-
-        return Ok(new { secret = result.Value.Secret, qrCodeUri = result.Value.QrCodeUri });
-    }
-
-    [Authorize]
-    [HttpPost("mfa/verify-enroll")]
-    public async Task<IActionResult> VerifyEnrollMfa([FromBody] VerifyEnrollMfaRequest request)
-    {
-        var result = await _mediator.Send(new MfaVerifyEnrollCommand(request.Secret, request.Code));
-        if (result.IsFailed)
-            return BadRequest(new { error = result.Errors.First().Message });
-
-        return Ok();
-    }
-
-    [Authorize]
     [HttpPost("change-password")]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
@@ -283,4 +173,3 @@ public class AuthController : ControllerBase
 }
 
 public record LogoutRequest(string RefreshToken);
-public record VerifyEnrollMfaRequest(string Secret, string Code);
