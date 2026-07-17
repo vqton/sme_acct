@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SmeAccounting.Web.Authorization;
 using SmeAccounting.Web.Data;
+using SmeAccounting.Web.Middleware;
 using SmeAccounting.Web.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -101,6 +102,8 @@ if (!app.Environment.IsDevelopment())
 app.UseRouting();
 
 app.UseAuthentication();
+app.UseMiddleware<IpWhitelistMiddleware>();
+app.UseMiddleware<RateLimitingMiddleware>();
 app.UseAuthorization();
 
 app.MapStaticAssets();
