@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SmeAccounting.Domain.Entities;
+using SmeAccounting.Domain.Interfaces;
 using SmeAccounting.Domain.Security;
 
 namespace SmeAccounting.Infrastructure.Persistence;
@@ -7,8 +8,13 @@ namespace SmeAccounting.Infrastructure.Persistence;
 public sealed class DbSeeder
 {
     private readonly ApplicationDbContext _context;
+    private readonly IPasswordHasher _passwordHasher;
 
-    public DbSeeder(ApplicationDbContext context) => _context = context;
+    public DbSeeder(ApplicationDbContext context, IPasswordHasher passwordHasher)
+    {
+        _context = context;
+        _passwordHasher = passwordHasher;
+    }
 
     public async Task SeedAsync(CancellationToken ct = default)
     {
@@ -19,6 +25,22 @@ public sealed class DbSeeder
         var features = await SeedFeaturesAsync(ct);
         var roles = SeedRoles(permissions);
         _context.Roles.AddRange(roles);
+        await _context.SaveChangesAsync(ct);
+
+        await SeedAdminUserAsync(roles, ct);
+    }
+
+    private async Task SeedAdminUserAsync(List<Role> roles, CancellationToken ct)
+    {
+        if (await _context.Users.AnyAsync(u => u.Username == "admin", ct))
+            return;
+
+        var adminRole = roles.FirstOrDefault(r => r.Name == "Admin");
+        if (adminRole == null) return;
+
+        var admin = new User("admin", "admin@smeaccounting.com", _passwordHasher.Hash("Admin@123456"), "System", "Admin", Guid.Empty);
+        admin.AddRole(adminRole);
+        _context.Users.Add(admin);
         await _context.SaveChangesAsync(ct);
     }
 
