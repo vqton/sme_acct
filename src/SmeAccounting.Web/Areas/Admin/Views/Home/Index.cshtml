@@ -19,13 +19,15 @@
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h5 class="card-title">Roles</h5>
-                <p class="card-text text-muted small">Define roles and assign permissions.</p>
-                <span class="badge bg-secondary">Coming soon</span>
+        <a href="@Url.Action("Index", "Company", new { area = "Admin" })" class="text-decoration-none">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Company</h5>
+                    <p class="card-text text-muted small">Manage company info and settings.</p>
+                    <span class="badge bg-primary">Manage</span>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-md-3">
         <div class="card shadow-sm h-100">

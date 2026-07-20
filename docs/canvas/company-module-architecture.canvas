@@ -1,0 +1,464 @@
+{
+  "nodes": [
+    {
+      "id": "company-root",
+      "type": "text",
+      "x": 500,
+      "y": -50,
+      "width": 300,
+      "height": 100,
+      "text": "# Company Aggregate Root\n\nCentral tenant entity. 40+ fields.\nAll financial ops gate on Status.",
+      "color": "4"
+    },
+    {
+      "id": "enums-group",
+      "type": "group",
+      "x": 20,
+      "y": -150,
+      "width": 400,
+      "height": 400,
+      "label": "Domain Enums (13)",
+      "color": "1"
+    },
+    {
+      "id": "enum-companytype",
+      "type": "text",
+      "x": 40,
+      "y": -110,
+      "width": 160,
+      "height": 80,
+      "text": "**CompanyType**\n1TV, 2TV, CTCP, DNTN, CTHD, DNNĐT, HTX, LS, ChiNhanh, VPDD, HoKD, Other",
+      "color": "1"
+    },
+    {
+      "id": "enum-status",
+      "type": "text",
+      "x": 220,
+      "y": -110,
+      "width": 160,
+      "height": 80,
+      "text": "**CompanyStatus**\nActive, Suspended, Dissolved, Bankrupt, Converting, Merged",
+      "color": "1"
+    },
+    {
+      "id": "enum-regime",
+      "type": "text",
+      "x": 40,
+      "y": -20,
+      "width": 160,
+      "height": 70,
+      "text": "**AccountingRegime**\nTT99, TT133",
+      "color": "1"
+    },
+    {
+      "id": "enum-taxmethod",
+      "type": "text",
+      "x": 220,
+      "y": -20,
+      "width": 160,
+      "height": 70,
+      "text": "**TaxCalcMethod**\nKhauTru, TrucTiep, HonHop",
+      "color": "1"
+    },
+    {
+      "id": "enum-inventory",
+      "type": "text",
+      "x": 40,
+      "y": 60,
+      "width": 160,
+      "height": 70,
+      "text": "**InventoryMethod**\nFIFO, BinhQuan, ThucTe, NhapTruocXuatSau",
+      "color": "1"
+    },
+    {
+      "id": "enum-other",
+      "type": "text",
+      "x": 220,
+      "y": 60,
+      "width": 160,
+      "height": 70,
+      "text": "**Rounding, RateSource,**\n**LicenseType, DocType,**\n**ContributorType, VNeID**",
+      "color": "1"
+    },
+    {
+      "id": "entity-group",
+      "type": "group",
+      "x": 480,
+      "y": -150,
+      "width": 650,
+      "height": 500,
+      "label": "Child Entities (12)",
+      "color": "2"
+    },
+    {
+      "id": "entity-settings",
+      "type": "text",
+      "x": 500,
+      "y": -110,
+      "width": 180,
+      "height": 70,
+      "text": "**CompanySettings**\n1:1. Regime, TaxMethod,\nDecimalPlaces, Rounding",
+      "color": "2"
+    },
+    {
+      "id": "entity-legalrep",
+      "type": "text",
+      "x": 700,
+      "y": -110,
+      "width": 180,
+      "height": 70,
+      "text": "**LegalRepresentative**\n1:N. VNeID, Cert, Primary,\nAuthScope",
+      "color": "2"
+    },
+    {
+      "id": "entity-bizline",
+      "type": "text",
+      "x": 900,
+      "y": -110,
+      "width": 180,
+      "height": 70,
+      "text": "**BusinessLine**\n1:N. VSIC code, Primary,\nConditional flag",
+      "color": "2"
+    },
+    {
+      "id": "entity-capital",
+      "type": "text",
+      "x": 500,
+      "y": -20,
+      "width": 180,
+      "height": 70,
+      "text": "**CapitalContributor**\n1:N. Ratio, Type,\nFounder flag",
+      "color": "2"
+    },
+    {
+      "id": "entity-bank",
+      "type": "text",
+      "x": 700,
+      "y": -20,
+      "width": 180,
+      "height": 70,
+      "text": "**BankAccount**\n1:N. Tax payment primary,\nSWIFT, per-currency",
+      "color": "2"
+    },
+    {
+      "id": "entity-branch",
+      "type": "text",
+      "x": 900,
+      "y": -20,
+      "width": 180,
+      "height": 70,
+      "text": "**Branch**\n1:N. Type, TaxCode,\nParent code validation",
+      "color": "2"
+    },
+    {
+      "id": "entity-license",
+      "type": "text",
+      "x": 500,
+      "y": 70,
+      "width": 180,
+      "height": 70,
+      "text": "**CompanyLicense**\n1:N. Expiry, Type,\nBusinessRegCert",
+      "color": "2"
+    },
+    {
+      "id": "entity-seal",
+      "type": "text",
+      "x": 700,
+      "y": 70,
+      "width": 180,
+      "height": 70,
+      "text": "**CompanySeal**\n1:0..1. Image URL,\nRegistration number",
+      "color": "2"
+    },
+    {
+      "id": "entity-doc",
+      "type": "text",
+      "x": 900,
+      "y": 70,
+      "width": 180,
+      "height": 70,
+      "text": "**CompanyDocument**\n1:N. File upload,\nExpiry tracking",
+      "color": "2"
+    },
+    {
+      "id": "entity-forms",
+      "type": "text",
+      "x": 500,
+      "y": 160,
+      "width": 180,
+      "height": 70,
+      "text": "**FormerName**\n1:N. Immutable.\nAuto-created.",
+      "color": "2"
+    },
+    {
+      "id": "entity-audit",
+      "type": "text",
+      "x": 700,
+      "y": 160,
+      "width": 180,
+      "height": 70,
+      "text": "**AuditAssignment**\n1:N. Year, Firm,\nEngagement Partner",
+      "color": "2"
+    },
+    {
+      "id": "entity-statuslog",
+      "type": "text",
+      "x": 900,
+      "y": 160,
+      "width": 180,
+      "height": 70,
+      "text": "**StatusChangeLog**\n1:N. From/To, Reason,\nDocument ref",
+      "color": "2"
+    },
+    {
+      "id": "value-group",
+      "type": "group",
+      "x": 20,
+      "y": 300,
+      "width": 400,
+      "height": 200,
+      "label": "Value Objects (4)",
+      "color": "6"
+    },
+    {
+      "id": "vo-taxcode",
+      "type": "text",
+      "x": 40,
+      "y": 340,
+      "width": 160,
+      "height": 60,
+      "text": "**TaxCode**\n10/13 digit + checksum\nper TCT algorithm",
+      "color": "6"
+    },
+    {
+      "id": "vo-entcode",
+      "type": "text",
+      "x": 220,
+      "y": 340,
+      "width": 160,
+      "height": 60,
+      "text": "**EnterpriseCode**\n10 digits.\nND 168/2025",
+      "color": "6"
+    },
+    {
+      "id": "vo-address",
+      "type": "text",
+      "x": 40,
+      "y": 410,
+      "width": 160,
+      "height": 60,
+      "text": "**Address**\nStreet + Province/\nDistrict/Ward IDs",
+      "color": "6"
+    },
+    {
+      "id": "vo-vneid",
+      "type": "text",
+      "x": 220,
+      "y": 410,
+      "width": 160,
+      "height": 60,
+      "text": "**VNeIDNumber**\n12 digit CCCD or\n9 digit CMND",
+      "color": "6"
+    },
+    {
+      "id": "service-group",
+      "type": "group",
+      "x": 20,
+      "y": 540,
+      "width": 1100,
+      "height": 200,
+      "label": "Domain Services",
+      "color": "5"
+    },
+    {
+      "id": "svc-status",
+      "type": "text",
+      "x": 40,
+      "y": 580,
+      "width": 200,
+      "height": 70,
+      "text": "**CompanyStatusMachine**\nValidates state transitions.\nCanTransition(from, to)\nGetAllowedTransitions(from)",
+      "color": "5"
+    },
+    {
+      "id": "svc-correction",
+      "type": "text",
+      "x": 280,
+      "y": 580,
+      "width": 200,
+      "height": 70,
+      "text": "**CorrectionReasonService**\nCritical field change detection.\nRequires mandatory reason.",
+      "color": "5"
+    },
+    {
+      "id": "svc-tenant",
+      "type": "text",
+      "x": 520,
+      "y": 580,
+      "width": 200,
+      "height": 70,
+      "text": "**TenantIsolation**\nGlobal query filter on\nCompanyId for all\nscoped DbSets",
+      "color": "5"
+    },
+    {
+      "id": "svc-expiry",
+      "type": "text",
+      "x": 760,
+      "y": 580,
+      "width": 200,
+      "height": 70,
+      "text": "**ExpiryAlertService**\nBackground job.\n90/30/7 day thresholds.",
+      "color": "5"
+    },
+    {
+      "id": "legacy-deprecated",
+      "type": "text",
+      "x": 1200,
+      "y": -100,
+      "width": 250,
+      "height": 100,
+      "text": "## Deprecated Fields\n\nName → NameVietnamese\nAddress → HeadOfficeAddress + Province/District/Ward\nLegalRepresentative → LegalRepresentatives collection\nIsActive → Status == CompanyStatus.Active",
+      "color": "3"
+    },
+    {
+      "id": "blocking-gaps",
+      "type": "text",
+      "x": 1200,
+      "y": 50,
+      "width": 250,
+      "height": 120,
+      "text": "## 5 Blocking Gaps Resolved\n\nBG-01: VNeID fields\nBG-02: EnterpriseCode\nBG-03: CharterCapital\nBG-04: LegalRep 1:N\nBG-05: AccountingRegime",
+      "color": "1"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "fromNode": "company-root",
+      "toNode": "entity-settings",
+      "fromSide": "left",
+      "toSide": "right",
+      "label": "1:1"
+    },
+    {
+      "id": "e2",
+      "fromNode": "company-root",
+      "toNode": "entity-legalrep",
+      "fromSide": "left",
+      "toSide": "right",
+      "label": "1:N"
+    },
+    {
+      "id": "e3",
+      "fromNode": "company-root",
+      "toNode": "entity-bizline",
+      "fromSide": "left",
+      "toSide": "right",
+      "label": "1:N"
+    },
+    {
+      "id": "e4",
+      "fromNode": "company-root",
+      "toNode": "entity-capital",
+      "fromSide": "left",
+      "toSide": "right",
+      "label": "1:N"
+    },
+    {
+      "id": "e5",
+      "fromNode": "company-root",
+      "toNode": "entity-bank",
+      "fromSide": "left",
+      "toSide": "right",
+      "label": "1:N"
+    },
+    {
+      "id": "e6",
+      "fromNode": "company-root",
+      "toNode": "entity-branch",
+      "fromSide": "left",
+      "toSide": "right",
+      "label": "1:N"
+    },
+    {
+      "id": "e7",
+      "fromNode": "company-root",
+      "toNode": "entity-license",
+      "fromSide": "left",
+      "toSide": "right",
+      "label": "1:N"
+    },
+    {
+      "id": "e8",
+      "fromNode": "company-root",
+      "toNode": "entity-seal",
+      "fromSide": "left",
+      "toSide": "right",
+      "label": "1:0..1"
+    },
+    {
+      "id": "e9",
+      "fromNode": "company-root",
+      "toNode": "entity-doc",
+      "fromSide": "left",
+      "toSide": "right",
+      "label": "1:N"
+    },
+    {
+      "id": "e10",
+      "fromNode": "company-root",
+      "toNode": "entity-forms",
+      "fromSide": "left",
+      "toSide": "right",
+      "label": "1:N"
+    },
+    {
+      "id": "e11",
+      "fromNode": "company-root",
+      "toNode": "entity-audit",
+      "fromSide": "left",
+      "toSide": "right",
+      "label": "1:N"
+    },
+    {
+      "id": "e12",
+      "fromNode": "company-root",
+      "toNode": "entity-statuslog",
+      "fromSide": "left",
+      "toSide": "right",
+      "label": "1:N"
+    },
+    {
+      "id": "e13",
+      "fromNode": "company-root",
+      "toNode": "svc-status",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "label": "gates"
+    },
+    {
+      "id": "e14",
+      "fromNode": "company-root",
+      "toNode": "svc-correction",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "label": "audits"
+    },
+    {
+      "id": "e15",
+      "fromNode": "company-root",
+      "toNode": "svc-tenant",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "label": "isolates"
+    },
+    {
+      "id": "e16",
+      "fromNode": "company-root",
+      "toNode": "blocking-gaps",
+      "fromSide": "right",
+      "toSide": "left",
+      "label": "resolves"
+    }
+  ]
+}
