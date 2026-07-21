@@ -1055,18 +1055,18 @@ Data isolation boundary enforced at every data access point. Every tenant-scoped
   │  ┌──────────────────────────────────┐│
   │  │  EF Core QueryInterceptor        ││
   │  │  │                               ││
-  │  │  │  All tenant-scoped entities   ││
-  │  │  │  have CompanyId column        ││
-  │  │  │                               ││
-  │  │  │  Interceptor adds:            ││
-  │  │  │  .Where(e => e.CompanyId      ││
-  │  │  │    == activeCompanyId)        ││
-  │  │  │                               ││
-  │  │  │  Applied globally to:         ││
-  │  │  │  • JournalEntry               ││
-  │  │  │  • Invoice                    ││
-  │  │  │  • Payment                    ││
-  │  │  │  • TaxDeclaration             ││
+  │  │  │  All tenant-scoped queries  ││
+  │  │  │  include CompanyId WHERE    ││
+  │  │  │  clause                     ││
+  │  │  │                             ││
+  │  │  │  Repository pattern adds:   ││
+  │  │  │  WHERE company_id = ?       ││
+  │  │  │                             ││
+  │  │  │  Applied globally to:       ││
+  │  │  │  • JournalEntry             ││
+  │  │  │  • Invoice                  ││
+  │  │  │  • Payment                  ││
+  │  │  │  • TaxDeclaration           ││
   │  │  │  • ChartOfAccount             ││
   │  │  │  • Customer, Vendor           ││
   │  │  │  • Inventory, Product         ││
@@ -1179,7 +1179,7 @@ Data isolation boundary enforced at every data access point. Every tenant-scoped
 |---|---|---|
 | JWT claim | `companyId` signed in token | Low — token tampering detected by signature |
 | Middleware | CompanyContextMiddleware validates membership every request | Low — runs on every request before controller |
-| Query interceptor | EF Core interceptor appends `.Where(e.CompanyId == x)` | Medium — interceptor can be disabled in raw SQL |
+| Query isolation | Repository methods append `WHERE company_id = ?` | Medium — caller could pass wrong companyId |
 | Repository | All repository methods accept `companyId` param | Medium — caller could pass wrong value |
 | Database FK | `CompanyId` FK constraint prevents orphaned rows | Low — no bypass possible |
 | Database row-level security (optional) | PostgreSQL RLS / SQL Server predicate | Low — at database level, bypass requires direct DB access |

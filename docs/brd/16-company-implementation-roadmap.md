@@ -15,9 +15,9 @@
 Regulatory Risk ──→ Data Integrity ──→ Migration Safety ──→ Feature Completeness ──→ Integration
 ```
 
-1. **Fix 5 blocking gaps first**: VNeID linkage (NĐ 69/2024), enterprise code (Luật DN 2020 Điều 29), charter capital (Điều 30), multiple legal reps (Điều 12-13), accounting regime selection (TT 99/2025). Cannot legally operate without these.
-2. **Migration before new features**: Existing companies with 12-field skeleton must migrate to 60+ field aggregate without data loss. Dry-run on staging mandatory before any PROD deploy.
-3. **Data model expansion before UI**: All new entities + EF Core configurations + validation rules must exist before any frontend work. Parallel UI development only on stable API contracts.
+1. **Fix 5 blocking gaps first**: VNeID linkage (NĐ 69/2024), enterprise code validation (Luật DN 2020 Điều 29), charter capital (Điều 30), multiple legal reps (Điều 12-13), accounting regime enforcement (TT 99/2025). Cannot legally operate without these.
+2. **Migration before new features**: Existing companies with 12-field skeleton must migrate to full aggregate without data loss. Dry-run on staging mandatory before any PROD deploy.
+3. **Data model expansion before UI**: All new entities + SQLite schema migrations + validation rules must exist before any frontend work. Parallel UI development only on stable API contracts.
 4. **Tracer-bullet entities first**: LegalRepresentative, BusinessLine, CapitalContributor ship before branches, documents, audit firm. Each entity is its own complete vertical slice.
 5. **VNeID last (API integration)**: VNeID entity fields + status tracking first (store the identifier), API integration last (government API volatility). Feature-flag the API call — fallback to manual status entry.
 
@@ -66,13 +66,13 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 
 ## 3. Phase Roadmap
 
-### Phase 0: Foundation (Sprint 0 — DONE for project, Company-specific domain prep)
+### Phase 0: Foundation (Sprint 0 — Company-specific domain prep)
 
 | Task | Status | Evidence |
 |------|--------|----------|
-| Domain enum types (CompanyType, CompanyStatus, AccountingRegime, TaxCalculationMethod, InventoryMethod, RoundingMethod, ExchangeRateSource, CompanyLicenseType, DocumentType, ContributorType, BranchType, VNeIDStatus, TenantIsolationLevel) | ❌ Not started | Need new file: `Domain/Enums/CompanyEnums.cs` — 13 enums, 80+ values |
-| Core value objects (Address: ProvinceId/DistrictId/WardId, TaxCode with checksum validation, EnterpriseCode) | ❌ Not started | Need new file: `Domain/ValueObjects/{Address,TaxCode,EnterpriseCode}.cs` |
-| Existing Company model audit — map current 12 fields to new 60+ field target | ❌ Not started | Run schema diff script |
+| Domain enum types (CompanyType, CompanyStatus, AccountingRegime, TaxCalculationMethod, InventoryMethod, RoundingMethod, ExchangeRateSource, CompanyLicenseType, DocumentType, ContributorType, BranchType, VNeIDStatus) | ❌ Not started | Need new file: `domain/enums/CompanyEnums.ts` — 12 const enums |
+| Core value objects (Address: ProvinceId/DistrictId/WardId, EnterpriseCode with regex validation) | ⚠️ Partial | `TaxCode.ts` exists. Need `Address.ts`, `EnterpriseCode.ts`, `VNeIDNumber.ts` |
+| Existing Company model audit — map current fields to target | ❌ Not started | Run schema diff |
 | Target data model review + sign-off | ❌ Not started | Reviewed in BRD. Stakeholder sign-off needed. |
 
 #### T0.1: Domain Enums + Value Objects
@@ -80,12 +80,12 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 | Attribute | Detail |
 |-----------|--------|
 | **Why** | Every entity references these enums. Must exist before any entity can be defined. |
-| **What** | 13 C# enums matching BRD §4.2 definitions. 4 value objects with validation (TaxCode, EnterpriseCode, Address, VNeIDNumber). TaxCode checksum algorithm per Tổng cục Thuế spec. |
-| **Files** | New: `Domain/Enums/CompanyEnums.cs`, `Domain/ValueObjects/TaxCode.cs`, `Domain/ValueObjects/EnterpriseCode.cs`, `Domain/ValueObjects/Address.cs`, `Domain/ValueObjects/VNeIDNumber.cs` |
-| **Skill** | Backend — domain modeling |
-| **Test** | Unit: each enum has expected count test. Unit: TaxCode format + checksum validation. Unit: EnterpriseCode regex. |
+| **What** | 12 TypeScript const enums matching BRD §4.2 definitions. 4 value objects with validation (TaxCode, EnterpriseCode, Address, VNeIDNumber). TaxCode checksum algorithm per Tổng cục Thuế spec. |
+| **Files** | New: `domain/enums/CompanyEnums.ts`. New: `domain/valueObjects/EnterpriseCode.ts`, `domain/valueObjects/Address.ts`, `domain/valueObjects/VNeIDNumber.ts`. Existing: `TaxCode.ts` (update). |
+| **Skill** | Backend — TypeScript domain modeling |
+| **Test** | Unit: each enum has expected count test. Unit: TaxCode format + checksum validation. |
 | **Dependency** | None — can start immediately |
-| **Definition of Done** | All 13 enums defined with XML doc comments. Value objects reject invalid input. Unit tests pass. |
+| **Definition of Done** | All 12 const enums defined with JSDoc. Value objects reject invalid input. Unit tests pass. |
 
 #### T0.2: Target Data Model Design Review
 
@@ -104,7 +104,7 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 ### Phase 1: Core Data Model + 5 Blocking Gaps (Sprints 1-3)
 
 **Goal:** Expand Company entity from 12 fields to 60+ fields. Fix all 5 blocking gaps. Migration script preserves existing data.
-**Skills:** Backend (.NET), EF Core, Domain modeling
+****Skill:**** Backend (.NET), EF Core, Domain modeling
 **Risk:** CRITICAL — blocking gaps prevent legal operation. Migration could lose data.
 
 #### T1: Company Entity Expansion ⚡ HIGHEST PRIORITY
@@ -113,8 +113,8 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 |-----------|--------|
 | **Why** | Current Company has 12 fields. Target requires 60+ across 10+ related entities. 5 blocking gaps depend on expanded entity. |
 | **What** | Expand `Company` entity with: EnterpriseCode, CompanyType, NameVietnamese/English/Abbreviated, CharterCapital/PaidInCapital, DateOfEstablishment/Commencement, HeadOfficeAddress with Province/District/Ward, Status with CompanyStatus enum. Convert current Name→NameVietnamese, current LegalRepresentative text field→deprecated (replaced by T4). Add VNeIDOrganizationId, VNeIDStatus. All audit fields. |
-| **Files** | Modified: `Domain/Entities/Company.cs` (full rewrite). New: `Infrastructure/Persistence/Configurations/CompanyConfiguration.cs`. Modified: `Infrastructure/Persistence/ApplicationDbContext.cs` |
-| **Skill** | Senior Backend — EF Core, domain entities |
+| **Files** | Modified: `domain/entities/Company.ts` (full rewrite). New: `infrastructure/database/CompanyConfiguration.cs`. Modified: `infrastructure/database/schema.ts` |
+| **Skill** | Senior Backend — TypeScript, domain entities |
 | **Test** | Unit: entity factory creates valid company. Integration: save + retrieve all new fields. Verify indexes on EnterpriseCode (unique), TaxCode (unique filtered), Status, CompanyType. |
 | **Dependency** | T0.1 (enums + value objects) |
 | **Definition of Done** | Company entity carries all 40+ scalar fields. Unique constraints enforced. Integration test passes CRUD on each new field. |
@@ -125,7 +125,7 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 |-----------|--------|
 | **Why** | Blocking gap BG-02 (no enterprise code). TaxCode format and uniqueness must be enforced at API boundary (BR-CI-01, BR-CI-02). |
 | **What** | TaxCode: regex validation `^\d{10}(-\d{3})?$` + checksum algorithm per Tổng cục Thuế. EnterpriseCode: regex `^\d{10}$`. Both indexed with unique constraint. |
-| **Files** | Modified: `Domain/ValueObjects/TaxCode.cs` (add checksum). Modified: `Infrastructure/Persistence/Configurations/CompanyConfiguration.cs` (add indexes). New: `Domain/Services/CompanyValidationService.cs` |
+| **Files** | Modified: `domain/valueObjects/TaxCode.ts` (add checksum). Modified: `infrastructure/database/CompanyConfiguration.cs` (add indexes). New: `domain/services/CompanyValidationService.ts` |
 | **Skill** | Backend — validation, checksum algorithms |
 | **Test** | Unit: valid TaxCode formats pass, invalid reject, checksum correct/incorrect. Integration: duplicate TaxCode → 409. |
 | **Dependency** | T1 (Company entity exists) |
@@ -137,7 +137,7 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 |-----------|--------|
 | **Why** | Blocking gap BG-09. Current IsActive bool replaced by rich status lifecycle. Status gates all financial operations (BR-CL-05). |
 | **What** | State machine: Pending → Active ↔ Suspended → Dissolving → Dissolved. Bankrupt as terminal. StatusChangeLog entity with reason, effective date, document ref. Status gate middleware checks company status before write operations. |
-| **Files** | New: `Domain/Services/CompanyStatusMachine.cs`. New: `Domain/Entities/StatusChangeLog.cs`. New: `Infrastructure/Persistence/Configurations/StatusChangeLogConfiguration.cs`. New: `Web/Middleware/CompanyStatusGateMiddleware.cs` |
+| **Files** | New: `domain/services/CompanyStatusMachine.ts`. New: `domain/entities/StatusChangeLog.ts`. New: `infrastructure/database/StatusChangeLogConfiguration.cs`. New: `presentation/middleware/CompanyStatusGateMiddleware.cs` |
 | **Skill** | Backend — state machine pattern, middleware |
 | **Test** | Unit: all valid transitions allowed, invalid rejected. Integration: set Suspended → verify GL write returns 403. Integration: set Dissolved → verify all write ops return 403. |
 | **Dependency** | T1 (Company entity with Status field) |
@@ -149,8 +149,8 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 |-----------|--------|
 | **Why** | Blocking gap BG-04. Single text field replaced by typed 1:N entity. Luật DN 2020 Điều 12-13 mandates multiple legal rep support. |
 | **What** | `LegalRepresentative` entity: FullName, VNeIDNumber (12-digit), Position, IsPrimary, AuthorizationScope, DigitalCertSerial/Provider/Expiry, VNeIDVerifiedAt, FromDate/ToDate, IsActive. Company must have ≥1 active rep, exactly 1 primary. CCCD uniqueness per company. |
-| **Files** | New: `Domain/Entities/LegalRepresentative.cs`. New: `Infrastructure/Persistence/Configurations/LegalRepresentativeConfiguration.cs`. Modified: `Domain/Entities/Company.cs` (add LegalRepresentatives collection) |
-| **Skill** | Senior Backend — aggregate design, EF Core owned collections |
+| **Files** | New: `domain/entities/LegalRepresentative.ts`. New: `infrastructure/database/LegalRepresentativeConfiguration.cs`. Modified: `domain/entities/Company.ts` (add LegalRepresentatives collection) |
+| **Skill** | Senior Backend — aggregate design, TypeScript |
 | **Test** | Unit: factory creates valid legal rep. Integration: add 3 reps, designate primary, remove secondary. Integration: block removal of last rep. Integration: block duplicate CCCD. |
 | **Dependency** | T1 (Company entity), T0.1 (VNeIDNumber value object) |
 | **Definition of Done** | Company can have 1:N legal reps. Exactly 1 primary. CCCD unique per company. VNeIDNumber validated (12 digits). No removal of last active rep. |
@@ -161,8 +161,8 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 |-----------|--------|
 | **Why** | Blocking gaps BG-14, BG-15. No regime selection means chart of accounts and report templates cannot be determined. Tax calc method drives VAT tracking. |
 | **What** | Add to CompanySettings: AccountingRegime enum (TT99/TT133), TaxCalculationMethod (KhauTru/TrucTiep/TrucTiepTrenDoanhThu/HonHop). Change DecimalPlaces default from 2 to 0 per TT 99/2025 §8. Add RoundingMethod, ExchangeRateSource, LastPeriodClosed, ClosedPeriodCount, FirstPeriodStartDate. |
-| **Files** | Modified: `Domain/Entities/CompanySettings.cs` (add 5+ new fields). New: `Infrastructure/Persistence/Configurations/CompanySettingsConfiguration.cs`. |
-| **Skill** | Backend — EF Core configuration |
+| **Files** | Modified: `domain/entities/CompanySettings.ts` (add 5+ new fields). New: `infrastructure/database/CompanySettingsConfiguration.cs`. |
+| **Skill** | Backend — SQLite schema |
 | **Test** | Unit: default DecimalPlaces = 0. Integration: create company → settings created with TT99 default. Integration: change regime → verify blocked after first period close. |
 | **Dependency** | T0.1 (AccountingRegime enum), T1 (Company entity) |
 | **Definition of Done** | CompanySettings includes AccountingRegime, TaxCalculationMethod, RoundingMethod, ExchangeRateSource, LastPeriodClosed. DecimalPlaces defaults to 0. All locked after first period close. |
@@ -173,7 +173,7 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 |-----------|--------|
 | **Why** | Blocking gaps BG-03, BG-05. Charter capital and contributor registry required by Luật DN 2020 Điều 30, 34, 36. |
 | **What** | `CapitalContributor` entity: ContributorType (Individual/Organization), FullName/OrgName, IdNumber/TaxCode, ContributionType (Member/Shareholder/CapitalContributingMember), CapitalContribution (decimal 18,2), OwnershipRatio (decimal 5,2), ContributionDate, ContributionCertificate, IsFounder. Add CharterCapital + PaidInCapital to Company. Validation: total ratio = 100% (±0.01), CTCP requires ≥3 shareholders, DNTN has 1 owner. |
-| **Files** | New: `Domain/Entities/CapitalContributor.cs`. New: `Infrastructure/Persistence/Configurations/CapitalContributorConfiguration.cs`. Modified: `Domain/Entities/Company.cs` (add CharterCapital, PaidInCapital, CapitalContributors collection) |
+| **Files** | New: `domain/entities/CapitalContributor.ts`. New: `infrastructure/database/CapitalContributorConfiguration.cs`. Modified: `domain/entities/Company.ts` (add CharterCapital, PaidInCapital, CapitalContributors collection) |
 | **Skill** | Backend — aggregate design, validation |
 | **Test** | Unit: ratio validation (sum = 100%). Integration: add 3 contributors → verify ratio auto-calculated. Integration: CTCP with 2 contributors → reject. Integration: CharterCapital change triggers capital change history. |
 | **Dependency** | T1 (Company entity), T0.1 (ContributorType enum) |
@@ -185,8 +185,8 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 |-----------|--------|
 | **Why** | FR-05. VSIC code classification required by NĐ 168/2025. Primary business line drives tax declarations. |
 | **What** | `BusinessLine` entity: VsicCode (string 10), VsicLevel (int 2-6), Name (string 500), IsPrimary, StartDate, EndDate, LicenseReference. VSIC hierarchy loading from seed data (source: GSO VSIC 2018). Exactly 1 primary business line. Conditional business lines flagged with warning. |
-| **Files** | New: `Domain/Entities/BusinessLine.cs`. New: `Infrastructure/Persistence/Configurations/BusinessLineConfiguration.cs`. New: `Infrastructure/Persistence/Seed/VSIC2018Seed.cs` |
-| **Skill** | Backend — EF Core, hierarchical data |
+| **Files** | New: `domain/entities/BusinessLine.ts`. New: `infrastructure/database/BusinessLineConfiguration.cs`. New: `infrastructure/database/VSIC2018Seed.cs` |
+| **Skill** | Backend — TypeScript, hierarchical data |
 | **Test** | Unit: primary line enforced. Integration: add 3 lines, change primary. Integration: query by VSIC level. |
 | **Dependency** | T1 (Company entity) |
 | **Definition of Done** | Company has 1:N business lines. VSIC code validated against seed data. Exactly 1 primary. Conditional business lines display warning. |
@@ -197,8 +197,8 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 |-----------|--------|
 | **Why** | FR-08. Tax payment bank account required for operations. LUẬT QLT 38/2019 requires registered tax payment account. |
 | **What** | `CompanyBankAccount` entity: AccountNumber (string 50), AccountName (string 200), BankName (string 200), BankBranch, SwiftCode, CurrencyCode (default VND), IsPrimaryTaxPayment, IsActive, OpenedDate. Validation: account number 8-20 digits, bank name from SBV-licensed list, exactly 1 primary tax payment account. |
-| **Files** | New: `Domain/Entities/CompanyBankAccount.cs`. New: `Infrastructure/Persistence/Configurations/CompanyBankAccountConfiguration.cs` |
-| **Skill** | Backend — EF Core |
+| **Files** | New: `domain/entities/CompanyBankAccount.ts`. New: `infrastructure/database/CompanyBankAccountConfiguration.cs` |
+| **Skill** | Backend — SQLite |
 | **Test** | Integration: add 3 accounts, designate primary. Integration: remove primary → must designate new primary. Integration: account number format validation. |
 | **Dependency** | T1 (Company entity) |
 | **Definition of Done** | Company has 1:N bank accounts. Exactly 1 primary tax payment account. Account format validated. |
@@ -209,8 +209,8 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 |-----------|--------|
 | **Why** | FR-10. Tax office assignment required for declaration routing and report headers. |
 | **What** | Add to Company: TaxOfficeId, TaxOfficeName, TaxDepartment, ManagedByTaxAuthorityCode. Seed data for Vietnamese tax offices (Cục Thuế 63 provinces + Chi cục Thuế ~700 districts). |
-| **Files** | Modified: `Domain/Entities/Company.cs` (add tax office fields). New: `Infrastructure/Persistence/Seed/TaxOfficeSeed.cs` |
-| **Skill** | Backend — EF Core, seed data |
+| **Files** | Modified: `domain/entities/Company.ts` (add tax office fields). New: `infrastructure/database/TaxOfficeSeed.cs` |
+| **Skill** | Backend — SQLite seed data |
 | **Test** | Integration: assign tax office → verify on company read. |
 | **Dependency** | T1 (Company entity) |
 | **Definition of Done** | Company assigned to tax office. Tax office data seeded. Office name included in declaration headers. |
@@ -221,7 +221,7 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 |-----------|--------|
 | **Why** | TT 99/2025 Điều 28 mandates correction reason + before/after values for legally significant fields (tax code, enterprise code, name, charter capital, legal reps). Blocking gap BG-26. |
 | **What** | Extend existing AuditInterceptor (from User Mgmt Phase 1) to capture OldValues/NewValues on Company aggregate entities. Require `CorrectionReason` string for designated critical fields. Audit log preserves all historical versions. |
-| **Files** | Modified: `Infrastructure/Persistence/Interceptors/AuditSaveChangesInterceptor.cs` (extend for Company aggregate). New: `Domain/Entities/CompanyAuditEntry.cs` |
+| **Files** | Modified: `infrastructure/database/AuditSaveChangesInterceptor.cs` (extend for Company aggregate). New: `domain/entities/CompanyAuditEntry.ts` |
 | **Skill** | Senior Backend — audit interceptor |
 | **Test** | Integration: modify TaxCode → verify audit entry has old/new values + reason. Integration: modify email → verify audit entry (no reason required). |
 | **Dependency** | T1-T9 (all Phase 1 entities). AuditInterceptor exists from User Mgmt Phase 1. |
@@ -233,8 +233,8 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 |-----------|--------|
 | **Why** | Existing PROD companies with old 12-field schema must migrate to new 60+ field aggregate. Data integrity is critical. |
 | **What** | EF Core migration with custom SQL: (1) Back up existing Company table. (2) Add all new columns with defaults/nulls. (3) Map old Name → NameVietnamese. (4) Map old LegalRepresentative text → new LegalRepresentative entity (single rep with IsPrimary=true). (5) Create CompanySettings if missing. (6) Preserve UserCompany records. (7) Verify row counts match. Rollback script included. |
-| **Files** | New: `Infrastructure/Persistence/Migrations/{timestamp}_ExpandCompanyEntity.cs`. New: `Infrastructure/Persistence/Migrations/{timestamp}_SeedLegalRepresentative.cs` |
-| **Skill** | Senior Backend — EF Core migrations, SQL, data integrity |
+| **Files** | New: `infrastructure/database/migrations/{timestamp}_ExpandCompanyEntity.cs`. New: `infrastructure/database/migrations/{timestamp}_SeedLegalRepresentative.cs` |
+| **Skill** | Senior Backend — SQLite migrations, data integrity |
 | **Test** | Dry-run on staging DB clone. Data diff: old vs new row counts, field-by-field comparison for each company. Rollback script tested. |
 | **Dependency** | T1-T10 (all new entities + fields must exist in migration target) |
 | **Definition of Done** | Migration runs successfully on staging. Zero data loss. Rollback restores original state. Data diff script confirms 100% fidelity. |
@@ -245,8 +245,8 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 |-----------|--------|
 | **Why** | FR-16. Tenant isolation must be enforced at query level. All tenant-scoped entities filtered by CompanyId. |
 | **What** | Audit existing query patterns to ensure all scoped queries include `WHERE CompanyId = @CurrentCompanyId`. Tenant filter interceptor pattern (global query filter) applied to all scoped DbSets. Verify UserCompany records scoped correctly. |
-| **Files** | Modified: `Infrastructure/Persistence/ApplicationDbContext.cs` (add global query filters). New: `Web/Middleware/TenantResolutionMiddleware.cs` |
-| **Skill** | Backend — EF Core global query filters, security |
+| **Files** | Modified: `infrastructure/database/schema.ts` (add global query filters). New: `presentation/middleware/TenantResolutionMiddleware.cs` |
+| **Skill** | Backend — middleware, security |
 | **Test** | Security: user from Company A attempts to access Company B data → blocked. Integration: cross-company query returns empty. |
 | **Dependency** | T1 (Company entity). Tenant filter pattern from User Mgmt foundation. |
 | **Definition of Done** | All tenant-scoped entities have `CompanyId` global query filter. Cross-company data leak prevented. Integration test proves isolation. |
@@ -256,7 +256,7 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 ### Phase 2: Extended Entities + Admin UI (Sprints 4-5)
 
 **Goal:** Branch management, documents, licenses, company seal, former names. Admin UI for Phase 1+2 entities.
-**Skills:** Backend + Frontend (Blazor/React)
+****Skill:**** Backend + Frontend (Blazor/React)
 **Risk:** MEDIUM — UI scope creep, file storage setup
 
 #### T13: Branch/RO/Location Entity
@@ -265,8 +265,8 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 |-----------|--------|
 | **Why** | FR-07. Luật DN 2020 Điều 43-45 requires branch/RO tracking. Branches have separate tax codes. |
 | **What** | `Branch` entity: BranchType (Branch/RO/BusinessLocation), Name, Address, TaxCode (parent code + `-\d{3}`), Phone, ManagerName, Status, DateOpened, DateClosed. TaxCode validation against parent company. |
-| **Files** | New: `Domain/Entities/Branch.cs`. New: `Infrastructure/Persistence/Configurations/BranchConfiguration.cs` |
-| **Skill** | Backend — EF Core |
+| **Files** | New: `domain/entities/Branch.ts`. New: `infrastructure/database/BranchConfiguration.cs` |
+| **Skill** | Backend — SQLite |
 | **Test** | Integration: CRUD branch. Integration: verify branch taxCode format `^\d{10}-\d{3}$` + first 10 digits = parent TaxCode. |
 | **Dependency** | T1 (Company entity with TaxCode), T2 (TaxCode validation) |
 | **Definition of Done** | Company manages branches/ROs/Locations. Branch tax code validated against parent. Status tracked independently. |
@@ -277,8 +277,8 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 |-----------|--------|
 | **Why** | FR-11. Business registration certificate, sub-licenses, permit tracking with expiry. |
 | **What** | `CompanyLicense` entity: LicenseType (BusinessRegCert/TaxRegCert/SealRegCert/SubLicense/Other), LicenseNumber, IssuedBy, DateIssued, DateExpiry, FileUrl, Notes. Expiry monitoring for alerts. |
-| **Files** | New: `Domain/Entities/CompanyLicense.cs`. New: `Infrastructure/Persistence/Configurations/CompanyLicenseConfiguration.cs` |
-| **Skill** | Backend — EF Core |
+| **Files** | New: `domain/entities/CompanyLicense.ts`. New: `infrastructure/database/CompanyLicenseConfiguration.cs` |
+| **Skill** | Backend — SQLite |
 | **Test** | Integration: add license with expiry. Integration: query licenses expiring within 30 days. |
 | **Dependency** | T1 (Company entity) |
 | **Definition of Done** | Company licenses tracked with expiry dates. Queryable by expiry window. |
@@ -289,8 +289,8 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 |-----------|--------|
 | **Why** | FR-13. Company seal image and registration number per Luật DN 2020 Điều 43. |
 | **What** | `CompanySeal` entity: SealRegistrationNumber, SealImageUrl, IssuedBy, DateRegistered, Notes. 0:1 relationship with Company. |
-| **Files** | New: `Domain/Entities/CompanySeal.cs`. New: `Infrastructure/Persistence/Configurations/CompanySealConfiguration.cs` |
-| **Skill** | Backend — EF Core, blob storage reference |
+| **Files** | New: `domain/entities/CompanySeal.ts`. New: `infrastructure/database/CompanySealConfiguration.cs` |
+| **Skill** | Backend — file storage, SQLite |
 | **Test** | Integration: create company with seal. Integration: update seal image URL. |
 | **Dependency** | T1 (Company entity) |
 | **Definition of Done** | Company has optional seal record. Image stored in blob storage. Seal registration number validated format. |
@@ -301,7 +301,7 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 |-----------|--------|
 | **Why** | FR-12. Certificate and license file upload with expiry tracking. |
 | **What** | `CompanyDocument` entity: DocumentType (enum), FileName, FileUrl, FileSize, ContentType, ExpiryDate, UploadedAt. File upload validation: max 10MB, PDF/JPEG/PNG. Blob storage integration. |
-| **Files** | New: `Domain/Entities/CompanyDocument.cs`. New: `Infrastructure/Persistence/Configurations/CompanyDocumentConfiguration.cs`. New: `Infrastructure/Storage/BlobStorageService.cs` |
+| **Files** | New: `domain/entities/CompanyDocument.ts`. New: `infrastructure/database/CompanyDocumentConfiguration.cs`. New: `infrastructure/storage/BlobStorageService.ts` |
 | **Skill** | Backend + DevOps — blob storage, file validation |
 | **Test** | Integration: upload document → verify FileUrl returned. Integration: upload >10MB → rejected. |
 | **Dependency** | T1 (Company entity) |
@@ -313,8 +313,8 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 |-----------|--------|
 | **Why** | FR-02.3. Name changes must preserve history. FormerName entity immutable. |
 | **What** | `FormerName` entity: Name, FromDate, ToDate. Auto-created when NameVietnamese or NameEnglish changes. Manual add supported for backdating. Immutable — cannot be deleted. |
-| **Files** | New: `Domain/Entities/FormerName.cs`. New: `Infrastructure/Persistence/Configurations/FormerNameConfiguration.cs`. Modified: `Domain/Entities/Company.cs` (add FormerNames collection) |
-| **Skill** | Backend — EF Core owned collection |
+| **Files** | New: `domain/entities/FormerName.ts`. New: `infrastructure/database/FormerNameConfiguration.cs`. Modified: `domain/entities/Company.ts` (add FormerNames collection) |
+| **Skill** | Backend — TypeScript, SQLite |
 | **Test** | Integration: change company name → verify FormerName created. Integration: try delete former name → blocked. |
 | **Dependency** | T1 (Company entity) |
 | **Definition of Done** | Name changes auto-create FormerName records. Former names displayed in read-only section. Manual backdate supported. |
@@ -360,7 +360,7 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 ### Phase 3: Compliance & VNeID (Sprints 6-7)
 
 **Goal:** VNeID registration fields + status tracking, audit firm, PDF export, expiry alerts, multi-company context switching.
-**Skills:** Backend + Frontend
+****Skill:**** Backend + Frontend
 **Risk:** HIGH — VNeID API dependency in Phase 4, but Phase 3 stores entity fields independently
 
 #### T21: VNeID Registration Fields + Status Tracking
@@ -369,7 +369,7 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 |-----------|--------|
 | **Why** | FR-15. NĐ 69/2024 mandates VNeID for tax e-transactions. Store org ID and status before API integration. |
 | **What** | Add to Company: VNeIDOrganizationId, VNeIDRegistrationDate, VNeIDStatus (enum: NotRegistered/Registered/Verified/Revoked), LastVNeIDSyncAt. VNeIDRegistrationAttempt audit entity. UI shows VNeID status badge. **No API integration yet** — status set manually or via import. |
-| **Files** | Modified: `Domain/Entities/Company.cs` (add VNeID fields). New: `Domain/Entities/VNeIDRegistrationAttempt.cs`. UI: VNeID status component. |
+| **Files** | Modified: `domain/entities/Company.ts` (add VNeID fields). New: `domain/entities/VNeIDRegistrationAttempt.ts`. UI: VNeID status component. |
 | **Skill** | Backend + Frontend |
 | **Test** | Integration: set VNeID status → verified → UI shows verified badge. Integration: VNeIDVerified blocks tax filing when not Verified. |
 | **Dependency** | T1 (Company entity) |
@@ -381,8 +381,8 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 |-----------|--------|
 | **Why** | FR-14. Annual audit firm assignment tracking per Luật Kế toán 88/2015. |
 | **What** | `AuditAssignment` entity: AuditFirmName, AuditFirmTaxCode, AuditFirmAddress, AssignmentYear, EngagementPartner, AuditStartDate, AuditEndDate, AuditReportReference, Status (Assigned/InProgress/Completed/Terminated). |
-| **Files** | New: `Domain/Entities/AuditAssignment.cs`. New: `Infrastructure/Persistence/Configurations/AuditAssignmentConfiguration.cs` |
-| **Skill** | Backend — EF Core |
+| **Files** | New: `domain/entities/AuditAssignment.ts`. New: `infrastructure/database/AuditAssignmentConfiguration.cs` |
+| **Skill** | Backend — SQLite |
 | **Test** | Integration: assign audit firm for year. Integration: query all audit assignments by company. |
 | **Dependency** | T1 (Company entity) |
 | **Definition of Done** | Annual audit assignments tracked. Status lifecycle managed. Linked to audit report document. |
@@ -393,7 +393,7 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 |-----------|--------|
 | **Why** | FR-17.1. PDF export of company profile for regulatory submission. |
 | **What** | PDF generation service: company overview, legal reps table, business lines, capital structure, bank accounts. Uses Razor PDF or similar. |
-| **Files** | New: `Infrastructure/Pdf/CompanyProfilePdfGenerator.cs`. New: `Web/Controllers/CompanyExportController.cs` |
+| **Files** | New: `infrastructure/pdf/CompanyProfilePdfGenerator.ts`. New: `presentation/controllers/CompanyExportController.cs` |
 | **Skill** | Backend — PDF generation |
 | **Test** | Integration: generate PDF → verify content includes all sections. |
 | **Dependency** | All Phase 1 + Phase 2 entities |
@@ -405,7 +405,7 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 |-----------|--------|
 | **Why** | US-030. 90/30/7-day expiry alerts for licenses, certificates, permits, digital certs. |
 | **What** | Background job runs daily: queries CompanyLicense + CompanyDocument + LegalRepresentative.DigitalCertExpiry. Generates alerts: 90-day dashboard warning, 30-day in-app + email, 7-day high priority. Expired items auto-deactivated. Critical documents expired >30 days block write ops. |
-| **Files** | New: `Infrastructure/BackgroundJobs/ExpiryAlertJob.cs`. New: `Domain/Services/ExpiryAlertService.cs` |
+| **Files** | New: `infrastructure/jobs/ExpiryAlertJob.cs`. New: `domain/services/ExpiryAlertService.ts` |
 | **Skill** | Backend — background jobs, notifications |
 | **Test** | Integration: set document expiry 5 days away → verify alert generated. Integration: expired license → verify write ops blocked. |
 | **Dependency** | T14 (CompanyLicense), T16 (CompanyDocument), T4 (LegalRepresentative for digital cert) |
@@ -417,7 +417,7 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 |-----------|--------|
 | **Why** | US-024, FR-16.2. Users assigned to multiple companies need to switch context. |
 | **What** | Company switcher UI in header: dropdown shows user's active companies with status badges. On switch: update CurrentCompanyId in session, reload company-specific data. Persist last-active company. Switch blocked for dissolved companies (read-only context). |
-| **Files** | UI: CompanySwitcher component. Modified: `Web/Middleware/TenantResolutionMiddleware.cs` |
+| **Files** | UI: CompanySwitcher component. Modified: `presentation/middleware/TenantResolutionMiddleware.cs` |
 | **Skill** | Frontend + Backend |
 | **Test** | E2E: user with 2 companies switches → dashboard reloads with Company B data. E2E: data isolation verified after switch. |
 | **Dependency** | T12 (tenant isolation), T18 (Admin UI framework) |
@@ -428,7 +428,7 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 ### Phase 4: External API Integration (Sprint 8-9)
 
 **Goal:** Replace manual VNeID status with real API integration. Tax authority data exchange. National portal sync.
-**Skills:** Backend (.NET), API integration, DevOps
+****Skill:**** Backend (.NET), API integration, DevOps
 **Risk:** HIGH — government API reliability, authentication, rate limits
 
 #### T26: VNeID API Integration (Adapter Pattern)
@@ -437,7 +437,7 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 |-----------|--------|
 | **Why** | Replace manual VNeID status entry with real API calls. Enable automated sync per NĐ 69/2024. |
 | **What** | `IVNeIDService` adapter pattern (follow ADR-0001). Real implementation: OAuth 2.0 authorization code flow, org identity fetch, permission delegation, daily sync background job. Feature-flagged — fallback to manual status if API unreachable. |
-| **Files** | New: `Domain/Interfaces/IVNeIDService.cs`. New: `Infrastructure/VNeID/VNeIDService.cs`. New: `Infrastructure/VNeID/VNeIDOptions.cs`. New: `Infrastructure/BackgroundJobs/VNeIDSyncJob.cs` |
+| **Files** | New: `domain/interfaces/IVNeIDService.ts`. New: `infrastructure/vneid/VNeIDService.ts`. New: `infrastructure/vneid/VNeIDOptions.ts`. New: `infrastructure/jobs/VNeIDSyncJob.cs` |
 | **Skill** | Senior Backend — OAuth, HTTP client, Polly retry/circuit breaker |
 | **Test** | Contract: WireMock.NET verifies request/response against VNeID sandbox. Integration: real OAuth flow (if sandbox available). |
 | **Dependency** | T21 (VNeID entity fields), T4 (Legal rep VNeID numbers) |
@@ -526,7 +526,7 @@ Enums + Base       LegalRep ──────→  Branch/RO           VNeID_Fie
 ## 6. Acceptance Gates per Phase
 
 ### Phase 0 → Phase 1 Gate
-- [ ] All 13 domain enums defined in `Domain/Enums/CompanyEnums.cs`
+- [ ] All 13 domain enums defined in `domain/enums/CompanyEnums.ts`
 - [ ] TaxCode, EnterpriseCode, Address, VNeIDNumber value objects with validation
 - [ ] Target data model reviewed and signed off
 - [ ] Unit tests for all value objects pass

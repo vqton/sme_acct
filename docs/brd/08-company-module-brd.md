@@ -1,9 +1,9 @@
 # BRD: Company Module — SmeAccounting
 
-**Version:** 1.0
-**Date:** 2026-07-20
+**Version:** 1.1
+**Date:** 2026-07-21
 **Author:** BA Lead + Chief Accountant (20+ yrs)
-**Status:** Draft — Not PROD Ready
+**Status:** Updated — Not PROD Ready (corrected gap analysis against actual TS/Express/SQLite codebase)
 
 ---
 
@@ -17,36 +17,36 @@ Current implementation is a **skeleton**. It stores 12 fields on `Company`, 7 fi
 
 ### 5 Blocking Gaps (cannot legally operate without)
 
-| # | Gap | Law Reference | Impact |
-|---|---|---|---|
-| BG-01 | No VNeID / National Digital Identity linkage | NĐ 69/2024/NĐ-CP (01/07/2025) | Cannot perform tax e-transactions — system is non-functional |
-| BG-02 | No enterprise code (mã doanh nghiệp) field | Luật DN 2020 Điều 29, NĐ 168/2025 | Cannot identify company in state records |
-| BG-03 | No charter capital (vốn điều lệ) + contributor tracking | Luật DN 2020 Điều 30, 34, 36 | Cannot verify capital structure — illegal for credit institutions |
-| BG-04 | Single legal rep field (must support multiple per Luật DN) | Luật DN 2020 Điều 12, 13 | Single rep field violates law allowing multiple legal reps |
-| BG-05 | No accounting regime (chế độ kế toán) selection | TT 99/2025/TT-BTC, TT 133/2016 | Cannot determine which chart of accounts, report templates, or rounding rules apply |
+| # | Gap | Law Reference | Impact | Code Status |
+|---|---|---|---|---|
+| BG-01 | No VNeID / National Digital Identity linkage | NĐ 69/2024/NĐ-CP (01/07/2025) | Cannot perform tax e-transactions — system is non-functional | MISSING |
+| BG-02 | No enterprise code (mã doanh nghiệp) field | Luật DN 2020 Điều 29, NĐ 168/2025 | Cannot identify company in state records | ✅ PARTIAL — `enterpriseCode` field exists in entity + DB but not validated |
+| BG-03 | No charter capital (vốn điều lệ) + contributor tracking | Luật DN 2020 Điều 30, 34, 36 | Cannot verify capital structure — illegal for credit institutions | MISSING |
+| BG-04 | Single legal rep field (must support multiple per Luật DN) | Luật DN 2020 Điều 12, 13 | Single rep field violates law allowing multiple legal reps | MISSING — `legalRepresentative: string` only |
+| BG-05 | No accounting regime (chế độ kế toán) selection enforcement | TT 99/2025/TT-BTC, TT 133/2016 | Cannot determine which chart of accounts or report templates apply | ✅ PARTIAL — `accountingRegime: number` exists in CompanySettings but not enforced in business logic |
 
 ### 18 Major Gaps (blocking PROD, not legally fatal individually)
 
-| # | Gap | Severity |
-|---|---|---|
-| MG-01 | No company type enum (tNHH, cT CP, DNTN, etc.) | High |
-| MG-02 | No Vietnamese name + English name + abbreviated name | Medium |
-| MG-03 | No former names history | Low |
-| MG-04 | No date of establishment / commencement | Medium |
-| MG-05 | No status lifecycle (active, suspended, dissolved, bankrupt) | High |
-| MG-06 | No business lines with VSIC codes | Medium |
-| MG-07 | No branch / representative office management | Medium |
-| MG-08 | No bank accounts for tax payment | High |
-| MG-09 | No tax authority assignment | Medium |
-| MG-10 | No licenses & permits tracking | Low |
-| MG-11 | No company seal (con dấu) image | Medium |
-| MG-12 | No business registration certificate document store | Medium |
-| MG-13 | No audit firm assignment | Low |
-| MG-14 | No capital contributor / shareholder registry | High |
-| MG-15 | No tax calculation method (khấu trừ vs trực tiếp) on settings | High |
-| MG-16 | No inventory method enum validation | Medium |
-| MG-17 | No decimal place rules per VAS 01 | Medium |
-| MG-18 | No multi-currency default rate source (NHNN vs commercial bank) | Low |
+| # | Gap | Severity | Code Status |
+|---|---|---|---|
+| MG-01 | No company type enum (tNHH, CT CP, DNTN, etc.) | High | MISSING — `CompanyStatus` enum exists but refers to lifecycle, not legal type |
+| MG-02 | No Vietnamese name + English name + abbreviated name | Medium | ✅ PARTIAL — `nameVietnamese` field exists, missing `nameEnglish` + `abbreviatedName` |
+| MG-03 | No former names history | Low | MISSING |
+| MG-04 | No date of establishment / commencement | Medium | MISSING — only `createdAt` (system timestamp), not establishment date |
+| MG-05 | No full status lifecycle enforcement | High | ✅ PARTIAL — `CompanyStatus` enum (6 states: Active/Suspended/Dissolved/Bankrupt/Merged/Converting), `CompanyService` with activate/suspend/dissolve. Missing: bankrupt/merged/converting transitions, middleware enforcement |
+| MG-06 | No business lines with VSIC codes | Medium | MISSING |
+| MG-07 | No branch / representative office management | Medium | MISSING |
+| MG-08 | No bank accounts for tax payment | High | MISSING |
+| MG-09 | No tax authority assignment | Medium | MISSING |
+| MG-10 | No licenses & permits tracking | Low | MISSING |
+| MG-11 | No company seal (con dấu) image | Medium | MISSING |
+| MG-12 | No business registration certificate document store | Medium | MISSING |
+| MG-13 | No audit firm assignment | Low | MISSING |
+| MG-14 | No capital contributor / shareholder registry | High | MISSING |
+| MG-15 | No tax calculation method selection | High | ✅ EXISTS — `taxCalculationMethod: number` in CompanySettings, but no UI to set |
+| MG-16 | No inventory method enum validation | Medium | ✅ PARTIAL — `CompanySettings` has field slot, no enum validation |
+| MG-17 | No decimal place enforcement per VAS 01 | Medium | ✅ EXISTS — `decimalPlaces: number` in CompanySettings, but defaults to 2 (should be 0 for VND per TT 99/2025) |
+| MG-18 | No multi-currency default rate source | Low | MISSING |
 
 ### Effort Estimate
 
@@ -64,7 +64,7 @@ Current implementation is a **skeleton**. It stores 12 fields on `Company`, 7 fi
 |---|---|---|---|
 | Luật Doanh nghiệp 2020 (59/2020/QH14) | Active | Enterprise code, legal reps, charter capital, business lines, company seal, branches | **Partial** (name + tax code only) |
 | NĐ 168/2025/NĐ-CP (Đăng ký doanh nghiệp) | Active, replaces NĐ 01/2021 | Registration certificate fields, VSIC codes, enterprise info disclosure | **Missing** |
-| TT 99/2025/TT-BTC (Chế độ kế toán) | Active from 01/01/2026, replaces TT 200/2014 | Accounting regime selection, fiscal year, currency, rounding, inventory method, tax method | **Partial** (settings exist but missing regime + tax calc method) |
+| TT 99/2025/TT-BTC (Chế độ kế toán) | Active from 01/01/2026, replaces TT 200/2014 | Accounting regime selection, fiscal year, currency, rounding, inventory method, tax method | **Partial** (settings exist with `accountingRegime`, `taxCalculationMethod`, `roundingMethod` fields — but no enforcement or UI for selection) |
 | TT 133/2016/TT-BTC (SME accounting) | Active (optional for SMEs) | Alternative accounting regime — fewer report templates, simpler chart of accounts | **Not supported** (no regime toggle) |
 | NĐ 69/2024/NĐ-CP (Định danh điện tử) | Active | VNeID for tax transactions, organization digital identity | **Missing** |
 | VAS 01 — Chuẩn mực chung | Active | Going concern, consistency, matching principle, decimal precision | **Partial** (decimal places on settings, no enforcement) |
@@ -76,47 +76,59 @@ Current implementation is a **skeleton**. It stores 12 fields on `Company`, 7 fi
 
 ## 3. Current State Analysis
 
-### 3.1 Current Data Model
+### 3.1 Current Data Model (Actual TypeScript + SQLite)
 
 ```
-Company
-├── Id (Guid)
-├── Name (string, 400)
-├── TaxCode (string?, 100) — unique index with filter
-├── Address (string?, 500)
-├── Phone (string?, 100)
-├── Email (string?, 256)
-├── Website (string?, 200)
-├── LegalRepresentative (string?, 200) — SINGLE field, plain text
-├── RepPosition (string?, 200) — plain text
-├── LogoUrl (string?, 512)
-├── IsActive (bool)
-├── CreatedAt / UpdatedAt (DateTime)
+Company (interface in domain/entities/Company.ts)
+├── id (string, UUID)
+├── name (string)
+├── nameVietnamese (string?, not null)
+├── taxCode (string?, not null)
+├── enterpriseCode (string?, not null)
+├── address (string?, not null)
+├── phone (string?, not null)
+├── email (string?, not null)
+├── status (CompanyStatus enum: 1=Active, 2=Suspended, 3=Dissolved, 4=Bankrupt, 5=Merged, 6=Converting)
+├── createdAt (Date)
+├── updatedAt (Date?)
 │
-└── CompanySettings (1:1)
-    ├── FiscalYearStartMonth (int, 1–12)
-    ├── CurrencyCode (string, default "VND")
-    ├── DecimalPlaces (int, default 2)
-    ├── InventoryMethod (string?)
-    ├── TaxMethod (string?)
-    ├── EnableMultiCurrency (bool)
-    └── EnableDepartmentManagement (bool)
+└── CompanySettings (1:1, interface in domain/entities/CompanySettings.ts)
+    ├── id (string, UUID)
+    ├── companyId (string, FK)
+    ├── fiscalYearStartMonth (int, default 1)
+    ├── currencyCode (string, default "VND")
+    ├── decimalPlaces (int, default 2 — NOTE: should be 0 for VND per TT 99/2025)
+    ├── accountingRegime (int)
+    ├── taxCalculationMethod (int)
+    └── roundingMethod (int)
 
-UserCompany (many-to-many link)
-├── UserId (string)
-├── CompanyId (Guid)
+UserCompany (many-to-many, interface in domain/entities/UserCompany.ts)
+├── userId (string)
+├── companyId (string)
+├── role (string?)
+├── isActive (boolean)
+├── joinedAt (Date)
 ```
 
-### 3.2 What Exists (Minimal Viability)
+Additional fields stored in DB but NOT exposed in TypeScript interface (accessed via type assertion):
+- `website (string?)`
+- `legalRepresentative (string?)`
+
+### 3.2 What Exists (Actual Implementation — Minimal Skeleton)
 
 | Component | Status | Notes |
 |---|---|---|
-| Basic company info CRUD | ✅ Implemented | Name, TaxCode, Address, Phone, Email, Website |
-| Settings CRUD | ✅ Implemented | Fiscal year, currency, decimals, inventory/tax method |
-| Company-user association | ✅ Implemented | UserCompany join table |
-| Admin controller | ✅ Implemented | CompanyController in Admin area |
-| Unique tax code constraint | ✅ Implemented | Index with filter on TaxCode |
-| Cascading relationships | ✅ Implemented | EF Core cascade deletes |
+| Basic company info CRUD | ✅ Implemented | Name, TaxCode, Address, Phone, Email, Website (via type assertion), enterpriseCode, nameVietnamese |
+| Settings CRUD | ✅ Implemented | Fiscal year, currency, decimal places, accounting regime, tax calc method, rounding method |
+| Company-user association | ✅ Implemented | UserCompany join table via SQLiteUserCompanyRepository |
+| API controller | ✅ Implemented | `companyController.ts` — GET `/api/companies`, GET `/:id`, POST `/`, POST `/:id/activate`, POST `/:id/suspend` |
+| Auth middleware | ✅ Implemented | `requirePermission('company:read/create/update')` from JWT claims |
+| TaxCode uniqueness check | ✅ Implemented | `findByTaxCode()` in CompanyUseCases.create() |
+| Status transitions | ✅ Implemented | `CompanyService` — activate (Suspended→Active), suspend (Active→Suspended), canDissolve (Active/Suspended→Dissolved) |
+| CompanyRepository | ✅ Implemented | `SQLiteCompanyRepository` with lazy-init prepared statements, findByTaxCode, findByEnterpriseCode, findByStatus |
+| TaxCode value object | ✅ Implemented | `domain/valueObjects/TaxCode.ts` — 10 or 13 digit validation |
+| Money value object | ✅ Implemented | `domain/valueObjects/Money.ts` — VND, no negative, add, equals |
+| Multi-company support | ✅ Implemented | Login flow branches on company count: 0=reject, 1=auto-select, N=company selection |
 
 ### 3.3 What Is Missing (Complete)
 
@@ -130,7 +142,7 @@ UserCompany (many-to-many link)
 | Branches / RO | Not tracked | 1..N with address, tax code, headcount, status |
 | Bank accounts | Not tracked | 1..N for tax payment, IBAN, swift, bank name, branch |
 | Tax authority | Not tracked | Tax office (Cục Thuế / Chi cục Thuế), tax department |
-| Fiscal settings | Partial | Missing: accounting regime (TT99/TT133), tax calc method (khấu trừ/trực tiếp), rounding method |
+| Fiscal settings | ✅ Present | Fields exist (`accountingRegime`, `taxCalculationMethod`, `roundingMethod`), but no validation, enforcement, or business logic |
 | Documents | Not tracked | Business registration certificate, seal registration, licenses |
 | Company seal | Not tracked | Image, registration number, date |
 | Audit firm | Not tracked | Auditor entity, assignment period, audit report references |
