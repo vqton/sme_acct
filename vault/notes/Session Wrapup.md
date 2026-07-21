@@ -80,8 +80,64 @@ vault/
 └── assets/
 ```
 
+## Architecture — NestJS Migration (Current Session)
+
+### Strategy
+Module-by-module replacement, not big-bang. Zero NestJS coupling in domain/application/infrastructure layers. Factory providers in NestJS modules, not `@Injectable()` on existing classes.
+
+### Migration Status
+| Module | Express | NestJS | Tests |
+|--------|:---:|:---:|:---:|
+| Auth (15 routes) | 🟢 kept | 🟢 migrated | 16 TDD |
+| Company (22+ routes) | 🟢 kept | 🟢 migrated | 9 TDD |
+| Health/Root | 🟢 kept | 🟢 migrated | — |
+| Future: Departments | — | — | — |
+
+### NestJS Module Structure
+```
+src/nest/
+├── app.module.ts               ← Root (imports Auth + Company)
+├── bootstrap.ts                 ← NestFactory.create()
+├── auth/
+│   ├── auth.module.ts           ← Factory providers for 9 repos
+│   ├── auth.controller.ts       ← 15 NestJS-decorated routes
+│   └── auth.controller.test.ts  ← 16 integration tests
+├── company/
+│   ├── company.module.ts        ← Factory providers for 5 repos
+│   ├── company.controller.ts    ← 22 NestJS-decorated routes
+│   └── company.controller.test.ts ← 9 integration tests
+└── common/
+    ├── database.module.ts       ← DB_PROVIDER + test helper
+    ├── health.controller.ts     ← GET / + GET /api/health
+    ├── guards/
+    │   ├── auth.guard.ts         ← JWT Bearer verification
+    │   ├── permission.guard.ts   ← Role-based permission check
+    │   └── permissions.decorator.ts
+    ├── filters/
+    │   └── http-exception.filter.ts ← Domain→HTTP status mapping
+    └── lifecycle/
+        └── app-lifecycle.ts      ← RoleSeeder on startup
+```
+
+### Key Files Added
+| Layer | File |
+|---|---|
+| Config | `tsconfig.json` (experimentalDecorators, emitDecoratorMetadata) |
+| Config | `package.json` (@nestjs/core, @nestjs/common, @nestjs/platform-express, @nestjs/testing, supertest) |
+| Entry | `src/index.ts` (now boots NestJS instead of Express) |
+| Nest common | `database.module.ts`, `auth.guard.ts`, `permission.guard.ts`, `http-exception.filter.ts`, `health.controller.ts` |
+| Nest modules | `auth/`, `company/` controllers + modules |
+| Test setup | `src/test/setup.ts` (added reflect-metadata import) |
+
+## Stats
+- **Server tests:** 277 passing (was 252, **+25 new** — 16 AuthController + 9 CompanyController)
+- **Server boots:** NestJS (47 routes mapped, Express `app.ts` kept as backup)
+- **New files:** 15 NestJS-specific files
+- **Packages added:** `@nestjs/core`, `@nestjs/common`, `@nestjs/platform-express`, `@nestjs/testing`, `reflect-metadata`, `rxjs`, `supertest`
+
 ## Next Candidates
-- Departments module implementation (TDD, Phase 1)
-- Company settings UI
+- Departments module implementation (TDD, Phase 1) as NestJS module
+- NestJS migration: remaining Express middleware → NestJS guards
+- Integration test between NestJS server + client
 - Reporting module
 - Tax calculation (VAT, CIT)
