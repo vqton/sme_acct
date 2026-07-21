@@ -1,5 +1,6 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpStatus } from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost, HttpStatus, Injectable, Optional, Inject } from '@nestjs/common';
 import { Response } from 'express';
+import { PinoLogger } from 'nestjs-pino';
 import {
   InvalidCredentialsError,
   AccountDisabledError,
@@ -26,8 +27,11 @@ const ERROR_STATUS: Array<[new (...args: unknown[]) => Error, HttpStatus]> = [
   [InvalidTOTPError, HttpStatus.UNAUTHORIZED],
 ];
 
+@Injectable()
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
+  constructor(@Optional() @Inject(PinoLogger) private logger?: PinoLogger) {}
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const res = ctx.getResponse<Response>();
@@ -47,7 +51,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
       return;
     }
 
-    console.error(`Unhandled: ${exception instanceof Error ? exception.message : exception}`);
+    const logFn = this.logger?.error.bind(this.logger) ?? console.error;
+    logFn(`Unhandled: ${exception instanceof Error ? exception.message : exception}`);
     res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Internal server error' });
   }
 }

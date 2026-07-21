@@ -6,9 +6,9 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 export async function createNestApp() {
   const app = await NestFactory.create(AppModule);
 
-  app.setGlobalPrefix('api', { exclude: ['/'] });
+  app.setGlobalPrefix('api', { exclude: ['/', 'metrics'] });
   app.enableCors();
-  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalFilters(app.get(HttpExceptionFilter));
 
   return app;
 }

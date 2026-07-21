@@ -1,4 +1,7 @@
-import type { AuthResponse, Company, TokenRefreshResponse } from '../types';
+import type {
+  AuthResponse, Company, TokenRefreshResponse, DashboardData,
+  LegalRepresentative, CapitalContributor, BusinessLine, CompanyBankAccount,
+} from '../types';
 
 const BASE = '/api';
 
@@ -165,10 +168,79 @@ export const api = {
     return refreshAccessToken();
   },
 
+  getDashboard: () => request<DashboardData>('/dashboard'),
+
   getCompanies: () => request<Company[]>('/companies'),
   getCompany: (id: string) => request<Company>(`/companies/${id}`),
   createCompany: (data: Partial<Company>) =>
     request<Company>('/companies', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updateCompany: (id: string, data: Partial<Company>) =>
+    request<Company>(`/companies/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  deleteCompany: (id: string) =>
+    request<void>(`/companies/${id}`, { method: 'DELETE' }),
+
+  // Status transitions
+  activateCompany: (id: string) =>
+    request<Company>(`/companies/${id}/activate`, { method: 'POST' }),
+  suspendCompany: (id: string) =>
+    request<Company>(`/companies/${id}/suspend`, { method: 'POST' }),
+  dissolveCompany: (id: string, reason?: string) =>
+    request<Company>(`/companies/${id}/dissolve`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
+  bankruptCompany: (id: string) =>
+    request<Company>(`/companies/${id}/bankrupt`, { method: 'POST' }),
+  convertCompany: (id: string) =>
+    request<Company>(`/companies/${id}/convert`, { method: 'POST' }),
+  mergeCompany: (id: string) =>
+    request<Company>(`/companies/${id}/merge`, { method: 'POST' }),
+
+  // Legal Representatives
+  getLegalReps: (companyId: string) =>
+    request<LegalRepresentative[]>(`/companies/${companyId}/legal-reps`),
+  addLegalRep: (companyId: string, data: Partial<LegalRepresentative>) =>
+    request<LegalRepresentative>(`/companies/${companyId}/legal-reps`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updateLegalRep: (companyId: string, repId: string, data: Partial<LegalRepresentative>) =>
+    request<LegalRepresentative>(`/companies/${companyId}/legal-reps/${repId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  deleteLegalRep: (companyId: string, repId: string) =>
+    request<void>(`/companies/${companyId}/legal-reps/${repId}`, { method: 'DELETE' }),
+
+  // Capital Contributors
+  getCapitalContributors: (companyId: string) =>
+    request<CapitalContributor[]>(`/companies/${companyId}/contributors`),
+  addCapitalContributor: (companyId: string, data: Partial<CapitalContributor>) =>
+    request<CapitalContributor>(`/companies/${companyId}/contributors`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Business Lines
+  getBusinessLines: (companyId: string) =>
+    request<BusinessLine[]>(`/companies/${companyId}/business-lines`),
+  addBusinessLine: (companyId: string, data: Partial<BusinessLine>) =>
+    request<BusinessLine>(`/companies/${companyId}/business-lines`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Bank Accounts
+  getBankAccounts: (companyId: string) =>
+    request<CompanyBankAccount[]>(`/companies/${companyId}/bank-accounts`),
+  addBankAccount: (companyId: string, data: Partial<CompanyBankAccount>) =>
+    request<CompanyBankAccount>(`/companies/${companyId}/bank-accounts`, {
       method: 'POST',
       body: JSON.stringify(data),
     }),

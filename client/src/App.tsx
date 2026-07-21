@@ -10,6 +10,8 @@ import TwoFactorSetupPage from './pages/TwoFactorSetupPage';
 import TwoFactorVerifyPage from './pages/TwoFactorVerifyPage';
 import DashboardPage from './pages/DashboardPage';
 import CompaniesPage from './pages/CompaniesPage';
+import CompanyDetailPage from './pages/CompanyDetailPage';
+import CompanyFormPage from './pages/CompanyFormPage';
 import SessionsPage from './pages/SessionsPage';
 import Layout from './components/Layout';
 
@@ -30,6 +32,9 @@ function AppRoutes() {
         <Route element={<Layout />}>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/companies" element={<CompaniesPage />} />
+          <Route path="/companies/new" element={<CompanyFormPage />} />
+          <Route path="/companies/:id" element={<CompanyDetailPage />} />
+          <Route path="/companies/:id/edit" element={<CompanyFormPage />} />
           <Route path="/sessions" element={<SessionsPage />} />
           <Route path="/2fa/setup" element={<TwoFactorSetupPage />} />
         </Route>

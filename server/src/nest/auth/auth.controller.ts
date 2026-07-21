@@ -1,6 +1,6 @@
 import {
   Controller, Post, Get, Delete, Body, Param, Req, Ip, Headers,
-  UseGuards, HttpCode, HttpStatus,
+  UseGuards, HttpCode, HttpStatus, Inject,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthService } from '../../application/AuthService.js';
@@ -11,7 +11,7 @@ import { RateLimiter } from '../../presentation/middleware/rateLimiter.js';
 export class AuthController {
   private loginLimiter = new RateLimiter({ windowMs: 15 * 60 * 1000, maxAttempts: 5 });
 
-  constructor(private readonly authService: AuthService) {}
+  constructor(@Inject(AuthService) private readonly authService: AuthService) {}
 
   private context(ip: string, headers: Record<string, string | string[] | undefined>) {
     return { ipAddress: ip, userAgent: (headers['user-agent'] as string) ?? null };

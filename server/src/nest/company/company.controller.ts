@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Put, Delete, Body, Param, Req,
-  UseGuards, HttpCode, HttpStatus,
+  UseGuards, HttpCode, HttpStatus, Inject,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { CompanyUseCases } from '../../application/CompanyUseCases.js';
@@ -11,7 +11,7 @@ import { Permissions } from '../common/guards/permissions.decorator.js';
 @Controller('companies')
 @UseGuards(AuthGuard, PermissionGuard)
 export class CompanyController {
-  constructor(private readonly companyUseCases: CompanyUseCases) {}
+  constructor(@Inject(CompanyUseCases) private readonly companyUseCases: CompanyUseCases) {}
 
   @Get()
   @Permissions('company:read')

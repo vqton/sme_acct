@@ -2,12 +2,25 @@ import { Module } from '@nestjs/common';
 import { DatabaseModule } from './common/database.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { CompanyModule } from './company/company.module.js';
-import { HealthController } from './common/health.controller.js';
 import { AppLifecycleHook } from './common/lifecycle/app-lifecycle.js';
+import { AppLoggerModule } from './integrations/logger.module.js';
+import { AppHealthModule } from './integrations/health.module.js';
+import { AppMetricsModule } from './integrations/metrics.module.js';
+import { AppSentryModule } from './integrations/sentry.module.js';
+import { DashboardModule } from './dashboard/dashboard.module.js';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 
 @Module({
-  imports: [DatabaseModule, AuthModule, CompanyModule],
-  controllers: [HealthController],
-  providers: [AppLifecycleHook],
+  imports: [
+    AppLoggerModule,
+    AppHealthModule,
+    AppMetricsModule,
+    AppSentryModule,
+    DatabaseModule,
+    AuthModule,
+    CompanyModule,
+    DashboardModule,
+  ],
+  providers: [AppLifecycleHook, HttpExceptionFilter],
 })
 export class AppModule {}
