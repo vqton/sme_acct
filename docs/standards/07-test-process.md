@@ -85,7 +85,86 @@ graph LR
 
 ---
 
-## 3. Roles & Responsibilities
+## 3. Test-Driven Development (TDD) Workflow
+
+### 3.1 The Red → Green Loop
+
+TDD is the development discipline where every code change starts with a failing test.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    TDD CYCLE                            │
+│                                                         │
+│   ┌───────┐     ┌───────┐     ┌──────────────┐         │
+│   │  RED  │────→│ GREEN │────→│  REFACTOR    │──┐      │
+│   │       │     │       │     │              │  │      │
+│   │ Write │     │Write  │     │ Clean up     │  │      │
+│   │ failing│    │minimal│     │ while tests  │  │      │
+│   │ test  │     │code to│     │ stay green   │  │      │
+│   │       │     │pass   │     │              │  │      │
+│   └───────┘     └───────┘     └──────────────┘  │      │
+│       ↑                                         │      │
+│       └─────────────────────────────────────────┘      │
+│                   next slice                            │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Rules:**
+1. **Red before green.** Write the failing test first, then only enough code to pass it. No anticipating future tests.
+2. **One slice at a time.** One seam, one test, one minimal implementation per cycle.
+3. **Refactoring is separate.** Clean up after tests pass, not during the red→green cycle.
+
+### 3.2 Vertical Slicing
+
+Work in vertical slices — one test → one implementation → repeat. Each test is a **tracer bullet** that hits a real user-facing behavior.
+
+```
+❌ Horizontal (wrong):
+   Write all tests for Money → Write all Money code → Write all tests for Tax → ...
+
+✅ Vertical (right):
+   Money.add() test → Money.add() code → Money.subtract() test → Money.subtract() code → ...
+```
+
+**Why:** Horizontal slicing verifies imagined behavior. You test the _shape_ of things rather than what users actually do. Vertical slices respond to what the last cycle taught you.
+
+### 3.3 Seams — Where to Test
+
+A **seam** is the public boundary you test at. Tests live at seams, never against internals.
+
+| Seam Type | Example in This Codebase | Test Level |
+|---|---|---|
+| Domain entity public API | `Money.add()`, `JournalEntry.post()` | Unit |
+| Use case handler | `CreateCompanyHandler.handle(cmd)` | Unit / Integration |
+| Repository interface | `CompanyRepo.findById(id)` | Integration |
+| API endpoint | `POST /api/companies` | Integration |
+| Zod schema | `CreateCompanySchema.safeParse(input)` | Contract |
+
+Before writing any test, confirm the seam: _"What's the public interface, and which seams should we test?"_
+
+### 3.4 TDD Anti-Patterns
+
+| Anti-Pattern | Symptom | Fix |
+|---|---|---|
+| Implementation-coupled | Test breaks on refactor, behavior unchanged | Test public interface only |
+| Tautological | Assertion recomputes expected same way as code | Use independent source of truth |
+| Horizontal slicing | All tests first, then all implementation | One test → one implementation → repeat |
+| Speculative tests | Tests for features that don't exist yet | Delete; write when needed |
+| Testing internals | Mocking private methods, reaching into DB | Test at the seam boundary |
+
+### 3.5 TDD per Test Level
+
+| Level | TDD Applies? | Notes |
+|---|---|---|
+| Domain unit (Level 1) | **Yes — mandatory** | Red→green on every entity, value object, calculation |
+| Application handler (Level 2) | **Yes — mandatory** | Red→green on command/query handlers |
+| Integration (Level 3) | Partially | Write integration tests alongside API endpoints |
+| Contract (Level 4) | No | Contracts come from external specs, not TDD |
+| Regression (Level 5) | No | Regression runs existing tests |
+
+---
+
+## 4. Roles & Responsibilities
 
 | Role | Name/Team | Responsibility |
 |---|---|---|
@@ -96,7 +175,7 @@ graph LR
 | **Product Owner** | [PO] | Acceptance criteria review, UAT coordination |
 | **Compliance Officer** | [Legal/Compliance] | Regulatory test results sign-off |
 
-### 3.1 RACI Matrix
+### 4.1 RACI Matrix
 
 | Activity | QA Mgr | QA Eng | Dev | Architect | PO | Compliance |
 |---|---|---|---|---|---|---|
@@ -116,9 +195,9 @@ R=Responsible, A=Accountable, C=Consulted, I=Informed
 
 ---
 
-## 4. Defect Management Process
+## 5. Defect Management Process
 
-### 4.1 Defect States
+### 5.1 Defect States
 
 ```
                 ┌──────────┐
@@ -152,7 +231,7 @@ R=Responsible, A=Accountable, C=Consulted, I=Informed
     └─────────┘
 ```
 
-### 4.2 Defect Attributes
+### 5.2 Defect Attributes
 
 | Field | Required | Values |
 |---|---|---|
@@ -168,7 +247,7 @@ R=Responsible, A=Accountable, C=Consulted, I=Informed
 | Related Test | No | Test case ID |
 | Assignee | Auto | Per triage |
 
-### 4.3 Triage Process
+### 5.3 Triage Process
 
 1. All new defects reviewed daily in stand-up
 2. QA Manager assigns severity + priority
@@ -177,7 +256,7 @@ R=Responsible, A=Accountable, C=Consulted, I=Informed
 5. Medium defects: milestone or defer
 6. Low defects: backlog if effort > value
 
-### 4.4 Severity vs Priority Matrix
+### 5.4 Severity vs Priority Matrix
 
 | | P0 (Immediate) | P1 (This Sprint) | P2 (Next Sprint) | P3 (Backlog) |
 |---|---|---|---|---|
@@ -188,9 +267,9 @@ R=Responsible, A=Accountable, C=Consulted, I=Informed
 
 ---
 
-## 5. Test Reporting
+## 6. Test Reporting
 
-### 5.1 Daily (during sprint)
+### 6.1 Daily (during sprint)
 
 ```yaml
 # Stand-up report input
@@ -203,7 +282,7 @@ Defects opened: 1
 Defects closed: 0
 ```
 
-### 5.2 Sprint Summary
+### 6.2 Sprint Summary
 
 | Metric | This Sprint | Last Sprint | Target |
 |---|---|---|---|
@@ -216,7 +295,7 @@ Defects closed: 0
 | Critical open | 0 | 1 | 0 |
 | High open | 3 | 4 | < 5 |
 
-### 5.3 Release Summary
+### 6.3 Release Summary
 
 - Executive summary (1 paragraph)
 - Quality score (Green/Yellow/Red)
@@ -228,7 +307,7 @@ Defects closed: 0
 
 ---
 
-## 6. Test Artifact Retention
+## 7. Test Artifact Retention
 
 | Artifact | Retention | Format |
 |---|---|---|
@@ -243,7 +322,7 @@ Defects closed: 0
 
 ---
 
-## 7. Tool Administration
+## 8. Tool Administration
 
 | Tool | Admin | Backup | Access |
 |---|---|---|---|
@@ -254,7 +333,7 @@ Defects closed: 0
 
 ---
 
-## 8. Escalation Path
+## 9. Escalation Path
 
 ```
 Critical defect found in PROD
@@ -272,7 +351,7 @@ Test suite regression > 5% drop
 
 ---
 
-## 9. Test Process Metrics
+## 10. Test Process Metrics
 
 | Metric | Collection | Target | Action if Missed |
 |---|---|---|---|

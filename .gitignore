@@ -1,16 +1,25 @@
-# .NET build artifacts
-bin/
-obj/
-*.user
-*.suo
-*.cache
-*.log
-*.vs/
+# Dependencies
+node_modules/
 
-# OS files
+# Build
+dist/
+build/
+.vite/
+
+# Database
+server/data/
+
+# Environment
+.env
+.env.local
+
+# OS
 .DS_Store
 Thumbs.db
 
 # IDE
 .idea/
 .vscode/
+
+# Logs
+*.log

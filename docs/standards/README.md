@@ -10,7 +10,7 @@
 | `04-security-and-exceptions.md` | JWT config, password policy, exception hierarchy, global handler, audit trail, SQL injection, logging, secrets |
 | `05-test-strategy.md` | ISO 29119 test strategy: scope, risk register, test pyramid, levels, regulatory compliance, entry/exit criteria, CI pipeline, defect lifecycle |
 | `06-test-approach.md` | ISO 29119-3 test design: techniques, templates, isolation, assertion philosophy, regulatory test design patterns |
-| `07-test-process.md` | ISO 29119-2 test process: sprint activities, RACI, defect management, reporting, metrics, SLAs, escalation |
+| `07-test-process.md` | ISO 29119-2 test process: sprint activities, TDD workflow, RACI, defect management, reporting, metrics, SLAs, escalation |
 | `08-implementation-roadmap.md` | 13-task phased roadmap: dependency graph, skills allocation, risk management, acceptance gates, delivery schedule |
 
 ## Quick Setup
