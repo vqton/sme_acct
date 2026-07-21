@@ -1,0 +1,28 @@
+{
+  "alwaysUpdateLinks": true,
+  "attachmentFolderPath": "assets",
+  "newFileLocation": "folder",
+  "newFileFolderPath": "notes",
+  "showUnsupportedFiles": true,
+  "useMarkdownLinks": true,
+  "showLineNumber": true,
+  "spellcheck": true,
+  "spellcheckLanguages": ["en", "vi"],
+  "tabSize": 2,
+  "readableLineLength": true,
+  "pdfExportSettings": {
+    "includeName": true,
+    "pageSize": "A4"
+  },
+  "dailyNotes": {
+    "folder": "daily",
+    "template": "templates/Daily.md",
+    "format": "YYYY-MM-DD"
+  },
+  "templates": {
+    "folder": "templates"
+  },
+  "properties": {
+    "defaultDateFormat": "YYYY-MM-DD"
+  }
+}

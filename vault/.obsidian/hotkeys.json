@@ -1,0 +1,5 @@
+[
+  { "hotkeys": [ { "modifiers": ["Mod", "Shift"], "key": "E" } ], "command": "editor:insert-wikilink" },
+  { "hotkeys": [ { "modifiers": ["Mod"], "key": "N" } ], "command": "app:new-note" },
+  { "hotkeys": [ { "modifiers": ["Mod", "Shift"], "key": "N" } ], "command": "workspace:split-vertical" }
+]
