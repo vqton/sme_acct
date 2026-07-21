@@ -1,76 +1,77 @@
-# Session Wrapup — Auth Overhaul
+# Session Wrapup — Company Module + Departments BRD
 
 **Date:** 2026-07-21
 **Branch:** `main`
 
 ## Objective
-Implement all must-have auth features for Vietnamese SME accounting system (intranet), comparing against MISA SME, VNPT Easy, Fast Accounting Online. TDD end-to-end.
+Implement Company module (Phases 0-2) via TDD. Then research and produce comprehensive BRD suite for Departments (Phòng ban) module.
 
-## Completed: 13 items
+## Completed: Company Module via TDD (252 tests)
 
-### P0 — Core Auth Infrastructure (10 items)
-| # | Feature | Tests |
-|---|---|---|
-| 1 | JWT expiry 24h→15min + `iss`/`aud`/`jti` claims | 9 |
-| 2 | Server-side logout (revoke refresh tokens) | 3 |
-| 3 | Rate limiting (5 attempts/15min/IP) | 7 |
-| 4 | Account lockout (5 fails → 30min) | 5 |
-| 5 | Password history (last 5 blocked) | 3 |
-| 6 | Audit logging (IP + user-agent capture) | 1 |
-| 7 | Forgot/reset password (1hr token) | 8 |
-| 8 | Registration UI (VN validation) | — |
-| 9 | Login page rewrite (VN, responsive, loading, errors) | — |
+### Phase 0 — Foundation (12 enums + 3 value objects)
+- CompanyType, AccountingRegime, TaxCalculationMethod, InventoryMethod, RoundingMethod, ExchangeRateSource, BranchType, BranchStatus, ContributorType, ContributorCategory, DocumentType, LicenseType, VNeIDStatus, AuditAssignmentStatus
+- Value objects: EnterpriseCode, Address, VNeIDNumber
 
-### P1 — Production Auth Features (3 items)
-| # | Feature | Tests |
-|---|---|---|
-| 10 | Company switching at login | 7 |
-| 11 | Session management dashboard | 6 |
-| 12 | 2FA / TOTP + backup codes | 10 |
+### Phase 1 — Company Aggregate (T1-T12)
+- Company entity (40+ fields, CompanyStatus 6-state: Active/Suspended/Dissolved/Bankrupt/Merged/Converting)
+- TaxCode + EnterpriseCode validation
+- CompanyStatus state machine with transition map
+- LegalRepresentative entity (multi-rep support) + repository
+- CompanySettings (inventoryMethod, enableMultiCurrency, enableDepartmentManagement, defaultExchangeRateSource, lastPeriodClosed)
+- CapitalContributor entity + ownership ratio validation + repository
+- BusinessLine entity + VSIC seed data (300+ codes) + repository
+- CompanyBankAccount entity + repository
+- Correction reason framework (CompanyErrors.ts)
+- CompanyUseCases (full CRUD + lifecycle + all sub-entities)
+- CompanyController (PUT/DELETE company, POST dissolve/bankrupt/convert/merge, sub-entity CRUD)
+- Migration script (001_company_expansion — idempotent ALTER TABLE)
+- Tenant isolation middleware (tenantMiddleware, requireCompanyAccess, filterByCompany)
 
-### P1 — Polish
-| # | Feature |
-|---|---|
-| 13 | Multi-language (VI/EN) with toggle |
+### Phase 2 — Secondary Entities (T13-T17)
+- Branch (chi nhánh), FormerName, CompanyLicense, CompanySeal, CompanyDocument entities + repositories
+
+## Departments Module Research & BRD
+- 3 research documents (regulatory, ERP practices, IFRS 8)
+- 8 BRD documents (17-24): BRD, Use Cases, Business Rules, Data Flows, Workflows, UI Templates, User Journeys, Implementation Roadmap
+- Key finding: **NOT PROD-READY** — `enable_department_management` boolean exists but zero implementation
+- 6 blocking gaps, 10 major gaps identified
+- Cost allocation engine + budget management + departmental P&L = Phase 2 deliverables
 
 ## Stats
-- **Server tests:** 128 passing (was 78, **+50 new**)
-- **Client type check:** Clean
-- **DB tables:** 12 (was 10)
-- **New API endpoints:** 7
-- **New packages:** `otpauth`
-- **New files:** 20
+- **Server tests:** 252 passing (was 128, **+124 new**)
+- **DB tables:** 17 (was 12)
+- **New API endpoints:** ~30
+- **New files:** 49 (Company module) + 11 (Dept research + BRD)
+- **Lines added:** ~3,501 (commit `0abfc72`)
 
-## Architecture
+## Architecture (Company)
 
-### Auth Flow (final)
+### Lifecycle
 ```
-Login → credentials → rate limit check → lockout check → password verify
-  → 2FA check (if enabled: tempToken issued)
-  → company check (0: error / 1: auto-select / N: list)
-  → JWT (15min) + refresh token (7 days, rotated)
-  → logout revokes all refresh tokens
+Active ←→ Suspended
+Active → Dissolved (final)
+Active → Bankrupt (final)
+Active → Merged (final)
+Active → Converting (final)
 ```
 
 ### Key Files
 | Layer | File |
 |---|---|
-| Domain | `entities/User.ts`, `entities/RefreshToken.ts`, `entities/BackupCode.ts` |
-| Domain | `errors/AuthErrors.ts` (11 error classes) |
-| Application | `AuthService.ts` (9 repos injected, 15 methods) |
-| Infrastructure | `jwt.ts`, `schema.ts`, `*Repository.ts` (8 repos) |
-| Presentation | `authController.ts` (17 endpoints) |
-| Client | `LoginPage`, `RegisterPage`, `ForgotPasswordPage` |
-| Client | `CompanySelector`, `SessionsPage` |
-| Client | `TwoFactorSetupPage`, `TwoFactorVerifyPage` |
-| Client | i18n `vi.json`/`en.json` (90 keys each) |
+| Domain | `Company.ts`, `Branch.ts`, `FormerName.ts`, `CompanyLicense.ts`, `CompanySeal.ts`, `CompanyDocument.ts`, `LegalRepresentative.ts`, `CapitalContributor.ts`, `BusinessLine.ts`, `CompanyBankAccount.ts`, `CompanySettings.ts` |
+| Domain | `CompanyErrors.ts` (correction reason framework) |
+| Domain | `CompanyService.ts` (6-state lifecycle) |
+| Application | `CompanyUseCases.ts` (aggregate CRUD) |
+| Infrastructure | `schema.ts` (17 tables), `migrations/001_company_expansion.ts` |
+| Presentation | `companyController.ts`, `tenantIsolation.ts` middleware |
 
 ## Vault Structure
 ```
 vault/
 ├── index.md              ← root note
 ├── notes/
-│   └── Auth System.md    ← auth overview
+│   ├── Auth System.md    ← auth overview
+│   └── Session Wrapup.md ← this file
 ├── adr/                  ← ADR templates
 ├── daily/                ← daily journals
 ├── templates/
@@ -80,8 +81,7 @@ vault/
 ```
 
 ## Next Candidates
-- Accounting engine (journal entries, ledger, reports)
+- Departments module implementation (TDD, Phase 1)
 - Company settings UI
-- Permissions / RBAC UI
 - Reporting module
 - Tax calculation (VAT, CIT)

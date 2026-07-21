@@ -1,366 +1,507 @@
-# BRD: Dept Module (Cong no - Accounts Payable/Receivable) — SmeAccounting
+# BRD: Departments (Phòng ban) Module — SmeAccounting
 
 **Version:** 1.0
 **Date:** 2026-07-21
-**Author:** BA Lead + Chief Accountant (20+ yrs)
-**Status:** **GREENFIELD — no code exists (zero implementation)**
+**Author:** BA Lead + Chief Accountant (40+ yrs combined)
+**Status:** V0 — NOT PROD Ready
 
 ---
 
 ## 1. Executive Summary
 
-The Dept Module (Phan he Cong no) manages accounts receivable (Cong no phai thu — TK 131) and accounts payable (Cong no phai tra — TK 331). It does NOT exist anywhere in the codebase. Zero entities, zero repositories, zero controllers, zero services.
+SmeAccounting Departments Module manages the organisational structure for management accounting — cost centres (trung tâm chi phí), profit centres (trung tâm lợi nhuận), and responsibility centres (trung tâm trách nhiệm) per TT 53/2006/TT-BTC and TT 99/2025/TT-BTC.
 
-### Status: NOT IMPLEMENTED (Greenfield)
+### Verdict: NOT PROD-READY — MISSING IN WHOLE
 
-| Aspect | Detail |
-|--------|--------|
-| Domain entities | 0 of 6 created |
-| Repositories | 0 of 4 created |
-| Application services | 0 of 2 created |
-| Controller endpoints | 0 implemented |
-| Database tables | 0 of 8+ needed |
-| Tests | 0 |
+Current implementation stores a single boolean `enable_department_management` on `CompanySettings`. Zero department entities, zero hierarchy, zero cost allocation, zero departmental reporting.
 
-### 5 Blocking Gaps (cannot operate without)
+| Component | Status | Notes |
+|-----------|--------|-------|
+| `enable_department_management` field | ✅ EXISTS | `CompanySettings.enableDepartmentManagement: boolean` defaults to `true` |
+| Department entity | ❌ MISSING | No `Department` / `PhongBan` entity |
+| Department hierarchy | ❌ MISSING | No tree/parent-child structure |
+| User-department assignment | ❌ MISSING | No user → department binding |
+| Cost allocation rules | ❌ MISSING | No direct/step-down/reciprocal |
+| Budget by department | ❌ MISSING | No budget entity |
+| P&L by department | ❌ MISSING | No multi-dimensional reporting |
+| Analytic dimension in COA | ❌ MISSING | No department field on journal entries |
+| Department head | ❌ MISSING | No manager assignment |
+| Branch/department distinction | ❌ MISSING | Branch tracked as separate entity, not linked |
 
-| # | Gap | Law Reference | Impact |
-|---|-----|---------------|--------|
-| BG-01 | No Invoice entity — cannot record sales/purchase invoices | TT 99/2025/TT-BTC dien 15, 16 | Cannot fulfill legal invoice recording obligation |
-| BG-02 | No Payment entity — cannot record receipts/disbursements | TT 99/2025/TT-BTC dien 17, 18 | Cash flow tracking impossible; bank reconciliation breaks |
-| BG-03 | No customer/supplier master data with tax code tracking | Luat Quan ly thue 38/2019 dien 30 | Cannot issue e-invoices per ND 254/2026/ND-CP |
-| BG-04 | No debt aging — cannot calculate bad debt provisions | VAS 18, TT 48/2019/TT-BTC | Financial statements non-compliant; provision omitted |
-| BG-05 | No AR/AP offset or reconciliation | VAS 01 matching principle | Inter-company offsets impossible; statements unreliable |
+### 5 Blocking Gaps (cannot deploy without)
 
-### Effort Estimate
+| # | Gap | Regulatory Reference | Impact |
+|---|---|---|---|
+| BG-D01 | No Department entity definition | TT 53/2006 Mục I.4 — định nghĩa trung tâm chi phí | Cannot track costs by department — management accounting non-functional |
+| BG-D02 | No user-department assignment | TT 99/2025 Điều 3 — Quy chế quản trị nội bộ | Cannot enforce department-level access control |
+| BG-D03 | No cost allocation mechanism | TT 53/2006; Thông tư 99 | Cannot distribute shared costs to departments — departmental P&L is wrong |
+| BG-D04 | No department field on journal entries | TT 99/2025 Điều 11 (analytic dimension) | Cannot filter/report transactions by department |
+| BG-D05 | No budget per department | TT 99/2025 — Kiểm soát nội bộ | Cannot enforce spending limits per department |
 
-**14–20 weeks** for 1 senior backend + 1 frontend developer to reach PROD readiness:
+### 10 Major Gaps (blocking full utility)
 
-- **Phase 1** (Weeks 1–5): Core entities (Customer, Vendor, Invoice, Payment) + CRUD endpoints
-- **Phase 2** (Weeks 6–10): Aging, provisions, reconciliation, statements
-- **Phase 3** (Weeks 11–14): GL integration, e-invoice interface, multi-currency
-- **Phase 4** (Weeks 15–20): Reporting, batch operations, month-end close automation
+| # | Gap | Severity |
+|---|---|---|
+| MG-D01 | No department hierarchy (tree structure) | High |
+| MG-D02 | No department type (CostCenter / ProfitCenter / InvestmentCenter) | High |
+| MG-D03 | No department head assignment | Medium |
+| MG-D04 | No department-level P&L reporting | High |
+| MG-D05 | No multi-period cost comparison by dept | Medium |
+| MG-D06 | No integration with Chart of Accounts (salary cost mapping) | High |
+| MG-D07 | No integration with Budget module (Ngân sách) | High |
+| MG-D08 | No department-level balance sheet (for investment centres) | Low |
+| MG-D09 | No inter-department transfer tracking (điều chuyển nội bộ) | Medium |
+| MG-D10 | No Quy chế hạch toán kế toán generation | Low |
 
 ---
 
-## 2. Module Architecture Proposal
+## 2. Regulatory Compliance Index
 
-### 2.1 Entity Model
+| Document | Status | Key Department-Related Requirements | Current Compliance |
+|---|---|---|---|
+| **TT 53/2006/TT-BTC** (Kế toán quản trị) | Active since 2006 | Định nghĩa trung tâm chi phí, trung tâm trách nhiệm; phương pháp phân bổ chi phí; tổ chức bộ máy KTQT | ❌ MISSING |
+| **TT 99/2025/TT-BTC** (Chế độ kế toán DN) | Active from 01/01/2026 | Điều 3: Quy chế quản trị nội bộ phân định trách nhiệm bộ phận. Điều 11: Tự chủ mở TK cấp 2/3 | ❌ MISSING — no dept integration |
+| **TT 133/2016/TT-BTC** (SME accounting) | Active | Điều 9: Đơn vị hạch toán phụ thuộc — yêu cầu phân cấp hạch toán cho chi nhánh | ❌ MISSING — no dependent unit accounting |
+| **Luật Kế toán 88/2015** | Active | Điều 4: Kế toán quản trị. Điều 39: Kiểm soát nội bộ. Điều 10: Đơn vị kế toán | ❌ PARTIAL — `enableDepartmentManagement` field only |
+| **IFRS 8** (Segment Reporting) | Voluntary for SMEs | Operating segment definition, CODM approach, 10% thresholds | ❌ MISSING — no optional segment reporting |
+| **VAS 28** (Báo cáo bộ phận) | Voluntary for SMEs | Primary/secondary segment structure | ❌ MISSING — no optional segment reporting |
+| **TT 53** — Phương pháp phân bổ | Active since 2006 | Direct, Step-Down, Reciprocal | ❌ MISSING — no allocation engine |
+
+---
+
+## 3. Current State Analysis
+
+### 3.1 Current Data Model
 
 ```
-Customer (Khach hang)                  Vendor (Nha cung cap)
-├── Id (string/Guid)                   ├── Id (string/Guid)
-├── Code (string, unique)              ├── Code (string, unique)
-├── Name (string, 400)                 ├── Name (string, 400)
-├── TaxCode (TaxCode value object)     ├── TaxCode (TaxCode value object)
-├── Address (string, 500)              ├── Address (string, 500)
-├── Phone (string, 20)                 ├── Phone (string, 20)
-├── Email (string, 256)                ├── Email (string, 256)
-├── ContactPerson (string, 200)        ├── ContactPerson (string, 200)
-├── PaymentTerms (enum)                ├── PaymentTerms (enum)
-├── CreditLimit (Money)                ├── BankAccount (string, 50)
-├── OpeningBalance (Money)             ├── OpeningBalance (Money)
-├── IsActive (bool)                    ├── IsActive (bool)
-└── CreatedAt/UpdatedAt                └── CreatedAt/UpdatedAt
-
-Invoice (Hoa don)                      InvoiceLine (Chi tiet hoa don)
-├── Id (string/Guid)                   ├── Id (string/Guid)
-├── InvoiceNumber (string, unique)     ├── InvoiceId (string FK)
-├── InvoiceType (Sale | Purchase)      ├── Description (string, 500)
-├── ReferenceType                      ├── Quantity (number)
-│   (Original | Adjustment | Debit)    ├── UnitPrice (Money)
-├── Customer/Vendor Id (string FK)     ├── TaxRate (number, 0-10)
-├── InvoiceDate (Date)                 ├── TaxAmount (Money)
-├── DueDate (Date)                     ├── LineTotal (Money)
-├── CurrencyCode (string, default VND) └── SortOrder (int)
-├── ExchangeRate (number?)
-├── SubTotal (Money)
-├── TaxTotal (Money)
-├── TotalAmount (Money)
-├── PaidAmount (Money)
-├── BalanceDue (Money) -- computed
-├── Status (Draft | Posted | Paid | Partial | Cancelled | Reversed)
-├── PostedAt (Date?)
-├── ApprovedBy (string?)
-└── GLEntryId (string FK?) -- link to journal entry
-
-Payment (Phieu thu/chi)
-├── Id (string/Guid)
-├── VoucherNumber (string, unique)
-├── PaymentType (Receipt | Disbursement)
-├── Customer/Vendor Id (string FK)
-├── PaymentDate (Date)
-├── CurrencyCode (string, default VND)
-├── ExchangeRate (number?)
-├── TotalAmount (Money)
-├── PaymentMethod (Cash | BankTransfer | Cheque | CreditCard)
-├── BankAccountId (string?)
-├── Reference (string?) -- e.g., cheque number
-├── Status (Draft | Posted | Cancelled)
-├── ApprovedBy (string?)
-├── PostedAt (Date?)
-└── GLEntryId (string FK?)
-
-InvoicePaymentAllocation (Phan bo thanh toan)
-├── Id (string/Guid)
-├── PaymentId (string FK)
-├── InvoiceId (string FK)
-├── AllocatedAmount (Money)
-└── AllocatedAt (Date)
-
-DebtAgingSummary (view/query -- not persisted)
-├── Customer/Vendor Id
-├── Bucket_0_30 (Money)
-├── Bucket_31_60 (Money)
-├── Bucket_61_90 (Money)
-├── Bucket_91_180 (Money)
-├── Bucket_Over_180 (Money)
-└── TotalDue (Money)
-
-BadDebtProvision (Du phong)
-├── Id (string/Guid)
-├── CustomerId (string FK)
-├── ProvisionDate (Date)
-├── AgingBucket (int)
-├── OutstandingBalance (Money)
-├── ProvisionRate (number %)
-├── ProvisionAmount (Money)
-├── JournalEntryId (string FK?)
-├── Status (Draft | Posted | Reversed)
-└── Period (string YYYY-MM)
+CompanySettings (domain/entities/CompanySettings.ts)
+├── enableDepartmentManagement (boolean, default true)  ← ONLY existing field
+└── [no other department-related fields or entities]
 ```
 
-### 2.2 Repository Interfaces
+### 3.2 What Exists
 
-| Repository | Methods |
-|------------|---------|
-| `ICustomerRepository` | getById, getByTaxCode, getAll, save, update, softDelete |
-| `IVendorRepository` | getById, getByTaxCode, getAll, save, update, softDelete |
-| `IInvoiceRepository` | getById, getByNumber, getByCustomer/Vendor, getOverdue, getAgingSummary, save, update |
-| `IPaymentRepository` | getById, getByVoucherNumber, getByCustomer/Vendor, getAllForPeriod, save, update |
-| `IDebtAgingRepository` | getAgingForCustomer, getAgingForVendor, getAgingSummary (read-model) |
+| Component | Status | Notes |
+|---|---|---|
+| `enable_department_management` on CompanySettings | ✅ EXISTS | Boolean toggle, default `true` |
+| DB schema has `enable_department_management` column | ✅ EXISTS | Created in schema migration, integer default 1 |
 
-### 2.3 Application Services
+### 3.3 What Is Missing (Complete)
 
-| Service | Key Operations |
-|---------|---------------|
-| `ArService` | recordInvoice, recordReceipt, allocatePayment, getCustomerAging, getCustomerStatement, createProvision, writeOffBadDebt |
-| `ApService` | recordInvoice, recordPayment, allocatePayment, getVendorAging, getVendorStatement, offsetArAp |
-
-### 2.4 GL Integration Contract
-
-Dept module posts to GL via `JournalEntryService`:
-
-| Transaction | Debit | Credit |
-|-------------|-------|--------|
-| Sales invoice | TK 131 (Customer) | TK 511 (Revenue), TK 3331 (VAT) |
-| Receipt from customer | TK 111/112 (Cash/Bank) | TK 131 (Customer) |
-| Purchase invoice | TK 152/156/641/642 (Expense) | TK 331 (Supplier) |
-| Payment to supplier | TK 331 (Supplier) | TK 111/112 (Cash/Bank) |
-| Bad debt provision | TK 642 (Expense) | TK 2293 (Provision) |
-| Bad debt write-off | TK 2293 (Provision) | TK 131 (Customer) |
-| AR/AP offset | TK 331 (Supplier) | TK 131 (Customer) |
+| Domain Area | Current State | Target State |
+|---|---|---|
+| Department definition | None | Entity with id, name, code, type, parentId, managerId, status |
+| Department hierarchy | None | Tree (parent-child), unlimited depth |
+| Department type | None | CostCenter, ProfitCenter, InvestmentCenter, SupportCenter |
+| Cost allocation | None | Direct, Step-Down, Reciprocal methods |
+| Budget | None | Budget per department per period, budget vs actual |
+| Departmental P&L | None | Multi-dimensional reporting (dept × account × period) |
+| User-department | None | Each user assigned to 1..N departments; primary department |
+| Analytic dimension | None | Department field on journal entries, invoices, expenses |
+| COA integration | None | Salary cost → department mapping; expense tracking by dept |
+| Inter-department transfers | None | Internal transfer tracking (điều chuyển nội bộ) |
+| Quy chế hạch toán | None | Auto-generate internal regulations for department-based accounting |
+| Department seal/head | None | Manager assignment, digital signing scope |
 
 ---
 
-## 3. Regulatory Compliance Index
+## 4. Target Data Model
 
-| Document | Status | Key Dept-Related Requirements | Current Compliance |
-|----------|--------|-----------------------------|-------------------|
-| TT 99/2025/TT-BTC (Che do ke toan DN) | Active from 01/01/2026 | TK 131, 331 format; mau so chi tiet cong no; bang tong hop cong no; mau phieu thu/chi | **Missing** (no entities) |
-| TT 133/2016/TT-BTC (SME accounting) | Active (optional) | Simplified TK 131, 331; reduced report templates for SMEs | **Missing** |
-| VAS 01 — Chuan muc chung | Active | Ghi nhan cong no theo nguyen tac co so don vi tien te; consistent | **Missing** |
-| VAS 10 — Ty gia hoi doai | Active | AR/AP ngoai te ghi nhan theo ty gia thuc te tai thoi diem phat sinh | **Missing** |
-| VAS 18 — Du phong phai thu kho doi | Active | Trich lap du phong theo tuoi no; xu ly no kho doi | **Missing** |
-| TT 48/2019/TT-BTC (Trich lap du phong) | Active | Ty le trich lap theo khung tuoi no; dieu kien duoc khau tru thue | **Missing** |
-| Luat Ke toan 88/2015/QH13 — Dieu 26 | Active | Chung tu ke toan bat buoc: phieu thu, phieu chi | **Missing** |
-| Luat Ke toan 88/2015/QH13 — Dieu 41 | Active | Luu tru chung tu 5 nam toi thieu | **Missing** |
-| ND 254/2026/ND-CP (Hoa don dien tu) | Active from 01/07/2026 | Hoa don ban hang phai la hoa don dien tu; co ma cua co quan thue | **Missing** |
-| ND 23/2025/ND-CP (Chu ky so) | Active | Chu ky so tren hoa don dien tu; yeu cau ky so tren chung tu thanh toan | **Missing** |
-| Luat Quan ly thue 38/2019 | Active | Ma so thue tren hoa don; bao cao thue GTGT dinh ky | **Missing** |
+### 4.1 Department Entity
 
----
+```
+Department (Aggregate branch of Company aggregate)
+│
+├── Core
+│   ├── id (UUID)
+│   ├── companyId (UUID, FK → companies.id)
+│   ├── code (string, 20) — mã phòng ban
+│   ├── name (string, 200) — tên phòng ban
+│   ├── nameEnglish (string?, 200)
+│   ├── departmentType (DepartmentType enum)
+│   ├── parentId (UUID?, self-ref FK)
+│   ├── path (string, hierarchy materialized path: /root/parent/child)
+│   ├── depth (int)
+│   ├── sortOrder (int)
+│   │
+│   ├── Manager
+│   │   ├── managerUserId (UUID?, FK → users.id)
+│   │   ├── managerTitle (string?, 100) — chức danh quản lý
+│   │   └── deputyManagerUserId (UUID?, FK → users.id)
+│   │
+│   ├── Cost Allocation Defaults
+│   │   ├── defaultSalaryAccount (string?, TK mặc định cho lương)
+│   │   ├── defaultExpenseAccount (string?, TK mặc định cho chi phí)
+│   │   └── costAllocationMethod (CostAllocationMethod enum?)
+│   │
+│   ├── Budget Settings
+│   │   ├── hasBudgetControl (boolean)
+│   │   ├── budgetAlertThreshold (decimal?, % threshold)
+│   │   └── budgetControlLevel (enum: Soft | Hard | None)
+│   │
+│   ├── Status & Lifecycle
+│   │   ├── status (DepartmentStatus enum)
+│   │   ├── effectiveDate (date, ngày thành lập)
+│   │   └── dissolutionDate (date?, ngày giải thể)
+│   │
+│   └── Audit
+│       ├── createdAt (DateTime)
+│       ├── updatedAt (DateTime?)
+│       ├── createdByUserId (UUID)
+│       └── updatedByUserId (UUID?)
+│
+├── Department Type (enum)
+│   ├── CostCenter = 1        — Trung tâm chi phí (chịu trách nhiệm chi phí)
+│   ├── ProfitCenter = 2      — Trung tâm lợi nhuận (chịu trách nhiệm DT-CP)
+│   ├── InvestmentCenter = 3  — Trung tâm đầu tư (chịu trách nhiệm LN + vốn)
+│   └── SupportCenter = 4     — Trung tâm phụ trợ (phục vụ các trung tâm khác)
+│
+├── Department Status (enum)
+│   ├── Active = 1      — Đang hoạt động
+│   ├── Inactive = 2    — Ngừng hoạt động
+│   └── Dissolved = 3   — Đã giải thể
+│
+├── CostAllocationMethod (enum)
+│   ├── Direct = 1      — Phân bổ trực tiếp
+│   ├── StepDown = 2    — Phân bổ bậc thang
+│   └── Reciprocal = 3  — Phân bổ đối ứng
+│
+├── BudgetControlLevel (enum)
+│   ├── None = 1     — Không kiểm soát
+│   ├── Soft = 2     — Cảnh báo, không chặn
+│   └── Hard = 3     — Chặn khi vượt ngân sách
+│
+└── UserDepartment (many-to-many)
+    ├── userId (UUID, FK → users.id)
+    ├── departmentId (UUID, FK → departments.id)
+    ├── isPrimary (boolean) — phòng ban chính
+    ├── jobTitle (string?, 200)
+    ├── isActive (boolean)
+    └── assignedAt (DateTime)
+```
 
-## 4. Integration Points
+### 4.2 Supporting Entities
 
-| Module | Integration | Data Flow |
-|--------|-------------|-----------|
-| GL (General Ledger) | JournalEntryService | Every invoice/payment creates journal entries to TK 131/331 and contra accounts |
-| Tax (Thue) | Invoice data for VAT declaration | Sales invoices feed into GTGT output; purchase invoices feed into GTGT input |
-| Company (Doanh nghiep) | Company context, settings | AccountingRegime (TT99/TT133) determines chart of accounts used for GL posting |
-| Cash/Bank (Tien mat/Tien gui) | Payment settlement | Receipts/disbursements update cash/bank balances |
-| Report (Bao cao) | AR aging, AP aging, statements | Reporting module sources debt aging data for financial statements |
-| E-Invoice (Hoa don dien tu) | Invoice issuance | Future: hoa don dien tu co ma cua co quan thue (post-MVP) |
+```
+CostAllocationRule
+├── id (UUID)
+├── companyId (UUID)
+├── ruleName (string, 200)
+├── fromDepartmentId (UUID, FK → departments.id)
+├── toDepartmentId (UUID, FK → departments.id) — nullable for all
+├── allocationMethod (CostAllocationMethod)
+├── allocationBasis (AllocationBasis enum: Headcount | Revenue | Area | Custom | Equal)
+├── allocationPercentage (decimal, 5.2) — khi ALLOCATION_BASIS = Custom
+├── accountCodes (string[]) — TK được phân bổ (trống = tất cả)
+├── effectiveFrom (date)
+├── effectiveTo (date?)
+├── isActive (boolean)
+└── createdAt/updatedAt
 
----
+BudgetPlan
+├── id (UUID)
+├── companyId (UUID)
+├── departmentId (UUID)
+├── fiscalYear (int)
+├── period (int, 1-12 or 0 for annual)
+├── accountCode (string, TK ngân sách)
+├── plannedAmount (decimal, 18,2)
+├── actualAmount (decimal, 18,2) — auto-updated from transactions
+├── remainingAmount (decimal, 18,2) — planned - actual
+├── notes (string?)
+├── status (BudgetStatus enum: Draft | Approved | Locked)
+└── createdAt/updatedAt
 
-## 5. Security & Segregation of Duties
+DepartmentTransfer
+├── id (UUID)
+├── companyId (UUID)
+├── transferDate (date)
+├── fromDepartmentId (UUID)
+├── toDepartmentId (UUID)
+├── itemType (string: CCDC | TSCD | Inventory | Other)
+├── itemDescription (string)
+├── quantity (decimal)
+├── unitValue (decimal, 18,2)
+├── totalValue (decimal, 18,2)
+├── voucherRef (string?, chứng từ gốc)
+├── reason (string?)
+├── approvedByUserId (UUID?)
+└── createdAt/updatedAt
+```
 
-### 5.1 Roles with Dept Permissions
+### 4.3 Entity Relationship Diagram
 
-| Role ID | Role Name (VN) | Dept Access |
-|---------|----------------|-------------|
-| `ke-toan-cong-no` | Ke toan cong no | Create/edit invoices and payments (AP + AR) |
-| `ke-toan-truong` | Ke toan truong | Approve invoices, approve payments, review aging |
-| `ke-toan-tong-hop` | Ke toan tong hop | View all, month-end closing |
-| `ke-toan-vien` | Ke toan vien | Data entry only (create draft invoices) |
-| `thu-quy` | Thu quy | Record receipts/disbursements (physical custody) |
-| `giam-doc` | Giam doc | View reports, approve large payments |
-| `kiem-soat` | Kiem soat vien | Read-only review of all dept data |
-
-### 5.2 SoD Rules (via existing SoDConflictMatrix)
-
-| Rule | Constraint | Enforced By |
-|------|-----------|-------------|
-| Creator != Approver | Invoice creator cannot approve same invoice | SoDConflictMatrix.checkCreatorApprover |
-| AR Clerk != Cash Handler | ke-toan-cong-no who records AR cannot also record receipt as thu-quy | SoDConflictMatrix.checkCashierRecords |
-| AP Clerk != Approver | ke-toan-cong-no who creates AP invoice cannot approve payment | SoDConflictMatrix.checkCreatorApprover |
-| System Admin != Transaction | he-thong cannot create/post invoices or payments | SoDConflictMatrix.checkSystemAdminAccounting |
-
-### 5.3 Permissions to Add
-
-| Permission | Description | Assigned To |
-|------------|-------------|-------------|
-| `dept:invoice:create` | Create draft invoices | ke-toan-cong-no, ke-toan-vien |
-| `dept:invoice:approve` | Approve/post invoices | ke-toan-truong |
-| `dept:payment:create` | Create draft payments | ke-toan-cong-no, thu-quy |
-| `dept:payment:approve` | Approve payments | ke-toan-truong, giam-doc |
-| `dept:aging:view` | View debt aging reports | ke-toan-cong-no, ke-toan-truong, ke-toan-tong-hop, giam-doc |
-| `dept:provision:create` | Create bad debt provisions | ke-toan-truong |
-| `dept:reconcile` | Perform reconciliation | ke-toan-cong-no, ke-toan-truong |
-| `dept:offset` | Perform AR/AP offset | ke-toan-truong |
-| `dept:writeoff` | Write off bad debts | ke-toan-truong (with giam-doc approval) |
-
----
-
-## 6. Regulatory & Vietnamese Context Notes
-
-### 6.1 TK 131 — Phai thu cua khach hang (AR)
-
-Per TT 99/2025/TT-BTC, TK 131 tracks all amounts receivable from customers:
-- Chi tiet theo tung khach hang (per-customer detail required)
-- Chi tiet theo tung hop dong kinh te (per-contract detail recommended)
-- Foreign currency AR tracked separately with exchange rate
-- TK 131 duoc phan loai: 131A (trong nuoc), 131B (nuoc ngoai)
-
-### 6.2 TK 331 — Phai tra cho nguoi ban (AP)
-
-Per TT 99/2025/TT-BTC, TK 331 tracks all amounts payable to suppliers:
-- Chi tiet theo tung nha cung cap (per-supplier detail required)
-- Foreign currency AP tracked with exchange rate
-- Doanh nghiep khong duoc bu tru so du TK 131/331 tren bao cao tai chinh (no netting on balance sheet per VAS)
-
-### 6.3 Bad Debt Provision Periods
-
-Per TT 48/2019/TT-BTC, bad debt provision calculation occurs:
-- At year-end (cuoi nam tai chinh) — mandatory
-- At mid-year (giua nam) — optional, recommended for listed companies
-- Additional provision when customer shows signs of insolvency
-
-### 6.4 E-Invoice Mandate (ND 254/2026/ND-CP)
-
-From 01/07/2026, all sales invoices must be electronic invoices with tax authority codes. The Dept module must integrate with the e-invoice system for:
-- Invoice issuance (phat hanh hoa don)
-- Invoice cancellation (huy hoa don)
-- Invoice adjustment (dieu chinh hoa don)
-
----
-
-## 7. Implementation Phases
-
-### Phase 1: Core Entities & CRUD (Weeks 1–5)
-
-| Week | Deliverable | Dependencies |
-|------|-------------|--------------|
-| W1 | Customer entity + repository + controller | Money value object (exists) |
-| W1 | Vendor entity + repository + controller | W1 Customer pattern |
-| W2 | Invoice entity + InvoiceLine entity | W1 Customer, Vendor |
-| W2 | Invoice CRUD endpoints (draft, save) | W2 entity |
-| W3 | Invoice approval workflow (post to GL) | GL JournalEntryService |
-| W3 | Payment entity + repository | W1, W2 |
-| W4 | Payment CRUD + approval + GL posting | W3 |
-| W4 | InvoicePaymentAllocation logic | W3, W4 |
-| W5 | Database migrations + seed data | All above |
-| W5 | Integration tests for core flows | All above |
-
-### Phase 2: Aging, Provision, Reconciliation (Weeks 6–10)
-
-| Week | Deliverable | Dependencies |
-|------|-------------|--------------|
-| W6 | AR aging query + report | Phase 1 |
-| W6 | AP aging query + report | Phase 1 |
-| W7 | Customer statement generation | W6 |
-| W7 | Supplier statement generation | W6 |
-| W8 | Bad debt provision calculation engine | W6 aging |
-| W8 | Bad debt provision GL posting | W8 |
-| W9 | Customer reconciliation | W7, W8 |
-| W9 | Supplier reconciliation | W7, W8 |
-| W10 | Write-off workflow | W8 |
-
-### Phase 3: GL Integration, Multi-Currency, E-Invoice (Weeks 11–14)
-
-| Week | Deliverable | Dependencies |
-|------|-------------|--------------|
-| W11 | Full GL auto-posting for all dept transactions | JournalEntry service |
-| W11 | Foreign currency AR/AP (VAS 10) | Money value object |
-| W12 | Exchange rate difference handling | W11 |
-| W12 | AR/AP offset (bu tru cong no) | Phase 2 |
-| W13 | E-invoice integration contract (interface) | ND 254/2026 |
-| W13 | Invoice XML export for tax authority | W13 |
-| W14 | Tax declaration data feed (GTGT) | Phase 1, W13 |
-
-### Phase 4: Reporting, Batch, Month-End (Weeks 15–20)
-
-| Week | Deliverable | Dependencies |
-|------|-------------|--------------|
-| W15 | So chi tiet cong no phai thu (Mau S03b-DN) | Phase 2 |
-| W15 | So chi tiet cong no phai tra (Mau S04-DN) | Phase 2 |
-| W16 | Bang tong hop cong no phai thu | W15 |
-| W16 | Bang tong hop cong no phai tra | W15 |
-| W17 | Batch invoice import/export (CSV, XML) | Phase 1 |
-| W17 | Batch payment processing | Phase 1 |
-| W18 | Month-end closing automation | All phases |
-| W18 | AR/AP dashboard | W15-W17 |
-| W19 | Performance optimization, indexes | W18 |
-| W19 | Security audit (SoD enforcement) | All |
-| W20 | Documentation, training materials | All |
+```
+Company (root)
+  │
+  ├──1:N─── Department
+  │           ├── self-ref (parentId → Department.id) — hierarchy
+  │           ├── 1:N─── UserDepartment (→ User)
+  │           ├── 1:N─── BudgetPlan
+  │           ├── 1:N─── CostAllocationRule (from/tos)
+  │           └── 1:N─── DepartmentTransfer (from/to)
+  │
+  ├──1:1─── CompanySettings
+  │           └── enableDepartmentManagement (boolean)
+  │
+  └── [All scoped entities: JournalEntry, Invoice, Expense, ...]
+              └── departmentId (UUID?, optional)
+```
 
 ---
 
-## 8. Related Documents
+## 5. Functional Requirements
+
+### FR-D01: Department CRUD
+
+| ID | Requirement | Priority | Regulation |
+|---|---|---|---|
+| FR-D01.1 | System SHALL allow creating departments with code, name, type, parent | P0 | TT 53/2006 |
+| FR-D01.2 | System SHALL enforce unique department code within a company | P0 | TT 53/2006 |
+| FR-D01.3 | System SHALL support unlimited tree hierarchy (parent-child) | P1 | Thực tiễn (MISA 5 cấp) |
+| FR-D01.4 | System SHALL maintain materialized path for efficient subtree queries | P1 | Best practice |
+| FR-D01.5 | System SHALL allow deactivating departments (soft delete) | P1 | TT 53/2006 |
+| FR-D01.6 | System SHALL block deletion of departments with transaction history | P1 | Data integrity |
+| FR-D01.7 | System SHALL display department tree in explorer panel | P1 | UX standard |
+
+### FR-D02: Department Type Classification
+
+| ID | Requirement | Priority | Regulation |
+|---|---|---|---|
+| FR-D02.1 | System SHALL support CostCenter, ProfitCenter, InvestmentCenter, SupportCenter | P0 | TT 53/2006 |
+| FR-D02.2 | InvestmentCenters SHALL track capital employed and ROI | P2 | TT 53/2006 suy diễn |
+| FR-D02.3 | ProfitCenters SHALL have department-level P&L | P0 | TT 53/2006 |
+| FR-D02.4 | SupportCenters SHALL be allocable to other centers | P1 | TT 53/2006 |
+| FR-D02.5 | System SHALL restrict allowable parent types (ProfitCenter cannot be child of CostCenter) | P2 | Best practice |
+
+### FR-D03: User-Department Assignment
+
+| ID | Requirement | Priority | Regulation |
+|---|---|---|---|
+| FR-D03.1 | System SHALL assign each user to 1..N departments | P0 | TT 99/2025 Điều 3 |
+| FR-D03.2 | User SHALL have exactly 1 primary department | P0 | TT 99/2025 Điều 3 |
+| FR-D03.3 | User SHALL inherit default department context when creating transactions | P1 | UX standard |
+| FR-D03.4 | System SHALL support department-scoped data access (optional) | P2 | Best practice |
+| FR-D03.5 | System SHALL track user job title within each department | P1 | Nhân sự |
+
+### FR-D04: Cost Allocation
+
+| ID | Requirement | Priority | Regulation |
+|---|---|---|---|
+| FR-D04.1 | System SHALL support Direct allocation method (trực tiếp) | P0 | TT 53/2006 Mục IV |
+| FR-D04.2 | System SHALL support Step-Down allocation method (bậc thang) | P1 | TT 53/2006 |
+| FR-D04.3 | System SHALL support Reciprocal allocation method (đối ứng) | P2 | TT 53/2006 |
+| FR-D04.4 | System SHALL support allocation bases: Headcount, Revenue, Area, Equal, Custom % | P0 | Thực tiễn |
+| FR-D04.5 | System SHALL allow filtering allocation rules by account codes (TK) | P1 | TT 53/2006 |
+| FR-D04.6 | System SHALL execute allocation in order for Step-Down method | P1 | TT 53/2006 |
+| FR-D04.7 | System SHALL generate allocation journal entries automatically | P0 | TT 99/2025 |
+
+### FR-D05: Budget Management
+
+| ID | Requirement | Priority | Regulation |
+|---|---|---|---|
+| FR-D05.1 | System SHALL allow setting budget by department × account × period | P0 | Kiểm soát nội bộ |
+| FR-D05.2 | System SHALL auto-calculate actual from transactions posted to department | P0 | TT 99/2025 |
+| FR-D05.3 | System SHALL display budget vs actual comparison | P0 | Quản trị |
+| FR-D05.4 | System SHALL support Soft (warn) and Hard (block) budget control | P1 | Kiểm soát nội bộ |
+| FR-D05.5 | System SHALL support budget lock after approval | P2 | Kiểm soát nội bộ |
+| FR-D05.6 | System SHALL support budget revision with audit trail | P2 | Kiểm soát nội bộ |
+
+### FR-D06: Departmental Reporting
+
+| ID | Requirement | Priority | Regulation |
+|---|---|---|---|
+| FR-D06.1 | System SHALL generate P&L by department (Báo cáo KQKD theo phòng ban) | P0 | TT 53/2006 |
+| FR-D06.2 | System SHALL generate Cost report by department (chi tiết theo TK) | P0 | TT 53/2006 |
+| FR-D06.3 | System SHALL generate Budget vs Actual by department | P0 | Kiểm soát nội bộ |
+| FR-D06.4 | System SHALL generate Multi-period comparison by department | P1 | Quản trị |
+| FR-D06.5 | System SHALL support drill-down from department total to individual vouchers | P1 | UX standard |
+| FR-D06.6 | System SHALL optionally generate IFRS 8-style segment report | P2 | Best practice |
+| FR-D06.7 | System SHALL allow export of department reports to Excel/PDF | P1 | UX standard |
+
+### FR-D07: Inter-Department Transfers
+
+| ID | Requirement | Priority | Regulation |
+|---|---|---|---|
+| FR-D07.1 | System SHALL support transfer of CCDC/tools between departments | P1 | Thực tiễn MISA |
+| FR-D07.2 | System SHALL track transfer history with values | P2 | Thực tiễn MISA |
+| FR-D07.3 | System SHALL generate internal transfer vouchers | P2 | Thực tiễn MISA |
+
+### FR-D08: Integration Points
+
+| ID | Requirement | Priority | Notes |
+|---|---|---|---|
+| FR-D08.1 | Journal entries SHALL carry optional departmentId field | P0 | Core integration |
+| FR-D08.2 | Expense vouchers SHALL carry departmentId | P0 | Core integration |
+| FR-D08.3 | Salary computation SHALL respect employee's department | P1 | HR integration |
+| FR-D08.4 | Fixed asset tracking SHALL include department assignment | P1 | Asset integration |
+| FR-D08.5 | Inventory transactions SHALL support department dimension | P2 | Inventory integration |
+| FR-D08.6 | Chart of Accounts SHALL allow setting default department per account | P2 | COA integration |
+
+---
+
+## 6. Gap Analysis Matrix
+
+| Gap ID | Description | Severity | Current State | Target State | Regulation | Effort |
+|---|---|---|---|---|---|---|
+| G-D01 | No Department entity | **BLOCKING** | Missing | Entity with code, name, type, parent, manager, status | TT 53/2006 | 5d |
+| G-D02 | No department hierarchy | **BLOCKING** | Missing | Tree with materialized path, unlimited depth | TT 53/2006 | 3d |
+| G-D03 | No user-department assignment | **BLOCKING** | Missing | UserDepartment many-to-many with primary flag | TT 99/2025 Điều 3 | 3d |
+| G-D04 | No cost allocation | **BLOCKING** | Missing | Direct + Step-Down + Reciprocal allocation engine | TT 53/2006 Mục IV | 10d |
+| G-D05 | No budget by department | **BLOCKING** | Missing | BudgetPlan entity with per-period, per-TK tracking | Kiểm soát nội bộ | 8d |
+| G-D06 | No department field on journal entries | **BLOCKING** | Missing | departmentId column on all transaction entities | TT 99/2025 Điều 11 | 3d |
+| G-D07 | No P&L by department | High | Missing | Multi-dimensional report (dept × account × period) | TT 53/2006 | 8d |
+| G-D08 | No cost allocation rules UI | High | Missing | Rule CRUD with allocation method, basis, account filter | TT 53/2006 | 5d |
+| G-D09 | No budget vs actual reporting | High | Missing | Comparison report with drill-down | Kiểm soát nội bộ | 5d |
+| G-D10 | No department type classification | Medium | Missing | 4 types: Cost, Profit, Investment, Support | TT 53/2006 | 2d |
+| G-D11 | No department head assignment | Medium | Missing | ManagerUserId field + deputy | TT 99/2025 Điều 3 | 1d |
+| G-D12 | No inter-department transfers | Medium | Missing | Transfer entity with value tracking | Thực tiễn MISA | 5d |
+| G-D13 | No COA-department mapping | Medium | Missing | Default expense/salary account per department | Thực tiễn | 3d |
+| G-D14 | No Quy chế hạch toán generation | Low | Missing | Auto-generate internal regulations | TT 99/2025 Điều 9 | 3d |
+| G-D15 | No IFRS 8 segment report | Low | Missing | Optional segment reporting | Best practice | 5d |
+| G-D16 | No department dashboard | Medium | Missing | Department overview with KPIs | Quản trị | 5d |
+
+### Effort Summary
+
+| Category | Count | Total Effort |
+|---|---|---|
+| Blocking | 6 | ~32 days |
+| High | 3 | ~18 days |
+| Medium | 5 | ~14 days |
+| Low | 2 | ~8 days |
+| **Total** | **16** | **~72 days** (parallelizable to 5-6 weeks) |
+
+---
+
+## 7. PROD Readiness Criteria
+
+### 7.1 Must-Have (PROD Gate)
+
+| # | Criterion | Verification |
+|---|---|---|
+| P1 | Department entity with CRUD | Unit + integration tests |
+| P2 | Department hierarchy (tree) with materialized path | Integration tests (parent-child, depth, path) |
+| P3 | User-department assignment (1 user → N depts, 1 primary) | Integration tests |
+| P4 | Department field on all transaction entities (journal entries, expenses) | Schema migration + tests |
+| P5 | Cost allocation engine (Direct method minimum) | Unit tests + integration tests |
+| P6 | Budget by department × account × period | Integration tests |
+| P7 | P&L by department report | Integration test on report query |
+| P8 | Budget vs Actual report | Integration test on report query |
+| P9 | Department code unique within company | Integration test |
+| P10 | Cost allocation generates correct journal entries | Integration test (debit/credit check) |
+
+### 7.2 Nice-to-Have (Post-PROD)
+
+| # | Criterion | Priority |
+|---|---|---|
+| N1 | Step-Down allocation method | Phase 2 |
+| N2 | Reciprocal allocation method | Phase 2 |
+| N3 | Budget lock/revision workflow | Phase 2 |
+| N4 | IFRS 8 segment report | Phase 3 |
+| N5 | Inter-department transfer module | Phase 2 |
+| N6 | Department dashboard with KPIs | Phase 3 |
+| N7 | Quy chế hạch toán auto-generation | Phase 3 |
+| N8 | Department-scoped data access | Phase 3 |
+
+---
+
+## 8. Implementation Roadmap
+
+### Phase 1: Core Data Model + Foundation (Weeks 1-2)
+
+| Week | Deliverables | Dependencies |
+|---|---|---|
+| W1 | Department entity (code, name, type, parent, status) + DB migration | Company module |
+| W1 | Department tree hierarchy (parentId, path, depth, materialized path triggers) | W1 entity |
+| W1 | UserDepartment entity (many-to-many, primary, job title) | W1 entity + User module |
+| W2 | Department field on JournalEntry, Expense, Invoice entities | All transaction entities |
+| W2 | Department CRUD API endpoints | W1 complete |
+| W2 | Department tree explorer API | W1 hierarchy |
+| W2 | Unit + integration tests for all W1-W2 items | All |
+
+### Phase 2: Cost Allocation + Budget (Weeks 3-5)
+
+| Week | Deliverables | Dependencies |
+|---|---|---|
+| W3 | BudgetPlan entity + CRUD | Phase 1 complete |
+| W3 | Budget vs actual auto-calculation logic | Phase 1 + transaction dept field |
+| W3 | Budget control (Soft/Hard enforcement) | W3 budget |
+| W4 | CostAllocationRule entity + CRUD | Phase 1 complete |
+| W4 | Direct allocation method implementation | W4 rules |
+| W4 | Step-Down allocation method | W4 direct |
+| W5 | Reciprocal allocation (system of linear equations) | W4 step-down |
+| W5 | Allocation journal entry generation | W4-5 allocation engine |
+| W5 | Cost allocation schedule (periodic execution) | W5 allocation |
+
+### Phase 3: Reporting + Integration (Weeks 5-8)
+
+| Week | Deliverables | Dependencies |
+|---|---|---|
+| W5 | P&L by department report | Phase 2 complete |
+| W6 | Cost report by department (detail by account) | Phase 2 complete |
+| W6 | Budget vs actual report | Phase 2 complete |
+| W6 | Multi-period comparison report | Phase 2 complete |
+| W7 | Salary account mapping per department | HR module |
+| W7 | Fixed asset department tracking | Asset module |
+| W7 | CCDC transfer between departments | Phase 2 |
+| W8 | IFRS 8 segment report (optional) | Phase 3 reports |
+| W8 | Department dashboard | Phase 3 reports |
+| W8 | Quy chế hạch toán generator | Phase 3 complete |
+| W8 | Full test suite + documentation | All |
+
+### Key Risks
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Adding departmentId to all transaction entities creates migration complexity | Phase 1 delay | Make departmentId nullable; no NOT NULL constraint until Phase 2 |
+| Cost allocation mis-calculations cause incorrect P&L | Data integrity issue | Extensive integration tests with known test data; manual verification |
+| Reciprocal method requires solving linear equations — performance risk | Allocation slowdown | Cap iterations; use Gauss-Seidel approximation for large rule sets |
+| Budget control at transaction time adds latency | UX degradation | Async allocation; synchronous budget check only for Hard mode |
+| No existing module for analytic dimensions — architectural decision needed | Architecture refactor | Decide: segment in COA vs independent field. Recommendation: independent field (MISA pattern) |
+
+---
+
+## 9. Related Documents
 
 | Doc | Location |
-|-----|----------|
-| BRD — Dept Use Cases | `docs/brd/18-dept-use-cases.md` |
-| BRD — Dept Workflows | `docs/brd/19-dept-workflows.md` |
-| BRD — Dept Business Rules | `docs/brd/20-dept-business-rules.md` |
-| BRD — Dept Data Flows | `docs/brd/21-dept-data-flows.md` |
-| BRD — Dept Templates | `docs/brd/22-dept-templates.md` |
-| BRD — Dept User Journeys | `docs/brd/23-dept-user-journeys.md` |
-| GL JournalEntry | `server/src/domain/GeneralLedger/JournalEntry.ts` (planned) |
-| Money Value Object | `server/src/domain/valueObjects/Money.ts` |
-| SoDConflictMatrix | `server/src/domain/services/SoDConflictMatrix.ts` |
-| Role Definitions | `server/src/domain/entities/Role.ts` |
-| Domain Glossary | `docs/UBIQUITOUS_LANGUAGE.md` |
+|---|---|
+| BRD — Departments | `docs/brd/17-dept-module-brd.md` |
+| Use Cases — Departments | `docs/brd/18-dept-use-cases.md` |
+| Business Rules — Departments | `docs/brd/19-dept-business-rules.md` |
+| Data Flows — Departments | `docs/brd/20-dept-data-flows.md` |
+| Workflows — Departments | `docs/brd/21-dept-workflows.md` |
+| UI Templates — Departments | `docs/brd/22-dept-templates.md` |
+| User Journeys — Departments | `docs/brd/23-dept-user-journeys.md` |
+| Research — Department Regulations | `docs/research/department-accounting-regulations.md` |
+| Research — ERP Practices | `docs/research/department-erp-practices.md` |
+| Research — IFRS 8 Segment Reporting | `docs/research/ifrs8-segment-reporting.md` |
+| Luật Kế toán 88/2015 | Điều 3, 4, 10, 39 |
+| TT 53/2006/TT-BTC | Full text — Hướng dẫn Kế toán quản trị |
+| TT 99/2025/TT-BTC | Điều 3, 9, 11, 12, 18; Phụ lục II |
+| TT 133/2016/TT-BTC | Điều 9 |
 
 ---
 
-## 9. Appendix A: Vietnamese Accounting Terminology for Dept
+## 10. Appendix A: Key Vietnamese Domain Terms
 
-| VN Term | EN Translation | Account | Context |
-|---------|---------------|---------|---------|
-| Cong no phai thu | Accounts Receivable | TK 131 | Amounts owed by customers |
-| Cong no phai tra | Accounts Payable | TK 331 | Amounts owed to suppliers |
-| Phai thu khach hang | Customer receivables | TK 131 | Detail by customer |
-| Phai tra nguoi ban | Supplier payables | TK 331 | Detail by supplier |
-| Hoa don ban hang | Sales invoice | — | Invoice issued to customer |
-| Hoa don mua hang | Purchase invoice | — | Invoice received from supplier |
-| Phieu thu | Receipt voucher | — | Evidence of cash/bank receipt |
-| Phieu chi | Payment voucher | — | Evidence of cash/bank disbursement |
-| Du phong phai thu kho doi | Bad debt provision | TK 2293 | Estimated uncollectible amount |
-| No kho doi | Bad debt | — | Debt deemed uncollectible |
-| Bu tru cong no | AR/AP offset | — | Mutual settlement between parties |
-| Bang tuoi no | Aging schedule | — | Debt classification by overdue period |
-| So chi tiet cong no | Detailed debt ledger | — | Per-customer/supplier statement |
-| Chiet khau thanh toan | Payment discount | — | Discount for early payment |
-| Lai cham thanh toan | Late payment interest | — | Penalty for overdue payment |
+| VN Term | EN Translation | Context |
+|---|---|---|
+| Phòng ban | Department | Internal organisational unit |
+| Trung tâm chi phí | Cost center | Department responsible for costs only |
+| Trung tâm lợi nhuận | Profit center | Department responsible for revenue + costs |
+| Trung tâm đầu tư | Investment center | Department responsible for profit + capital employed |
+| Trung tâm trách nhiệm | Responsibility center | General term for any accountable unit |
+| Trung tâm phụ trợ | Support center | Department serving other departments (HR, IT, Accounting) |
+| Phân bổ chi phí | Cost allocation | Distributing shared costs to departments |
+| Phương pháp trực tiếp | Direct method | Simplest allocation method |
+| Phương pháp bậc thang | Step-down method | Sequential allocation |
+| Phương pháp đối ứng | Reciprocal method | Algebraic allocation (most accurate) |
+| Ngân sách phòng ban | Department budget | Planned spending per department |
+| Điều chuyển nội bộ | Internal transfer | Transferring assets between departments |
+| Mã phân tích | Analytic code | Independent coding dimension for management accounting |
+| Quy chế hạch toán kế toán | Internal accounting regulations | Required when deviating from standard charts |
+| Đơn vị hạch toán phụ thuộc | Dependent accounting unit | Branch with partial accounting autonomy |
+| Báo cáo bộ phận | Segment report | IFRS 8 / VAS 28 style |
+
+
+
