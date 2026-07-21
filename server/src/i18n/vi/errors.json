@@ -1,0 +1,15 @@
+{
+  "InvalidCredentialsError": "Thông tin đăng nhập không đúng",
+  "AccountDisabledError": "Tài khoản đã bị vô hiệu hóa",
+  "AccountLockedError": "Tài khoản bị khóa do nhập sai quá nhiều lần. Vui lòng thử lại sau {{retryAfter}} giây.",
+  "UsernameTakenError": "Tên đăng nhập đã tồn tại",
+  "EmailTakenError": "Email đã được sử dụng",
+  "ValidationError": "{{message}}",
+  "InvalidResetTokenError": "Mã đặt lại không hợp lệ hoặc đã hết hạn",
+  "NoCompaniesAssignedError": "Chưa được phân công công ty",
+  "CompanyAccessError": "Người dùng không thuộc công ty {{companyId}}",
+  "TwoFactorRequiredError": "Yêu cầu xác thực 2 lớp",
+  "InvalidTOTPError": "Mã xác thực không đúng",
+  "BackupCodeUsedError": "Mã dự phòng không hợp lệ",
+  "InternalServerError": "Lỗi hệ thống"
+}

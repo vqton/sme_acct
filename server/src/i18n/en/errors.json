@@ -1,0 +1,15 @@
+{
+  "InvalidCredentialsError": "Invalid credentials",
+  "AccountDisabledError": "Account disabled",
+  "AccountLockedError": "Account locked due to too many failed attempts. Try again in {{retryAfter}} seconds.",
+  "UsernameTakenError": "Username already taken",
+  "EmailTakenError": "Email already in use",
+  "ValidationError": "{{message}}",
+  "InvalidResetTokenError": "Invalid or expired reset token",
+  "NoCompaniesAssignedError": "No companies assigned",
+  "CompanyAccessError": "User is not a member of company {{companyId}}",
+  "TwoFactorRequiredError": "Two-factor authentication required",
+  "InvalidTOTPError": "Invalid verification code",
+  "BackupCodeUsedError": "Invalid backup code",
+  "InternalServerError": "Internal server error"
+}
