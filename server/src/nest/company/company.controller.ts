@@ -7,9 +7,10 @@ import { CompanyUseCases } from '../../application/CompanyUseCases.js';
 import { AuthGuard } from '../common/guards/auth.guard.js';
 import { PermissionGuard } from '../common/guards/permission.guard.js';
 import { Permissions } from '../common/guards/permissions.decorator.js';
+import { TenantGuard } from '../common/guards/tenant.guard.js';
 
 @Controller('companies')
-@UseGuards(AuthGuard, PermissionGuard)
+@UseGuards(AuthGuard, PermissionGuard, TenantGuard)
 export class CompanyController {
   constructor(@Inject(CompanyUseCases) private readonly companyUseCases: CompanyUseCases) {}
 

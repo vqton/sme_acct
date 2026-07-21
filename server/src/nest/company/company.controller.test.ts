@@ -4,7 +4,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import Database from 'better-sqlite3';
 import { CompanyModule } from './company.module.js';
-import { createTestDbProvider, DB_PROVIDER } from '../common/database.module.js';
+import { DB_PROVIDER } from '../common/database.module.js';
 import { runMigrations } from '../../infrastructure/database/schema.js';
 import { HttpExceptionFilter } from '../common/filters/http-exception.filter.js';
 import { generateToken } from '../../infrastructure/auth/jwt.js';
@@ -16,19 +16,25 @@ describe('NestJS CompanyController', () => {
   let db: Database.Database;
   let authToken: string;
   const userId = crypto.randomUUID();
-  const companyId = crypto.randomUUID();
+  const seededCompanyId = crypto.randomUUID();
 
   beforeAll(async () => {
     db = new Database(':memory:');
     db.pragma('foreign_keys = ON');
     runMigrations(db);
 
-    // Seed: user with he-thong role (has all company permissions)
+    // Seed: user with he-thong role
     const hash = bcrypt.hashSync('TestPass1!', 10);
     db.prepare('INSERT INTO users (id, username, email, full_name, password_hash, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
       .run(userId, 'companyadmin', 'admin@example.com', 'Company Admin', hash, 1, new Date().toISOString());
     db.prepare('INSERT INTO user_roles (user_id, role) VALUES (?, ?)').run(userId, 'he-thong');
     authToken = generateToken({ userId, username: 'companyadmin', roles: ['he-thong'] });
+
+    // Seed a company + user_companies for TenantGuard tests
+    db.prepare('INSERT INTO companies (id, name, status, created_at) VALUES (?, ?, ?, ?)')
+      .run(seededCompanyId, 'Seeded Co', 1, new Date().toISOString());
+    db.prepare('INSERT INTO user_companies (user_id, company_id, is_active) VALUES (?, ?, ?)')
+      .run(userId, seededCompanyId, 1);
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [CompanyModule],
@@ -47,13 +53,21 @@ describe('NestJS CompanyController', () => {
     db.close();
   });
 
+  // Helper: create a company and grant the test user access
+  async function createCompany(name: string, status = 1) {
+    const res = await request(app.getHttpServer())
+      .post('/companies')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({ name, status });
+    const id = res.body.id;
+    db.prepare('INSERT INTO user_companies (user_id, company_id, is_active) VALUES (?, ?, ?)')
+      .run(userId, id, 1);
+    return res;
+  }
+
   describe('POST /companies', () => {
     it('creates a company', async () => {
-      const res = await request(app.getHttpServer())
-        .post('/companies')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ name: 'Test Company', status: 1 });
-
+      const res = await createCompany('Test Company', 1);
       expect(res.status).toBe(201);
       expect(res.body.id).toBeDefined();
       expect(res.body.name).toBe('Test Company');
@@ -74,46 +88,36 @@ describe('NestJS CompanyController', () => {
 
   describe('GET /companies/:id', () => {
     it('gets company by id', async () => {
-      // Create first
-      const createRes = await request(app.getHttpServer())
-        .post('/companies')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ name: 'Get Test Co', status: 1 });
-      const id = createRes.body.id;
-
       const res = await request(app.getHttpServer())
-        .get(`/companies/${id}`)
+        .get(`/companies/${seededCompanyId}`)
         .set('Authorization', `Bearer ${authToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.name).toBe('Get Test Co');
+      expect(res.body.name).toBe('Seeded Co');
     });
   });
 
   describe('PUT /companies/:id', () => {
     it('updates a company', async () => {
-      const createRes = await request(app.getHttpServer())
-        .post('/companies')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ name: 'Update Test', status: 1 });
-      const id = createRes.body.id;
-
       const res = await request(app.getHttpServer())
-        .put(`/companies/${id}`)
+        .put(`/companies/${seededCompanyId}`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({ name: 'Updated Name' });
 
       expect(res.status).toBe(200);
       expect(res.body.name).toBe('Updated Name');
+
+      // Reset
+      await request(app.getHttpServer())
+        .put(`/companies/${seededCompanyId}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ name: 'Seeded Co' });
     });
   });
 
   describe('POST /companies/:id/activate', () => {
     it('activates a suspended company', async () => {
-      const createRes = await request(app.getHttpServer())
-        .post('/companies')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ name: 'Activate Test', status: 1 });
+      const createRes = await createCompany('Activate Co', 1);
       const id = createRes.body.id;
 
       // First suspend
@@ -133,10 +137,7 @@ describe('NestJS CompanyController', () => {
 
   describe('POST /companies/:id/suspend', () => {
     it('suspends an active company', async () => {
-      const createRes = await request(app.getHttpServer())
-        .post('/companies')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ name: 'Suspend Test', status: 1 });
+      const createRes = await createCompany('Suspend Co', 1);
       const id = createRes.body.id;
 
       const res = await request(app.getHttpServer())
@@ -150,10 +151,8 @@ describe('NestJS CompanyController', () => {
 
   describe('DELETE /companies/:id', () => {
     it('deletes a company', async () => {
-      const createRes = await request(app.getHttpServer())
-        .post('/companies')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ name: 'Delete Test', status: 1 });
+      // Create a temp company for deletion
+      const createRes = await createCompany('Delete Temp', 1);
       const id = createRes.body.id;
 
       const res = await request(app.getHttpServer())

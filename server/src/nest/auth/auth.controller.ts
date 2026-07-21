@@ -5,12 +5,11 @@ import {
 import { Request } from 'express';
 import { AuthService } from '../../application/AuthService.js';
 import { AuthGuard } from '../common/guards/auth.guard.js';
-import { RateLimiter } from '../../presentation/middleware/rateLimiter.js';
+import { ThrottleGuard } from '../common/guards/throttle.guard.js';
+import { Throttle } from '../common/guards/throttle.decorator.js';
 
 @Controller('auth')
 export class AuthController {
-  private loginLimiter = new RateLimiter({ windowMs: 15 * 60 * 1000, maxAttempts: 5 });
-
   constructor(@Inject(AuthService) private readonly authService: AuthService) {}
 
   private context(ip: string, headers: Record<string, string | string[] | undefined>) {
@@ -28,16 +27,14 @@ export class AuthController {
   }
 
   @Post('login')
+  @UseGuards(ThrottleGuard)
+  @Throttle({ windowMs: 15 * 60 * 1000, maxAttempts: 5 })
   @HttpCode(HttpStatus.OK)
   login(
     @Body() body: { username: string; password: string },
     @Ip() ip: string,
     @Req() req: Request,
   ) {
-    if (!this.loginLimiter.isAllowed(ip)) {
-      const retryAfter = this.loginLimiter.getRetryAfter(ip);
-      throw Object.assign(new Error('Too many login attempts. Please try again later.'), { status: 429, retryAfter });
-    }
     return this.authService.login(body, this.context(ip, req.headers));
   }
 
