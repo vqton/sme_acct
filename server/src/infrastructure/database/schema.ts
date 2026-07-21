@@ -428,6 +428,133 @@ export function runMigrations(db: Database): void {
     }
   }
 
+  // ─── Accounting Module Tables ──────────────────────────
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS accounts (
+      id TEXT PRIMARY KEY,
+      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      account_number TEXT NOT NULL,
+      name TEXT NOT NULL,
+      name_english TEXT,
+      category INTEGER NOT NULL,
+      nature INTEGER NOT NULL,
+      type INTEGER NOT NULL DEFAULT 1,
+      parent_id TEXT,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      is_system INTEGER NOT NULL DEFAULT 0,
+      allow_transactions INTEGER NOT NULL DEFAULT 1,
+      opening_debit REAL NOT NULL DEFAULT 0,
+      opening_credit REAL NOT NULL DEFAULT 0,
+      debit_amount REAL NOT NULL DEFAULT 0,
+      credit_amount REAL NOT NULL DEFAULT 0,
+      closing_debit REAL NOT NULL DEFAULT 0,
+      closing_credit REAL NOT NULL DEFAULT 0,
+      description TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT,
+      UNIQUE(company_id, account_number)
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS fiscal_periods (
+      id TEXT PRIMARY KEY,
+      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      year INTEGER NOT NULL,
+      month INTEGER NOT NULL,
+      period_name TEXT NOT NULL,
+      start_date TEXT NOT NULL,
+      end_date TEXT NOT NULL,
+      status INTEGER NOT NULL DEFAULT 1,
+      is_opening_balance_period INTEGER NOT NULL DEFAULT 0,
+      closed_at TEXT,
+      closed_by_user_id TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT,
+      UNIQUE(company_id, year, month)
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS journal_entries (
+      id TEXT PRIMARY KEY,
+      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      entry_number TEXT NOT NULL,
+      entry_date TEXT NOT NULL,
+      period_id TEXT NOT NULL REFERENCES fiscal_periods(id),
+      entry_type INTEGER NOT NULL DEFAULT 9,
+      description TEXT NOT NULL,
+      description_english TEXT,
+      reference_number TEXT,
+      reference_date TEXT,
+      total_debit REAL NOT NULL DEFAULT 0,
+      total_credit REAL NOT NULL DEFAULT 0,
+      is_posted INTEGER NOT NULL DEFAULT 0,
+      is_reversed INTEGER NOT NULL DEFAULT 0,
+      reversed_by_id TEXT,
+      posted_at TEXT,
+      posted_by_user_id TEXT,
+      created_by_user_id TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS journal_entry_lines (
+      id TEXT PRIMARY KEY,
+      journal_entry_id TEXT NOT NULL REFERENCES journal_entries(id) ON DELETE CASCADE,
+      account_id TEXT NOT NULL REFERENCES accounts(id),
+      account_number TEXT NOT NULL,
+      description TEXT,
+      debit_amount REAL NOT NULL DEFAULT 0,
+      credit_amount REAL NOT NULL DEFAULT 0,
+      cost_center_id TEXT,
+      department_id TEXT,
+      project_id TEXT,
+      line_index INTEGER NOT NULL DEFAULT 0
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ledger_entries (
+      id TEXT PRIMARY KEY,
+      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      account_id TEXT NOT NULL REFERENCES accounts(id),
+      account_number TEXT NOT NULL,
+      period_id TEXT NOT NULL REFERENCES fiscal_periods(id),
+      journal_entry_id TEXT NOT NULL REFERENCES journal_entries(id),
+      entry_number TEXT NOT NULL,
+      entry_date TEXT NOT NULL,
+      description TEXT NOT NULL,
+      debit_amount REAL NOT NULL DEFAULT 0,
+      credit_amount REAL NOT NULL DEFAULT 0,
+      running_debit REAL NOT NULL DEFAULT 0,
+      running_credit REAL NOT NULL DEFAULT 0,
+      running_balance REAL NOT NULL DEFAULT 0,
+      cost_center_id TEXT,
+      department_id TEXT,
+      project_id TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS account_balances (
+      account_id TEXT NOT NULL REFERENCES accounts(id),
+      account_number TEXT NOT NULL,
+      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      period_id TEXT NOT NULL REFERENCES fiscal_periods(id),
+      opening_debit REAL NOT NULL DEFAULT 0,
+      opening_credit REAL NOT NULL DEFAULT 0,
+      period_debit REAL NOT NULL DEFAULT 0,
+      period_credit REAL NOT NULL DEFAULT 0,
+      closing_debit REAL NOT NULL DEFAULT 0,
+      closing_credit REAL NOT NULL DEFAULT 0,
+      PRIMARY KEY (account_id, period_id)
+    )
+  `);
+
   // Migration: add new columns to company_settings
   const settingsCols = db.prepare("PRAGMA table_info(company_settings)").all() as { name: string }[];
   const settingsColNames = settingsCols.map((c) => c.name);

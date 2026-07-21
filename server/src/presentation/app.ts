@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import authController from './controllers/authController.js';
 import companyController from './controllers/companyController.js';
+import accountingController from './controllers/accountingController.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -28,6 +29,7 @@ app.get('/api/health', (_req, res) => {
 
 app.use('/api/auth', authController);
 app.use('/api/companies', companyController);
+app.use('/api/accounting', accountingController);
 
 app.use(errorHandler);
 

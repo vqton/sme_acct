@@ -23,7 +23,7 @@ Current implementation is a **skeleton**. It stores 12 fields on `Company`, 7 fi
 | BG-02 | No enterprise code (mã doanh nghiệp) field | Luật DN 2020 Điều 29, NĐ 168/2025 | Cannot identify company in state records | ✅ PARTIAL — `enterpriseCode` field exists in entity + DB but not validated |
 | BG-03 | No charter capital (vốn điều lệ) + contributor tracking | Luật DN 2020 Điều 30, 34, 36 | Cannot verify capital structure — illegal for credit institutions | MISSING |
 | BG-04 | Single legal rep field (must support multiple per Luật DN) | Luật DN 2020 Điều 12, 13 | Single rep field violates law allowing multiple legal reps | MISSING — `legalRepresentative: string` only |
-| BG-05 | No accounting regime (chế độ kế toán) selection enforcement | TT 99/2025/TT-BTC, TT 133/2016 | Cannot determine which chart of accounts or report templates apply | ✅ PARTIAL — `accountingRegime: number` exists in CompanySettings but not enforced in business logic |
+| BG-05 | No accounting regime (chế độ kế toán) selection enforcement | TT 99/2025/TT-BTC (TT 133/2016 — legacy, transition only for existing companies) | Cannot determine which chart of accounts or report templates apply | ✅ PARTIAL — `accountingRegime: number` exists in CompanySettings but not enforced in business logic |
 
 ### 18 Major Gaps (blocking PROD, not legally fatal individually)
 
@@ -65,7 +65,7 @@ Current implementation is a **skeleton**. It stores 12 fields on `Company`, 7 fi
 | Luật Doanh nghiệp 2020 (59/2020/QH14) | Active | Enterprise code, legal reps, charter capital, business lines, company seal, branches | **Partial** (name + tax code only) |
 | NĐ 168/2025/NĐ-CP (Đăng ký doanh nghiệp) | Active, replaces NĐ 01/2021 | Registration certificate fields, VSIC codes, enterprise info disclosure | **Missing** |
 | TT 99/2025/TT-BTC (Chế độ kế toán) | Active from 01/01/2026, replaces TT 200/2014 | Accounting regime selection, fiscal year, currency, rounding, inventory method, tax method | **Partial** (settings exist with `accountingRegime`, `taxCalculationMethod`, `roundingMethod` fields — but no enforcement or UI for selection) |
-| TT 133/2016/TT-BTC (SME accounting) | Active (optional for SMEs) | Alternative accounting regime — fewer report templates, simpler chart of accounts | **Not supported** (no regime toggle) |
+| TT 133/2016/TT-BTC (SME accounting) | Legacy — transition only for existing companies | Alternative accounting regime — fewer report templates, simpler chart of accounts. New companies must use TT 99/2025 | **Not supported** (no regime toggle) |
 | NĐ 69/2024/NĐ-CP (Định danh điện tử) | Active | VNeID for tax transactions, organization digital identity | **Missing** |
 | VAS 01 — Chuẩn mực chung | Active | Going concern, consistency, matching principle, decimal precision | **Partial** (decimal places on settings, no enforcement) |
 | NĐ 23/2025/NĐ-CP (Chữ ký số) | Active | Digital signature for legal reps on tax filings | **Missing** |
@@ -248,7 +248,7 @@ Company (Aggregate Root)
 │   ├── CurrencyCode (string, 3, default "VND")
 │   ├── DecimalPlaces (int, 0–6, default 0 per TT 99)
 │   ├── RoundingMethod (enum: RoundHalfUp | RoundDown | RoundUp)
-│   ├── AccountingRegime (enum: TT99 | TT133) — chế độ kế toán áp dụng
+│   ├── AccountingRegime (enum: TT99 | TT133) — chế độ kế toán áp dụng. TT 99 default for new companies; TT 133 legacy/transition only
 │   ├── TaxCalculationMethod (enum: KhauTru | TrucTiep | HonHop) — pp tính thuế
 │   ├── InventoryMethod (enum: FIFO | LIFO | BinhQuanGiaQuyen | ThucTeDichDanh | NhapTruocXuatSau)
 │   ├── TaxMethod (enum: TrucTiepGTGT | KhauTruGTGT) — pp tính thuế GTGT
@@ -339,8 +339,8 @@ public enum CompanyStatus
 
 public enum AccountingRegime
 {
-    TT99 = 1,    // TT 99/2025/TT-BTC (replaces TT 200/2014) — enterprise accounting
-    TT133 = 2,   // TT 133/2016/TT-BTC — SME accounting (simplified)
+    TT99 = 1,    // TT 99/2025/TT-BTC (replaces TT 200/2014) — enterprise accounting (default, required for new companies)
+    TT133 = 2,   // TT 133/2016/TT-BTC — SME accounting (simplified). Legacy — existing companies only, not selectable for new registrations
 }
 
 public enum TaxCalculationMethod
@@ -499,7 +499,7 @@ Company (root) ───1:1─── CompanySettings
 
 | ID | Requirement | Priority |
 |---|---|---|
-| FR-09.1 | System SHALL enforce AccountingRegime selection (TT99 vs TT133) — drives chart of accounts + report templates | P0 |
+| FR-09.1 | System SHALL enforce AccountingRegime selection — TT 99 for new companies (default), TT 133 allowed only for existing companies transitioning from previous system. Drives chart of accounts + report templates | P0 |
 | FR-09.2 | System SHALL enforce TaxCalculationMethod selection — drives VAT tracking | P0 |
 | FR-09.3 | System SHALL set default DecimalPlaces = 0 per TT 99/2025 (VND is integer, non-decimal currency) | P0 |
 | FR-09.4 | System SHALL provide RoundingMethod selection for VND conversion | P1 |
@@ -602,7 +602,7 @@ Company (root) ───1:1─── CompanySettings
 | G-11 | No branch management | Medium | Missing | Branch/RO/Location entity | Luật DN Điều 43-45 | 2w |
 | G-12 | No bank accounts | High | Missing | 1..N BankAccount with tax payment flag | TT 99/2025, Luật QLT | 1w |
 | G-13 | No tax authority assignment | Medium | Missing | TaxOfficeId + department | TT 86/2024/TT-BTC | 2d |
-| G-14 | No accounting regime selection | **Blocking** | Missing | TT99 vs TT133 toggle | TT 99/2025, TT 133/2016 | 3d |
+| G-14 | No accounting regime selection | **Blocking** | Missing | TT 99 (new companies) / TT 133 (legacy only) toggle | TT 99/2025 (TT 133/2016 — legacy) | 3d |
 | G-15 | No tax calc method | **Blocking** | TaxMethod free text | TaxCalculationMethod enum | TT 99/2025 Điều 12, Luật GTGT | 3d |
 | G-16 | Decimal rules non-compliant | High | DecimalPlaces default 2 | Default 0 per TT 99/2025 (VND) | TT 99/2025 Điều 10 | 1d |
 | G-17 | No rounding method | Low | Missing | RoundingMethod enum | VAS 01 | 1d |
@@ -647,7 +647,7 @@ Company (root) ───1:1─── CompanySettings
 | P7 | At least one business line with VSIC code required | Integration test |
 | P8 | Company status lifecycle with Active/Suspended/Dissolved/Bankrupt | Unit test + workflow test |
 | P9 | Status change blocks financial ops when suspended/dissolved | Integration test |
-| P10 | Accounting regime (TT99/TT133) selection required at setup | Integration test |
+| P10 | Accounting regime selection required at setup — TT 99 default for new companies, TT 133 legacy for existing | Integration test |
 | P11 | Tax calculation method selection required | Integration test |
 | P12 | Decimal places default 0 per TT 99/2025 | Config check |
 | P13 | Last closed period tracked and enforced | Integration test |

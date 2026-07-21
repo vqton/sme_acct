@@ -158,3 +158,115 @@ export interface TokenRefreshResponse {
   token: string;
   refreshToken: string;
 }
+
+// ─── Accounting Types ─────────────────────────────────────
+
+export interface Account {
+  id: string;
+  companyId: string;
+  accountNumber: string;
+  name: string;
+  nameEnglish?: string;
+  category: number;
+  nature: number;
+  type: number;
+  parentId?: string;
+  isActive: boolean;
+  isSystem: boolean;
+  allowTransactions: boolean;
+  openingDebit?: number;
+  openingCredit?: number;
+  debitAmount?: number;
+  creditAmount?: number;
+  closingDebit?: number;
+  closingCredit?: number;
+  description?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface JournalEntry {
+  id: string;
+  companyId: string;
+  entryNumber: string;
+  entryDate: string;
+  periodId: string;
+  entryType: number;
+  description: string;
+  descriptionEnglish?: string;
+  referenceNumber?: string;
+  referenceDate?: string;
+  totalDebit: number;
+  totalCredit: number;
+  isPosted: boolean;
+  isReversed: boolean;
+  reversedById?: string;
+  postedAt?: string;
+  createdAt: string;
+  postedByUserId?: string;
+  createdByUserId?: string;
+  lines: JournalLine[];
+}
+
+export interface JournalLine {
+  id: string;
+  journalEntryId: string;
+  accountId: string;
+  accountNumber: string;
+  description?: string;
+  debitAmount: number;
+  creditAmount: number;
+  costCenterId?: string;
+  departmentId?: string;
+  projectId?: string;
+}
+
+export interface FiscalPeriod {
+  id: string;
+  companyId: string;
+  year: number;
+  month: number;
+  periodName: string;
+  startDate: string;
+  endDate: string;
+  status: number;
+  isOpeningBalancePeriod: boolean;
+  closedAt?: string;
+  closedByUserId?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface LedgerEntry {
+  id: string;
+  companyId: string;
+  accountId: string;
+  accountNumber: string;
+  periodId: string;
+  journalEntryId: string;
+  entryNumber: string;
+  entryDate: string;
+  description: string;
+  debitAmount: number;
+  creditAmount: number;
+  runningDebit: number;
+  runningCredit: number;
+  runningBalance: number;
+  costCenterId?: string;
+  departmentId?: string;
+  projectId?: string;
+  createdAt: string;
+}
+
+export interface AccountBalance {
+  accountId: string;
+  accountNumber: string;
+  companyId: string;
+  periodId: string;
+  openingDebit: number;
+  openingCredit: number;
+  periodDebit: number;
+  periodCredit: number;
+  closingDebit: number;
+  closingCredit: number;
+}

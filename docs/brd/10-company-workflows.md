@@ -21,7 +21,7 @@
 **Postconditions:**
 1. Company entity created with status Active
 2. CompanySettings created with VND defaults per TT 99/2025
-3. CompanySettings.AccountingRegime set (TT99 or TT133)
+3. CompanySettings.AccountingRegime set — TT 99 for new companies, TT 133 legacy (existing companies transitioning only)
 4. At least one LegalRepresentative on record
 5. At least one BusinessLine with VSIC code
 6. Company associated with SA as first UserCompany record
@@ -53,9 +53,9 @@ graph TD
         C1[Enter Legal Rep Info] --> C2[Enter Business Lines]
         C2 --> C3[Upload Business Registration Cert]
         C3 --> C4[Configure Accounting Settings]
-        C4 --> C5{TT99 or TT133?}
-        C5 -->|TT99| C6[Set Full Chart of Accounts]
-        C5 -->|TT133| C7[Set Simplified COA]
+        C4 --> C5{Accounting Regime?}
+        C5 -->|TT99 (new/legacy)| C6[Set Full Chart of Accounts]
+        C5 -->|TT133 (legacy only)| C7[Set Simplified COA]
         C6 --> C8[Select Tax Calc Method]
         C7 --> C8
         C8 --> C9[Enter Bank Account]
@@ -92,7 +92,7 @@ graph TD
 | 6 | CA | Add LegalRepresentative info: FullName, VNeIDNumber (CCCD), Position, IsPrimary | Validate and store | VNeIDNumber: exactly 12 digits for new CCCD, 9 for old CMND. At least 1 rep required, exactly 1 primary | Duplicate CCCD → "already registered for this company" |
 | 7 | CA | Add BusinessLine(s) with VSIC code via search | Show VSIC hierarchy browser | At least 1 primary business line required. VSIC code must exist in classification. Conditional lines flagged | Invalid VSIC → "select from code list" |
 | 8 | CA | Upload Business Registration Certificate (PDF/JPEG) | Store to blob storage, run OCR | Max 10MB, PDF/JPEG/PNG. OCR extracts TaxCode + Name → compare to entered data | OCR mismatch → warning + manual verify. File too large → reject |
-| 9 | CA | Configure CompanySettings: AccountingRegime, FiscalYearStartMonth, CurrencyCode, DecimalPlaces, TaxCalculationMethod, InventoryMethod | Show defaults | TT99 or TT133. FiscalYearStartMonth 1-12. DecimalPlaces default 0 per TT 99 Điều 8. TaxCalcMethod: KhauTru/TrucTiep | Settings locked after first period close |
+| 9 | CA | Configure CompanySettings: AccountingRegime, FiscalYearStartMonth, CurrencyCode, DecimalPlaces, TaxCalculationMethod, InventoryMethod | Show defaults | TT99 (new companies) or TT133 (legacy — existing only). FiscalYearStartMonth 1-12. DecimalPlaces default 0 per TT 99 Điều 8. TaxCalcMethod: KhauTru/TrucTiep | Settings locked after first period close |
 | 10 | CA | Enter BankAccount: AccountNumber, BankName, Branch, IsPrimaryTaxPayment | Validate | AccountNumber 8-20 digits. BankName must be from SBV-licensed list. At least 1 account required. Exactly 1 primary tax payment account | Invalid bank → warning + flag |
 | 11 | CA | Click "Submit & Activate" | Final validation | All required fields: EnterpriseCode, TaxCode, Name, CompanyType, 1 LegalRep, 1 BusinessLine, 1 BankAccount, Settings complete | Return list of all missing fields |
 | 12 | System | — | Create Company + Settings + LegalReps + BusinessLines + BankAccount in transaction | TaxCode unique across DB. EnterpriseCode unique. All FK constraints | Transaction rollback on any failure. Log partial state |
@@ -114,7 +114,7 @@ graph TD
 | Module | Integration |
 |--------|------------|
 | Tax Declaration | Company.TaxCode, TaxOfficeId used as root for all tax filings |
-| GL / Chart of Accounts | CompanySettings.AccountingRegime drives COA template selection (TT99 vs TT133) |
+| GL / Chart of Accounts | CompanySettings.AccountingRegime drives COA template selection (TT99 full COA vs TT133 simplified COA) |
 | HR / Payroll | Company.Branches used for department/org structure in payroll |
 | Document Management | BusinessRegCert stored as CompanyDocument, referenced by licenses |
 | VNeID | Company.LegalRepresentative.VNeIDNumber used for VNeID registration (WF-07) |
@@ -503,7 +503,7 @@ graph TD
     B -->|No - Initial Setup| C[Select FiscalYearStartMonth]
     C --> D[Select CurrencyCode]
     D --> E[Set DecimalPlaces default 0]
-    E --> F[Select AccountingRegime: TT99 or TT133]
+    E --> F[Select AccountingRegime: TT99 default / TT133 legacy]
     F --> G[Select TaxCalcMethod]
     G --> H[Select InventoryMethod]
     H --> I[Save Settings]
@@ -545,7 +545,7 @@ graph TD
 | 2 | KT | Select FiscalYearStartMonth (1-12) | 1 <= month <= 12. Default 1 (calendar year per Luật Kế toán Điều 12) | Out of range → reject |
 | 3 | KT | Select CurrencyCode | Default "VND". Multi-currency toggle available | Non-VND + single mode → reject |
 | 4 | KT | Set DecimalPlaces per TT 99/2025 Điều 8 | 0-6. Default 0 (VND is integer currency) | Out of range → clamp |
-| 5 | KT | Select AccountingRegime: TT99 or TT133 | Required. Drives COA template. Cannot change later | No selection → required |
+| 5 | KT | Select AccountingRegime: TT99 (new companies) or TT133 (legacy — existing only) | Required. Drives COA template. Cannot change later. New registrations default to TT99 | No selection → required |
 | 6 | KT | Select TaxCalculationMethod: KhauTru / TrucTiep / HonHop | Required. Must match tax authority registration | Mismatch with tax authority → warning |
 | 7 | KT | Select InventoryMethod: FIFO / BinhQuan / ThucTe / NhapTruocXuatSau | Required for inventory-enabled companies | — |
 | 8 | KT | Click Save | All validations pass | Aggregate error display |
@@ -586,7 +586,7 @@ graph LR
 |-----------|------------|
 | Fiscal year start month | Cannot change after JE posted in current fiscal year |
 | Decimal places | Cannot change after first period close |
-| AccountingRegime | Immutable after any transactions exist (BR-OP-02) |
+| AccountingRegime | Immutable after any transactions exist (BR-OP-02). TT 99 is required default for all new company registrations |
 | CurrencyCode | Can change only with 0 JE in current fiscal year |
 | InventoryMethod | Cannot change mid-fiscal-year per VAS 02 |
 | TaxCalculationMethod | Can change only at start of fiscal year per TT 99 Điều 12 |

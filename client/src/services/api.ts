@@ -1,6 +1,7 @@
 import type {
   AuthResponse, Company, TokenRefreshResponse, DashboardData,
   LegalRepresentative, CapitalContributor, BusinessLine, CompanyBankAccount,
+  Account, JournalEntry, FiscalPeriod, LedgerEntry, AccountBalance,
 } from '../types';
 
 const BASE = '/api';
@@ -244,4 +245,80 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+
+  // ─── Accounting ─────────────────────────────────────────
+
+  getAccounts: (companyId: string) =>
+    request<Account[]>(`/accounting/accounts?companyId=${companyId}`),
+  getAccount: (id: string) =>
+    request<Account>(`/accounting/accounts/${id}`),
+  createAccount: (data: Partial<Account>) =>
+    request<Account>('/accounting/accounts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updateAccount: (id: string, data: Partial<Account>) =>
+    request<Account>(`/accounting/accounts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  deleteAccount: (id: string) =>
+    request<void>(`/accounting/accounts/${id}`, { method: 'DELETE' }),
+  seedAccounts: (companyId: string) =>
+    request<Account[]>('/accounting/accounts/seed', {
+      method: 'POST',
+      body: JSON.stringify({ companyId }),
+    }),
+
+  getJournalEntries: (companyId: string) =>
+    request<JournalEntry[]>(`/accounting/journal-entries?companyId=${companyId}`),
+  getJournalEntry: (id: string) =>
+    request<JournalEntry>(`/accounting/journal-entries/${id}`),
+  createJournalEntry: (data: any) =>
+    request<JournalEntry>('/accounting/journal-entries', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  postJournalEntry: (id: string) =>
+    request<JournalEntry>(`/accounting/journal-entries/${id}/post`, { method: 'POST' }),
+  reverseJournalEntry: (id: string) =>
+    request<{ reversal: JournalEntry; original: JournalEntry }>(`/accounting/journal-entries/${id}/reverse`, { method: 'POST' }),
+  deleteJournalEntry: (id: string) =>
+    request<void>(`/accounting/journal-entries/${id}`, { method: 'DELETE' }),
+
+  getLedger: (companyId: string, accountId?: string, periodId?: string) => {
+    let path = `/accounting/ledger?companyId=${companyId}`;
+    if (accountId) path += `&accountId=${accountId}`;
+    if (periodId) path += `&periodId=${periodId}`;
+    return request<LedgerEntry[]>(path);
+  },
+  getTrialBalance: (companyId: string, periodId: string) =>
+    request<AccountBalance[]>(`/accounting/ledger/balances?companyId=${companyId}&periodId=${periodId}`),
+
+  getFiscalPeriods: (companyId: string) =>
+    request<FiscalPeriod[]>(`/accounting/fiscal-periods?companyId=${companyId}`),
+  getCurrentPeriod: (companyId: string) =>
+    request<FiscalPeriod>(`/accounting/fiscal-periods/current?companyId=${companyId}`),
+  createFiscalPeriod: (data: { companyId: string; year: number; month: number }) =>
+    request<FiscalPeriod>('/accounting/fiscal-periods', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  closeFiscalPeriod: (id: string) =>
+    request<FiscalPeriod>(`/accounting/fiscal-periods/${id}/close`, { method: 'POST' }),
 };
+
+// Standalone exports for direct imports
+export function getAccounts(companyId: string) { return api.getAccounts(companyId); }
+export function createAccount(data: any) { return api.createAccount(data); }
+export function updateAccount(id: string, data: any) { return api.updateAccount(id, data); }
+export function deleteAccount(id: string) { return api.deleteAccount(id); }
+export function seedAccounts(companyId: string) { return api.seedAccounts(companyId); }
+export function getJournalEntries(companyId: string) { return api.getJournalEntries(companyId); }
+export function createJournalEntry(data: any) { return api.createJournalEntry(data); }
+export function postJournalEntry(id: string) { return api.postJournalEntry(id); }
+export function reverseJournalEntry(id: string) { return api.reverseJournalEntry(id); }
+export function deleteJournalEntry(id: string) { return api.deleteJournalEntry(id); }
+export function getLedger(companyId: string, accountId?: string, periodId?: string) { return api.getLedger(companyId, accountId, periodId); }
+export function getTrialBalance(companyId: string, periodId: string) { return api.getTrialBalance(companyId, periodId); }
+export function getFiscalPeriods(companyId: string) { return api.getFiscalPeriods(companyId); }
