@@ -1,5 +1,4 @@
 import { Card, Typography, Tag } from 'antd';
-import { ConstructionOutlined } from '@ant-design/icons';
 
 interface Props {
   name: string;

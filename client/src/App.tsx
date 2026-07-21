@@ -53,18 +53,22 @@ function AppRoutes() {
           <Route path="/accounting/trial-balance" element={<TrialBalancePage />} />
 
           {/* Stub modules — next version */}
+          <Route path="/accounting/contacts" element={<ModuleStub name="Danh mục đối tượng" description="Quản lý khách hàng, nhà cung cấp" />} />
           <Route path="/accounting/cash" element={<ModuleStub name="Sổ quỹ tiền mặt" description="Quản lý thu chi tiền mặt, phiếu thu, phiếu chi" />} />
-          <Route path="/accounting/bank" element={<ModuleStub name="Sổ tiền gửi ngân hàng" description="Quản lý giao dịch ngân hàng, giấy báo Nợ/Có" />} />
-          <Route path="/accounting/sales" element={<ModuleStub name="Hóa đơn bán hàng" description="Quản lý hóa đơn bán hàng, doanh thu" />} />
-          <Route path="/accounting/ar" element={<ModuleStub name="Công nợ phải thu" description="Quản lý công nợ khách hàng, đối chiếu công nợ" />} />
+          <Route path="/accounting/bank" element={<ModuleStub name="Tiền gửi ngân hàng" description="Quản lý giao dịch ngân hàng, giấy báo Nợ/Có" />} />
           <Route path="/accounting/purchasing" element={<ModuleStub name="Hóa đơn mua hàng" description="Quản lý hóa đơn mua hàng, chi phí" />} />
           <Route path="/accounting/ap" element={<ModuleStub name="Công nợ phải trả" description="Quản lý công nợ nhà cung cấp" />} />
+          <Route path="/accounting/sales" element={<ModuleStub name="Hóa đơn bán hàng" description="Quản lý hóa đơn bán hàng, doanh thu" />} />
+          <Route path="/accounting/ar" element={<ModuleStub name="Công nợ phải thu" description="Quản lý công nợ khách hàng, đối chiếu công nợ" />} />
+          <Route path="/accounting/inventory" element={<ModuleStub name="Hàng tồn kho" description="Quản lý nhập xuất tồn, định giá hàng tồn kho" />} />
           <Route path="/accounting/fa" element={<ModuleStub name="Tài sản cố định" description="Quản lý TSCĐ, tính khấu hao" />} />
           <Route path="/accounting/ccdc" element={<ModuleStub name="Công cụ dụng cụ" description="Quản lý CCDC, phân bổ" />} />
-          <Route path="/accounting/inventory" element={<ModuleStub name="Hàng tồn kho" description="Quản lý nhập xuất tồn, định giá hàng tồn kho" />} />
+          <Route path="/accounting/tax" element={<ModuleStub name="Thuế" description="Kê khai thuế GTGT, TNDN, TNCN" />} />
+          <Route path="/accounting/einvoice" element={<ModuleStub name="Hóa đơn điện tử" description="Quản lý hóa đơn điện tử, ký số, phát hành" />} />
           <Route path="/accounting/costing" element={<ModuleStub name="Giá thành" description="Tính giá thành sản phẩm, dịch vụ" />} />
           <Route path="/accounting/payroll" element={<ModuleStub name="Tiền lương" description="Quản lý bảng lương, BHXH, BHYT, BHTN" />} />
-          <Route path="/accounting/tax" element={<ModuleStub name="Thuế" description="Kê khai thuế GTGT, TNDN, TNCN" />} />
+          <Route path="/accounting/reports" element={<ModuleStub name="Báo cáo tài chính" description="B01-DN, B02-DN, B03-DN, B09-DN và báo cáo quản trị" />} />
+          <Route path="/accounting/system" element={<ModuleStub name="Tham số hệ thống" description="Cấu hình hệ thống, tham số kế toán" />} />
         </Route>
       </Route>
     </Routes>
