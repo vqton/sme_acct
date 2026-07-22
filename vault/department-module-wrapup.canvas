@@ -1,0 +1,188 @@
+{
+  "nodes": [
+    {
+      "id": "dept-root",
+      "type": "text",
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 80,
+      "text": "# Department Module\n\nPhase 1: Core Foundation",
+      "color": "4"
+    },
+    {
+      "id": "domain-layer",
+      "type": "text",
+      "x": -400,
+      "y": 150,
+      "width": 280,
+      "height": 260,
+      "text": "## Domain Layer\n\n**Enums** `DepartmentEnums.ts`\n- DepartmentType (4 types)\n- DepartmentStatus (3 states)\n- CostAllocationMethod (3 methods)\n- BudgetControlLevel (3 levels)\n\n**Entities**\n- `Department.ts` — interface + factory + lifecycle fns\n- `UserDepartment.ts` — interface + factory\n\n**Repository Interfaces**\n- `DepartmentRepository.ts` — 10 methods\n- `UserDepartmentRepository.ts` — 8 methods\n\n**Errors** `DepartmentErrors.ts` — 5 error classes",
+      "color": "5"
+    },
+    {
+      "id": "app-layer",
+      "type": "text",
+      "x": 0,
+      "y": 150,
+      "width": 300,
+      "height": 200,
+      "text": "## Application Layer\n\n**DepartmentUseCases**\n- CRUD: create, getById, list, update, delete\n- Lifecycle: deactivate, reactivate, dissolve\n- Hierarchy: reparent (circular ref protected)\n- User assignment: assign, changePrimary, remove\n- Queries: getTree, getChildren, getDepartmentUsers, getUserDepartments",
+      "color": "6"
+    },
+    {
+      "id": "infra-layer",
+      "type": "text",
+      "x": 400,
+      "y": 150,
+      "width": 280,
+      "height": 260,
+      "text": "## Infrastructure Layer\n\n**Schema Migration** (in `schema.ts`)\n- `departments` table — 25 columns\n- `user_departments` table — 6 columns\n- 5 indexes (company_id, parent_id, path, user_id, dept_id)\n\n**SQLiteDepartmentRepository**\n- Lazy-prepared stmts pattern\n- Materialized path subtree updates\n- Code uniqueness enforcement\n\n**SQLiteUserDepartmentRepository**\n- Composite PK (user_id + department_id)\n- Primary flag management",
+      "color": "2"
+    },
+    {
+      "id": "presentation",
+      "type": "text",
+      "x": 0,
+      "y": 400,
+      "width": 300,
+      "height": 200,
+      "text": "## Presentation Layer\n\n**NestJS Module**\n- `DepartmentModule` — DI wiring\n- `DepartmentController` — 13 endpoints\n- Guards: AuthGuard, PermissionGuard, TenantGuard\n\n**Permissions added**\n- `department:read/create/update/delete`\n- `user:create/update/delete` (was missing)",
+      "color": "1"
+    },
+    {
+      "id": "permissions",
+      "type": "text",
+      "x": 400,
+      "y": 470,
+      "width": 280,
+      "height": 130,
+      "text": "## Permissions\n\nRoles with dept access:\n- `he-thong` — all (ALL_PERMISSIONS)\n- `ke-toan-truong` — dept:read/create/update\n- `ke-toan-tong-hop` — dept:read\n\nAdded user:update/delete to system",
+      "color": "3"
+    },
+    {
+      "id": "tests",
+      "type": "text",
+      "x": -400,
+      "y": 470,
+      "width": 280,
+      "height": 200,
+      "text": "## Tests\n\n**51 test files · 454 tests passing**\n\nNew tests:\n- DepartmentEnums — 4 tests\n- Department entity — 10 tests\n- UserDepartment entity — 2 tests\n- SQLiteDepartmentRepository — 9 tests\n- SQLiteUserDepartmentRepository — 8 tests\n- DepartmentUseCases — 22 tests\n- DepartmentController — 14 tests",
+      "color": "4"
+    },
+    {
+      "id": "next-phase",
+      "type": "text",
+      "x": 0,
+      "y": 650,
+      "width": 300,
+      "height": 120,
+      "text": "## Phase 2 (Next Version)\n\n- Cost allocation engine\n- Budget management\n- Departmental reporting (P&L, Budget vs Actual)\n- Inter-department transfers\n- Step-down & reciprocal methods",
+      "color": "1"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-root-domain",
+      "fromNode": "dept-root",
+      "toNode": "domain-layer",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e-root-app",
+      "fromNode": "dept-root",
+      "toNode": "app-layer",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e-root-infra",
+      "fromNode": "dept-root",
+      "toNode": "infra-layer",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e-domain-app",
+      "fromNode": "domain-layer",
+      "toNode": "app-layer",
+      "fromSide": "right",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "implemented by"
+    },
+    {
+      "id": "e-app-infra",
+      "fromNode": "app-layer",
+      "toNode": "infra-layer",
+      "fromSide": "right",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "persisted by"
+    },
+    {
+      "id": "e-app-presentation",
+      "fromNode": "app-layer",
+      "toNode": "presentation",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "exposed by"
+    },
+    {
+      "id": "e-presentation-perm",
+      "fromNode": "presentation",
+      "toNode": "permissions",
+      "fromSide": "right",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "guarded by"
+    },
+    {
+      "id": "e-domain-tests",
+      "fromNode": "domain-layer",
+      "toNode": "tests",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "verified by"
+    },
+    {
+      "id": "e-app-tests",
+      "fromNode": "app-layer",
+      "toNode": "tests",
+      "fromSide": "bottom",
+      "toSide": "right",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e-infra-tests",
+      "fromNode": "infra-layer",
+      "toNode": "tests",
+      "fromSide": "bottom",
+      "toSide": "right",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e-presentation-tests",
+      "fromNode": "presentation",
+      "toNode": "tests",
+      "fromSide": "bottom",
+      "toSide": "right",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "e-next-phase",
+      "fromNode": "presentation",
+      "toNode": "next-phase",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "→ Phase 2"
+    }
+  ]
+}

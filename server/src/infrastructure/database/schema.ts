@@ -605,6 +605,69 @@ export function runMigrations(db: Database): void {
       updated_at TEXT
     )
   `);
+
+  // ─── Department Module Tables ──────────────────────────
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS departments (
+      id TEXT PRIMARY KEY,
+      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      code TEXT NOT NULL,
+      name TEXT NOT NULL,
+      name_english TEXT,
+      department_type INTEGER NOT NULL DEFAULT 1,
+      parent_id TEXT REFERENCES departments(id) ON DELETE SET NULL,
+      path TEXT NOT NULL,
+      depth INTEGER NOT NULL DEFAULT 0,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      manager_user_id TEXT,
+      manager_title TEXT,
+      deputy_manager_user_id TEXT,
+      default_salary_account TEXT,
+      default_expense_account TEXT,
+      cost_allocation_method INTEGER,
+      has_budget_control INTEGER NOT NULL DEFAULT 0,
+      budget_alert_threshold INTEGER NOT NULL DEFAULT 80,
+      budget_control_level INTEGER NOT NULL DEFAULT 1,
+      status INTEGER NOT NULL DEFAULT 1,
+      effective_date TEXT NOT NULL,
+      dissolution_date TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT,
+      created_by_user_id TEXT,
+      updated_by_user_id TEXT,
+      UNIQUE(company_id, code)
+    )
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_departments_company_id ON departments(company_id)
+  `);
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_departments_parent_id ON departments(parent_id)
+  `);
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_departments_path ON departments(path)
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_departments (
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      department_id TEXT NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
+      is_primary INTEGER NOT NULL DEFAULT 0,
+      job_title TEXT,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      assigned_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (user_id, department_id)
+    )
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_user_departments_user_id ON user_departments(user_id)
+  `);
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_user_departments_dept_id ON user_departments(department_id)
+  `);
 }
 
 export function initDatabase(): void {
