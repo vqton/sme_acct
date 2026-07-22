@@ -571,6 +571,40 @@ export function runMigrations(db: Database): void {
       db.exec(sql);
     }
   }
+
+  // ─── User Management Module Tables ─────────────────────
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_groups (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL UNIQUE,
+      description TEXT,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_group_members (
+      group_id TEXT NOT NULL REFERENCES user_groups(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      joined_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (group_id, user_id)
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_profiles (
+      user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      phone TEXT,
+      position TEXT,
+      department TEXT,
+      avatar_url TEXT,
+      notes TEXT,
+      updated_at TEXT
+    )
+  `);
 }
 
 export function initDatabase(): void {

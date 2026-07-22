@@ -1,6 +1,6 @@
 import Database, { type Database as DatabaseType } from 'better-sqlite3';
 import type { User } from '../../domain/entities/User.js';
-import type { UserRepository } from '../../domain/repositories/UserRepository.js';
+import type { UserRepository, UserSearchParams } from '../../domain/repositories/UserRepository.js';
 import { getDb } from '../database/connection.js';
 
 export class SQLiteUserRepository implements UserRepository {
@@ -74,6 +74,67 @@ export class SQLiteUserRepository implements UserRepository {
 
   delete(id: string): void {
     this.stmts.delete.run(id);
+  }
+
+  search(params: UserSearchParams): User[] {
+    let sql = 'SELECT * FROM users WHERE 1=1';
+    const values: unknown[] = [];
+
+    if (params.query) {
+      sql += ' AND (username LIKE ? OR email LIKE ? OR full_name LIKE ?)';
+      const q = `%${params.query}%`;
+      values.push(q, q, q);
+    }
+    if (params.isActive !== undefined) {
+      sql += ' AND is_active = ?';
+      values.push(params.isActive ? 1 : 0);
+    }
+    if (params.role) {
+      sql += ' AND id IN (SELECT user_id FROM user_roles WHERE role = ?)';
+      values.push(params.role);
+    }
+    if (params.groupId) {
+      sql += ' AND id IN (SELECT user_id FROM user_group_members WHERE group_id = ?)';
+      values.push(params.groupId);
+    }
+
+    sql += ' ORDER BY username';
+
+    if (params.limit !== undefined) {
+      sql += ' LIMIT ?';
+      values.push(params.limit);
+    }
+    if (params.offset !== undefined) {
+      sql += ' OFFSET ?';
+      values.push(params.offset);
+    }
+
+    return (this.db.prepare(sql).all(...values) as Record<string, unknown>[]).map((r) => this.toEntity(r));
+  }
+
+  count(params: UserSearchParams): number {
+    let sql = 'SELECT COUNT(*) as c FROM users WHERE 1=1';
+    const values: unknown[] = [];
+
+    if (params.query) {
+      sql += ' AND (username LIKE ? OR email LIKE ? OR full_name LIKE ?)';
+      const q = `%${params.query}%`;
+      values.push(q, q, q);
+    }
+    if (params.isActive !== undefined) {
+      sql += ' AND is_active = ?';
+      values.push(params.isActive ? 1 : 0);
+    }
+    if (params.role) {
+      sql += ' AND id IN (SELECT user_id FROM user_roles WHERE role = ?)';
+      values.push(params.role);
+    }
+    if (params.groupId) {
+      sql += ' AND id IN (SELECT user_id FROM user_group_members WHERE group_id = ?)';
+      values.push(params.groupId);
+    }
+
+    return (this.db.prepare(sql).get(...values) as { c: number }).c;
   }
 
   private toEntity(row: Record<string, unknown>): User {

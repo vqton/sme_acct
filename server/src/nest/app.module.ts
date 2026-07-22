@@ -8,6 +8,7 @@ import { AppHealthModule } from './integrations/health.module.js';
 import { AppMetricsModule } from './integrations/metrics.module.js';
 import { AppSentryModule } from './integrations/sentry.module.js';
 import { DashboardModule } from './dashboard/dashboard.module.js';
+import { UserModule } from './user/user.module.js';
 import { I18nModule } from './common/i18n.module.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 
@@ -21,6 +22,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
     I18nModule,
     AuthModule,
     CompanyModule,
+    UserModule,
     DashboardModule,
   ],
   providers: [AppLifecycleHook, HttpExceptionFilter],

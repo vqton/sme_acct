@@ -3,6 +3,7 @@ import cors from 'cors';
 import authController from './controllers/authController.js';
 import companyController from './controllers/companyController.js';
 import accountingController from './controllers/accountingController.js';
+import userController from './controllers/userController.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -18,6 +19,7 @@ app.get('/', (_req, res) => {
       health: '/api/health',
       auth: '/api/auth/login | /api/auth/register',
       companies: '/api/companies',
+      users: '/api/users',
     },
     client: 'http://localhost:5173',
   });
@@ -30,6 +32,7 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authController);
 app.use('/api/companies', companyController);
 app.use('/api/accounting', accountingController);
+app.use('/api/users', userController);
 
 app.use(errorHandler);
 

@@ -1,0 +1,293 @@
+{
+  "nodes": [
+    {
+      "id": "overview",
+      "x": 400,
+      "y": 0,
+      "width": 300,
+      "height": 60,
+      "type": "group",
+      "label": "User Management Module"
+    },
+    {
+      "id": "domain",
+      "x": 0,
+      "y": 100,
+      "width": 250,
+      "height": 200,
+      "type": "group",
+      "label": "Domain Layer"
+    },
+    {
+      "id": "user-profile",
+      "x": 20,
+      "y": 140,
+      "width": 200,
+      "height": 40,
+      "type": "file",
+      "file": "server/src/domain/entities/UserProfile.ts",
+      "label": "UserProfile entity"
+    },
+    {
+      "id": "user-group",
+      "x": 20,
+      "y": 190,
+      "width": 200,
+      "height": 40,
+      "type": "file",
+      "file": "server/src/domain/entities/UserGroup.ts",
+      "label": "UserGroup entity"
+    },
+    {
+      "id": "user-group-member",
+      "x": 20,
+      "y": 240,
+      "width": 200,
+      "height": 40,
+      "type": "file",
+      "file": "server/src/domain/entities/UserGroupMember.ts",
+      "label": "UserGroupMember entity"
+    },
+    {
+      "id": "repo-interfaces",
+      "x": 20,
+      "y": 290,
+      "width": 200,
+      "height": 100,
+      "type": "group",
+      "label": "Repository Interfaces"
+    },
+    {
+      "id": "app",
+      "x": 300,
+      "y": 100,
+      "width": 250,
+      "height": 250,
+      "type": "group",
+      "label": "Application Layer"
+    },
+    {
+      "id": "user-mgmt-svc",
+      "x": 320,
+      "y": 140,
+      "width": 200,
+      "height": 40,
+      "type": "file",
+      "file": "server/src/application/UserManagementService.ts",
+      "label": "UserManagementService"
+    },
+    {
+      "id": "user-group-svc",
+      "x": 320,
+      "y": 190,
+      "width": 200,
+      "height": 40,
+      "type": "file",
+      "file": "server/src/application/UserGroupService.ts",
+      "label": "UserGroupService"
+    },
+    {
+      "id": "user-mgmt-test",
+      "x": 320,
+      "y": 240,
+      "width": 200,
+      "height": 40,
+      "type": "file",
+      "file": "server/src/application/UserManagementService.test.ts",
+      "label": "UserManagementService test (41 tests)"
+    },
+    {
+      "id": "user-group-test",
+      "x": 320,
+      "y": 290,
+      "width": 200,
+      "height": 40,
+      "type": "file",
+      "file": "server/src/application/UserGroupService.test.ts",
+      "label": "UserGroupService test"
+    },
+    {
+      "id": "infra",
+      "x": 600,
+      "y": 100,
+      "width": 250,
+      "height": 200,
+      "type": "group",
+      "label": "Infrastructure Layer"
+    },
+    {
+      "id": "sqlite-profile-repo",
+      "x": 620,
+      "y": 140,
+      "width": 200,
+      "height": 40,
+      "type": "file",
+      "file": "server/src/infrastructure/database/UserProfileRepository.ts",
+      "label": "SQLiteUserProfileRepository"
+    },
+    {
+      "id": "sqlite-group-repo",
+      "x": 620,
+      "y": 190,
+      "width": 200,
+      "height": 40,
+      "type": "file",
+      "file": "server/src/infrastructure/database/UserGroupRepository.ts",
+      "label": "SQLiteUserGroupRepository"
+    },
+    {
+      "id": "schema",
+      "x": 620,
+      "y": 240,
+      "width": 200,
+      "height": 40,
+      "type": "file",
+      "file": "server/src/infrastructure/database/schema.ts",
+      "label": "Schema migration (3 new tables)"
+    },
+    {
+      "id": "presentation",
+      "x": 900,
+      "y": 100,
+      "width": 250,
+      "height": 200,
+      "type": "group",
+      "label": "Presentation Layer"
+    },
+    {
+      "id": "express-controller",
+      "x": 920,
+      "y": 140,
+      "width": 200,
+      "height": 40,
+      "type": "file",
+      "file": "server/src/presentation/controllers/userController.ts",
+      "label": "Express userController"
+    },
+    {
+      "id": "nest-controller",
+      "x": 920,
+      "y": 190,
+      "width": 200,
+      "height": 40,
+      "type": "file",
+      "file": "server/src/nest/user/user.controller.ts",
+      "label": "NestJS UserController"
+    },
+    {
+      "id": "nest-module",
+      "x": 920,
+      "y": 240,
+      "width": 200,
+      "height": 40,
+      "type": "file",
+      "file": "server/src/nest/user/user.module.ts",
+      "label": "NestJS UserModule"
+    },
+    {
+      "id": "client",
+      "x": 300,
+      "y": 400,
+      "width": 500,
+      "height": 200,
+      "type": "group",
+      "label": "Client Layer"
+    },
+    {
+      "id": "users-page",
+      "x": 320,
+      "y": 440,
+      "width": 200,
+      "height": 40,
+      "type": "file",
+      "file": "client/src/pages/UsersPage.tsx",
+      "label": "UsersPage (list/search/filter)"
+    },
+    {
+      "id": "user-detail-page",
+      "x": 540,
+      "y": 440,
+      "width": 200,
+      "height": 40,
+      "type": "file",
+      "file": "client/src/pages/UserDetailPage.tsx",
+      "label": "UserDetailPage"
+    },
+    {
+      "id": "user-form-page",
+      "x": 320,
+      "y": 490,
+      "width": 200,
+      "height": 40,
+      "type": "file",
+      "file": "client/src/pages/UserFormPage.tsx",
+      "label": "UserFormPage (create/edit)"
+    },
+    {
+      "id": "user-groups-page",
+      "x": 540,
+      "y": 490,
+      "width": 200,
+      "height": 40,
+      "type": "file",
+      "file": "client/src/pages/UserGroupsPage.tsx",
+      "label": "UserGroupsPage (CRUD groups)"
+    },
+    {
+      "id": "api-service",
+      "x": 320,
+      "y": 540,
+      "width": 200,
+      "height": 40,
+      "type": "file",
+      "file": "client/src/services/api.ts",
+      "label": "API service methods (userApi)"
+    },
+    {
+      "id": "types",
+      "x": 540,
+      "y": 540,
+      "width": 200,
+      "height": 40,
+      "type": "file",
+      "file": "client/src/types/index.ts",
+      "label": "TypeScript types (UserListItem, UserGroup)"
+    },
+    {
+      "id": "i18n",
+      "x": 540,
+      "y": 590,
+      "width": 200,
+      "height": 40,
+      "type": "file",
+      "file": "client/src/i18n/vi.json",
+      "label": "i18n VI/EN translations"
+    },
+    {
+      "id": "errors",
+      "x": 0,
+      "y": 400,
+      "width": 250,
+      "height": 100,
+      "type": "group",
+      "label": "Domain Errors"
+    },
+    {
+      "id": "user-errors",
+      "x": 20,
+      "y": 440,
+      "width": 200,
+      "height": 40,
+      "type": "file",
+      "file": "server/src/domain/errors/UserManagementErrors.ts",
+      "label": "UserManagementErrors"
+    }
+  ],
+  "edges": [
+    { "id": "e1", "fromNode": "domain", "fromSide": "right", "toNode": "app", "toSide": "left" },
+    { "id": "e2", "fromNode": "app", "fromSide": "right", "toNode": "infra", "toSide": "left" },
+    { "id": "e3", "fromNode": "infra", "fromSide": "right", "toNode": "presentation", "toSide": "left" },
+    { "id": "e4", "fromNode": "app", "fromSide": "bottom", "toNode": "client", "toSide": "top" },
+    { "id": "e5", "fromNode": "presentation", "fromSide": "bottom", "toNode": "client", "toSide": "top" }
+  ]
+}

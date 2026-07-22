@@ -20,6 +20,10 @@ import JournalEntryListPage from './pages/JournalEntryListPage';
 import JournalEntryFormPage from './pages/JournalEntryFormPage';
 import LedgerPage from './pages/LedgerPage';
 import TrialBalancePage from './pages/TrialBalancePage';
+import UsersPage from './pages/UsersPage';
+import UserDetailPage from './pages/UserDetailPage';
+import UserFormPage from './pages/UserFormPage';
+import UserGroupsPage from './pages/UserGroupsPage';
 import ModuleStub from './pages/ModuleStub';
 
 function AppRoutes() {
@@ -69,6 +73,13 @@ function AppRoutes() {
           <Route path="/accounting/payroll" element={<ModuleStub name="Tiền lương" description="Quản lý bảng lương, BHXH, BHYT, BHTN" />} />
           <Route path="/accounting/reports" element={<ModuleStub name="Báo cáo tài chính" description="B01-DN, B02-DN, B03-DN, B09-DN và báo cáo quản trị" />} />
           <Route path="/accounting/system" element={<ModuleStub name="Tham số hệ thống" description="Cấu hình hệ thống, tham số kế toán" />} />
+
+          {/* User Management */}
+          <Route path="/users" element={<UsersPage />} />
+          <Route path="/users/new" element={<UserFormPage />} />
+          <Route path="/users/:id" element={<UserDetailPage />} />
+          <Route path="/users/:id/edit" element={<UserFormPage />} />
+          <Route path="/user-groups" element={<UserGroupsPage />} />
         </Route>
       </Route>
     </Routes>

@@ -39,6 +39,8 @@ const MODULE_ROUTES: Record<string, { label: string; group: string }> = {
   '/accounting/contacts': { label: 'Đối tượng', group: 'Danh mục' },
   '/accounting/reports': { label: 'Báo cáo tài chính', group: 'Báo cáo' },
   '/accounting/system': { label: 'Tham số hệ thống', group: 'Hệ thống' },
+  '/users': { label: 'Người dùng', group: 'Hệ thống' },
+  '/user-groups': { label: 'Nhóm người dùng', group: 'Hệ thống' },
   '/companies': { label: 'Công ty', group: 'Hệ thống' },
   '/sessions': { label: 'Phiên đăng nhập', group: 'Hệ thống' },
   '/2fa/setup': { label: 'Thiết lập 2FA', group: 'Hệ thống' },
@@ -84,6 +86,8 @@ const menuItems = [
   {
     key: 'hethong', icon: <SettingOutlined />, label: 'Hệ thống',
     children: [
+      { key: '/users', icon: <UserOutlined />, label: 'Người dùng' },
+      { key: '/user-groups', icon: <TeamOutlined />, label: 'Nhóm người dùng' },
       { key: '/accounting/system', icon: <SettingOutlined />, label: 'Tham số' },
       { key: '/companies', icon: <BankOutlined />, label: 'Công ty' },
       { key: '/sessions', icon: <KeyOutlined />, label: 'Phiên đ.nhập' },
@@ -95,6 +99,8 @@ const menuItems = [
 const SEARCH_ITEMS = [
   { key: '/accounting/accounts', label: 'Hệ thống tài khoản' },
   { key: '/accounting/journal-entries', label: 'Chứng từ kế toán' },
+  { key: '/users', label: 'Người dùng' },
+  { key: '/user-groups', label: 'Nhóm người dùng' },
   { key: '/accounting/contacts', label: 'Danh mục đối tượng' },
   { key: '/accounting/cash', label: 'Sổ quỹ tiền mặt' },
   { key: '/accounting/bank', label: 'Tiền gửi ngân hàng' },

@@ -2,6 +2,7 @@ import type {
   AuthResponse, Company, TokenRefreshResponse, DashboardData,
   LegalRepresentative, CapitalContributor, BusinessLine, CompanyBankAccount,
   Account, JournalEntry, FiscalPeriod, LedgerEntry, AccountBalance,
+  UserListItem, UserGroup,
 } from '../types';
 
 const BASE = '/api';
@@ -322,3 +323,60 @@ export function deleteJournalEntry(id: string) { return api.deleteJournalEntry(i
 export function getLedger(companyId: string, accountId?: string, periodId?: string) { return api.getLedger(companyId, accountId, periodId); }
 export function getTrialBalance(companyId: string, periodId: string) { return api.getTrialBalance(companyId, periodId); }
 export function getFiscalPeriods(companyId: string) { return api.getFiscalPeriods(companyId); }
+
+// ─── User Management ──────────────────────────────────────
+
+export const userApi = {
+  listUsers: (params?: { query?: string; isActive?: boolean; role?: string; groupId?: string; offset?: number; limit?: number }) => {
+    const sp = new URLSearchParams();
+    if (params?.query) sp.set('query', params.query);
+    if (params?.isActive !== undefined) sp.set('isActive', String(params.isActive));
+    if (params?.role) sp.set('role', params.role);
+    if (params?.groupId) sp.set('groupId', params.groupId);
+    if (params?.offset !== undefined) sp.set('offset', String(params.offset));
+    if (params?.limit !== undefined) sp.set('limit', String(params.limit));
+    const qs = sp.toString();
+    return request<{ data: UserListItem[]; total: number }>(`/users${qs ? `?${qs}` : ''}`);
+  },
+
+  getUser: (id: string) => request<UserListItem>(`/users/${id}`),
+
+  updateUser: (id: string, data: Partial<UserListItem>) =>
+    request<UserListItem>(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  deleteUser: (id: string) => request<void>(`/users/${id}`, { method: 'DELETE' }),
+
+  activateUser: (id: string) => request<UserListItem>(`/users/${id}/activate`, { method: 'POST' }),
+
+  deactivateUser: (id: string) => request<UserListItem>(`/users/${id}/deactivate`, { method: 'POST' }),
+
+  getUserRoles: (id: string) => request<{ roles: string[] }>(`/users/${id}/roles`),
+
+  assignRole: (id: string, role: string) =>
+    request<{ roles: string[] }>(`/users/${id}/roles`, { method: 'POST', body: JSON.stringify({ role }) }),
+
+  removeRole: (id: string, role: string) =>
+    request<{ roles: string[] }>(`/users/${id}/roles/${role}`, { method: 'DELETE' }),
+
+  getUserGroups: (id: string) => request<{ data: UserGroup[] }>(`/users/${id}/groups`),
+
+  addUserToGroup: (id: string, groupId: string) =>
+    request<{ ok: boolean }>(`/users/${id}/groups/${groupId}`, { method: 'POST' }),
+
+  removeUserFromGroup: (id: string, groupId: string) =>
+    request<{ ok: boolean }>(`/users/${id}/groups/${groupId}`, { method: 'DELETE' }),
+
+  // Groups management
+  listGroups: () => request<{ data: UserGroup[] }>('/users/groups/all'),
+
+  createGroup: (data: { name: string; description?: string }) =>
+    request<UserGroup>('/users/groups', { method: 'POST', body: JSON.stringify(data) }),
+
+  updateGroup: (id: string, data: { name?: string; description?: string }) =>
+    request<UserGroup>(`/users/groups/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  deleteGroup: (id: string) => request<void>(`/users/groups/${id}`, { method: 'DELETE' }),
+
+  toggleGroupActive: (id: string, isActive: boolean) =>
+    request<UserGroup>(`/users/groups/${id}/toggle`, { method: 'POST', body: JSON.stringify({ isActive }) }),
+};

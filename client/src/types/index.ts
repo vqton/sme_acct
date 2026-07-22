@@ -114,6 +114,31 @@ export interface User {
   fullName: string;
 }
 
+export interface UserListItem {
+  id: string;
+  username: string;
+  email: string;
+  fullName: string;
+  isActive: boolean;
+  twoFactorEnabled: boolean;
+  createdAt: string;
+  updatedAt?: string;
+  phone?: string;
+  position?: string;
+  department?: string;
+  avatarUrl?: string;
+  roles: string[];
+}
+
+export interface UserGroup {
+  id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface AuthResponse {
   token: string | null;
   refreshToken: string;
