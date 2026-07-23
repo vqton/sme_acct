@@ -13,6 +13,7 @@ const categoryColors: Record<number, string> = {
 };
 
 const natureLabels: Record<number, string> = { 1: 'Dư Nợ', 2: 'Dư Có', 3: 'Lưỡng tính' };
+const currencyList = ['VND', 'USD', 'EUR', 'JPY', 'CNY', 'GBP', 'AUD', 'SGD', 'THB', 'KRW'];
 
 export default function ChartOfAccountsPage() {
   const [accounts, setAccounts] = useState<any[]>([]);
@@ -119,6 +120,9 @@ export default function ChartOfAccountsPage() {
     },
     { title: 'Tính chất', dataIndex: 'nature', key: 'nature', width: 90,
       render: (v: number) => natureLabels[v] || v,
+    },
+    { title: 'NT', dataIndex: 'currency', key: 'currency', width: 60,
+      render: (v: string) => <Tag>{v || 'VND'}</Tag>,
     },
     { title: 'Dư Nợ ĐK', dataIndex: 'openingDebit', key: 'openingDebit', width: 100, align: 'right' as const,
       render: (v: number) => v?.toLocaleString(),
@@ -254,6 +258,9 @@ export default function ChartOfAccountsPage() {
           </Form.Item>
           <Form.Item name="nature" label="Tính chất" rules={[{ required: true }]}>
             <Select options={Object.entries(natureLabels).map(([v, l]) => ({ value: Number(v), label: l }))} />
+          </Form.Item>
+          <Form.Item name="currency" label="Loại tiền" initialValue="VND">
+            <Select options={currencyList.map((c) => ({ value: c, label: c }))} />
           </Form.Item>
           <Form.Item name="description" label="Diễn giải">
             <Input.TextArea rows={2} />

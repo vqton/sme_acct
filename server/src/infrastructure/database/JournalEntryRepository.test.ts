@@ -32,7 +32,7 @@ describe('SQLiteJournalEntryRepository', () => {
       id: 0, companyId, accountNumber: '1111',
       name: 'Tiền mặt', category: AccountCategory.TaiSan,
       nature: AccountNature.DuNo, type: AccountType.TaiKhoanChiTiet,
-      isActive: true, isSystem: false, allowTransactions: true,
+      isActive: true, isSystem: false, allowTransactions: true, currency: 'VND',
       openingDebit: 0, openingCredit: 0, debitAmount: 0, creditAmount: 0,
       closingDebit: 0, closingCredit: 0,
       createdAt: new Date(),

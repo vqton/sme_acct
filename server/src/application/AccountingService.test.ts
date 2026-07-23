@@ -40,7 +40,7 @@ describe('AccountingService', () => {
       id: 0, companyId, accountNumber: '1111',
       name: 'Tiền mặt', category: AccountCategory.TaiSan,
       nature: AccountNature.DuNo, type: AccountType.TaiKhoanChiTiet,
-      isActive: true, isSystem: false, allowTransactions: true,
+      isActive: true, isSystem: false, allowTransactions: true, currency: 'VND',
       openingDebit: 0, openingCredit: 0, debitAmount: 0, creditAmount: 0,
       closingDebit: 0, closingCredit: 0,
       createdAt: new Date(),
@@ -50,7 +50,7 @@ describe('AccountingService', () => {
       id: 0, companyId, accountNumber: '5111',
       name: 'Doanh thu', category: AccountCategory.DoanhThu,
       nature: AccountNature.DuCo, type: AccountType.TaiKhoanChiTiet,
-      isActive: true, isSystem: false, allowTransactions: true,
+      isActive: true, isSystem: false, allowTransactions: true, currency: 'VND',
       openingDebit: 0, openingCredit: 0, debitAmount: 0, creditAmount: 0,
       closingDebit: 0, closingCredit: 0,
       createdAt: new Date(),
@@ -291,5 +291,42 @@ describe('AccountingService', () => {
     const all = service.searchAccounts(companyId, '', { page: 1, pageSize: 5 });
     expect(all.data.length).toBeLessThanOrEqual(5);
     expect(all.totalPages).toBeGreaterThanOrEqual(1);
+  });
+
+  // ─── Multi-Currency ──────────────────────────────────────
+
+  it('creates account with default VND currency', () => {
+    const acc = service.createStandardAccount(companyId, { accountNumber: '790', name: 'VND Account', category: AccountCategory.TaiSan });
+    expect(acc.currency).toBe('VND');
+  });
+
+  it('creates account with explicit currency', () => {
+    const acc = service.createStandardAccount(companyId, {
+      accountNumber: '791', name: 'USD Account', category: AccountCategory.TaiSan,
+      currency: 'USD',
+    });
+    expect(acc.currency).toBe('USD');
+  });
+
+  it('creates account with EUR currency', () => {
+    const acc = service.createStandardAccount(companyId, {
+      accountNumber: '792', name: 'EUR Account', category: AccountCategory.TaiSan,
+      currency: 'EUR',
+    });
+    expect(acc.currency).toBe('EUR');
+  });
+
+  it('cannot change account number after ledger transactions', () => {
+    const acc = service.createStandardAccount(companyId, { accountNumber: '793', name: 'Locked Number', category: AccountCategory.TaiSan, allowTransactions: true });
+    const offset = service.createStandardAccount(companyId, { accountNumber: '794', name: 'Offset', category: AccountCategory.NoPhaiTra, allowTransactions: true });
+    service.createJournalEntry({
+      companyId, entryDate: '2026-01-15', entryType: JournalEntryType.ThuTien,
+      description: 'Lock number test',
+      lines: [
+        { accountId: acc.id, accountNumber: '793', debitAmount: 50000, creditAmount: 0 },
+        { accountId: offset.id, accountNumber: '794', debitAmount: 0, creditAmount: 50000 },
+      ],
+    });
+    expect(() => service.updateAccount(acc.id, { accountNumber: '793X' })).toThrow('account number');
   });
 });

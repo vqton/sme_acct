@@ -80,6 +80,7 @@ export class AccountingService {
     accountNumber: string; name: string; category: number;
     nature?: number; parentId?: number; type?: number;
     isSystem?: boolean; allowTransactions?: boolean;
+    currency?: string;
   }): Account {
     if (data.parentId) {
       this.validateAccountHierarchy(companyId, data.accountNumber, data.parentId);
@@ -95,6 +96,7 @@ export class AccountingService {
       nature,
       type: data.type ?? (data.parentId ? AccountType.TaiKhoanCon : AccountType.TaiKhoanMe),
       parentId: data.parentId,
+      currency: data.currency ?? 'VND',
       isSystem: data.isSystem ?? false,
       allowTransactions: data.allowTransactions ?? !!data.parentId,
       isActive: true,
@@ -122,6 +124,12 @@ export class AccountingService {
     if (data.parentId !== undefined && data.parentId !== existing.parentId) {
       if (data.parentId === id) throw new Error('Circular parent reference: account cannot be its own parent');
       this.validateAccountHierarchy(existing.companyId, existing.accountNumber, data.parentId);
+    }
+    if (data.accountNumber && data.accountNumber !== existing.accountNumber) {
+      const ledgerEntries = this.repos.ledger.findByAccountId(existing.companyId, id);
+      if (ledgerEntries.length > 0) throw new Error('Cannot change account number: account has ledger transactions');
+      const journalLines = this.repos.journalEntries.findLinesByAccountId(id);
+      if (journalLines.length > 0) throw new Error('Cannot change account number: account has journal entry references');
     }
     const updated = { ...existing, ...data, updatedAt: new Date() };
     const saved = this.repos.accounts.save(updated);

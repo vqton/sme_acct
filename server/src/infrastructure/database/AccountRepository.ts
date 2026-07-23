@@ -43,8 +43,8 @@ export class SQLiteAccountRepository implements AccountRepository {
       findSystem: s('SELECT * FROM accounts WHERE company_id = ? AND is_system = 1 ORDER BY account_number'),
       findLeafAccounts: s('SELECT * FROM accounts WHERE company_id = ? AND parent_id IS NOT NULL AND allow_transactions = 1 ORDER BY account_number'),
       search: s('SELECT * FROM accounts WHERE company_id = ? AND (account_number LIKE ? OR name LIKE ?) ORDER BY account_number'),
-      insert: s(`INSERT INTO accounts (id, company_id, account_number, name, name_english, category, nature, type, parent_id, is_active, is_system, allow_transactions, opening_debit, opening_credit, debit_amount, credit_amount, closing_debit, closing_credit, description, created_at, updated_at) VALUES (@id, @companyId, @accountNumber, @name, @nameEnglish, @category, @nature, @type, @parentId, @isActive, @isSystem, @allowTransactions, @openingDebit, @openingCredit, @debitAmount, @creditAmount, @closingDebit, @closingCredit, @description, @createdAt, @updatedAt)`),
-      update: s(`UPDATE accounts SET company_id=@companyId, account_number=@accountNumber, name=@name, name_english=@nameEnglish, category=@category, nature=@nature, type=@type, parent_id=@parentId, is_active=@isActive, is_system=@isSystem, allow_transactions=@allowTransactions, opening_debit=@openingDebit, opening_credit=@openingCredit, debit_amount=@debitAmount, credit_amount=@creditAmount, closing_debit=@closingDebit, closing_credit=@closingCredit, description=@description, updated_at=@updatedAt WHERE id=@id`),
+      insert: s(`INSERT INTO accounts (id, company_id, account_number, name, name_english, category, nature, type, parent_id, is_active, is_system, allow_transactions, opening_debit, opening_credit, debit_amount, credit_amount, closing_debit, closing_credit, description, currency, created_at, updated_at) VALUES (@id, @companyId, @accountNumber, @name, @nameEnglish, @category, @nature, @type, @parentId, @isActive, @isSystem, @allowTransactions, @openingDebit, @openingCredit, @debitAmount, @creditAmount, @closingDebit, @closingCredit, @description, @currency, @createdAt, @updatedAt)`),
+      update: s(`UPDATE accounts SET company_id=@companyId, account_number=@accountNumber, name=@name, name_english=@nameEnglish, category=@category, nature=@nature, type=@type, parent_id=@parentId, is_active=@isActive, is_system=@isSystem, allow_transactions=@allowTransactions, opening_debit=@openingDebit, opening_credit=@openingCredit, debit_amount=@debitAmount, credit_amount=@creditAmount, closing_debit=@closingDebit, closing_credit=@closingCredit, description=@description, currency=@currency, updated_at=@updatedAt WHERE id=@id`),
       delete: s('DELETE FROM accounts WHERE id = ?'),
     };
   }
@@ -133,6 +133,7 @@ export class SQLiteAccountRepository implements AccountRepository {
       closingDebit: (row.closing_debit as number) ?? 0,
       closingCredit: (row.closing_credit as number) ?? 0,
       description: row.description as string ?? undefined,
+      currency: (row.currency as string) ?? 'VND',
       createdAt: row.created_at as unknown as Date,
       updatedAt: row.updated_at as unknown as Date | undefined,
     };
@@ -159,6 +160,7 @@ export class SQLiteAccountRepository implements AccountRepository {
       closingDebit: entity.closingDebit ?? 0,
       closingCredit: entity.closingCredit ?? 0,
       description: entity.description ?? null,
+      currency: entity.currency ?? 'VND',
       createdAt: entity.createdAt instanceof Date ? entity.createdAt.toISOString() : entity.createdAt,
       updatedAt: entity.updatedAt instanceof Date ? entity.updatedAt.toISOString() : (entity.updatedAt ?? null),
     };

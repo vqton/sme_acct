@@ -19,6 +19,7 @@ export interface Account {
   creditAmount?: number;
   closingDebit?: number;
   closingCredit?: number;
+  currency: string;
   description?: string;
   createdAt: Date;
   updatedAt?: Date;
@@ -35,6 +36,7 @@ export function createAccount(data: Partial<Account> & {
     id: 0,
     isActive: true,
     isSystem: false,
+    currency: 'VND',
     allowTransactions: true,
     type: data.parentId ? AccountType.TaiKhoanChiTiet : AccountType.TaiKhoanMe,
     openingDebit: 0,

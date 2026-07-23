@@ -451,11 +451,14 @@ export function runMigrations(db: Database): void {
       closing_debit REAL NOT NULL DEFAULT 0,
       closing_credit REAL NOT NULL DEFAULT 0,
       description TEXT,
+      currency TEXT NOT NULL DEFAULT 'VND',
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT,
       UNIQUE(company_id, account_number)
     )
   `);
+
+  try { db.exec(`ALTER TABLE accounts ADD COLUMN currency TEXT NOT NULL DEFAULT 'VND'`); } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS fiscal_periods (

@@ -36,6 +36,19 @@ describe('Account', () => {
       expect(acc.openingDebit).toBe(0);
       expect(acc.openingCredit).toBe(0);
       expect(acc.type).toBe(AccountType.TaiKhoanMe);
+      expect(acc.currency).toBe('VND');
+    });
+
+    it('accepts explicit currency', () => {
+      const acc = createAccount({
+        companyId: 1,
+        accountNumber: '1112',
+        name: 'Tiền mặt USD',
+        category: AccountCategory.TaiSan,
+        nature: AccountNature.DuNo,
+        currency: 'USD',
+      });
+      expect(acc.currency).toBe('USD');
     });
 
     it('sets type to chi tiet when parentId provided', () => {

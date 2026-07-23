@@ -199,6 +199,7 @@ export interface Account {
   isActive: boolean;
   isSystem: boolean;
   allowTransactions: boolean;
+  currency: string;
   openingDebit?: number;
   openingCredit?: number;
   debitAmount?: number;
