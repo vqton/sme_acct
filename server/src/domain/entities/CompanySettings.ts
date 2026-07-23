@@ -1,6 +1,6 @@
 export interface CompanySettings {
-  id: string;
-  companyId: string;
+  id: number;
+  companyId: number;
 
   fiscalYearStartMonth: number;
   currencyCode: string;

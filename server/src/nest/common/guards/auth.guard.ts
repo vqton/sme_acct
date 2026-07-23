@@ -3,7 +3,7 @@ import { Request } from 'express';
 import { verifyToken } from '../../../infrastructure/auth/jwt.js';
 
 export interface AuthenticatedUser {
-  userId: string;
+  userId: number;
   username: string;
   roles: string[];
 }

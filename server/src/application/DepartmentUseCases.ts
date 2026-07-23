@@ -26,23 +26,23 @@ export class DepartmentUseCases {
     return this.deptRepo.save(dept);
   }
 
-  getById(id: string): Department {
+  getById(id: number): Department {
     const dept = this.deptRepo.findById(id);
     if (!dept) throw new Error('Department not found');
     return dept;
   }
 
-  list(companyId: string): Department[] {
+  list(companyId: number): Department[] {
     return this.deptRepo.findByCompanyId(companyId);
   }
 
-  update(id: string, data: Partial<Department>): Department {
+  update(id: number, data: Partial<Department>): Department {
     const dept = this.getById(id);
     const updated = { ...dept, ...data, updatedAt: new Date() };
     return this.deptRepo.save(updated);
   }
 
-  deactivate(id: string): Department {
+  deactivate(id: number): Department {
     const dept = this.getById(id);
     const children = this.deptRepo.findChildren(id);
     if (children.some((c) => c.status === DepartmentStatus.Active)) {
@@ -54,7 +54,7 @@ export class DepartmentUseCases {
     return this.deptRepo.save(deactivateDepartment(dept));
   }
 
-  reactivate(id: string): Department {
+  reactivate(id: number): Department {
     const dept = this.getById(id);
     if (dept.status === DepartmentStatus.Dissolved) {
       throw new Error('Cannot reactivate dissolved department');
@@ -62,7 +62,7 @@ export class DepartmentUseCases {
     return this.deptRepo.save(reactivateDepartment(dept));
   }
 
-  dissolve(id: string, dissolutionDate?: string): Department {
+  dissolve(id: number, dissolutionDate?: string): Department {
     const dept = this.getById(id);
     const children = this.deptRepo.findChildren(id);
     if (children.length > 0) {
@@ -74,7 +74,7 @@ export class DepartmentUseCases {
     return this.deptRepo.save(dissolveDepartment(dept, dissolutionDate));
   }
 
-  reparent(id: string, newParentId: string): Department {
+  reparent(id: number, newParentId: number): Department {
     const dept = this.getById(id);
     const newParent = this.deptRepo.findById(newParentId);
     if (!newParent) throw new Error('New parent not found');
@@ -94,15 +94,15 @@ export class DepartmentUseCases {
     return saved;
   }
 
-  getTree(companyId: string): Department[] {
+  getTree(companyId: number): Department[] {
     return this.deptRepo.findByCompanyId(companyId);
   }
 
-  getChildren(parentId: string): Department[] {
+  getChildren(parentId: number): Department[] {
     return this.deptRepo.findChildren(parentId);
   }
 
-  delete(id: string): void {
+  delete(id: number): void {
     const dept = this.getById(id);
     const children = this.deptRepo.findChildren(id);
     if (children.length > 0) {
@@ -125,7 +125,7 @@ export class DepartmentUseCases {
     return this.userDeptRepo.save(ud);
   }
 
-  changePrimaryDepartment(userId: string, departmentId: string): void {
+  changePrimaryDepartment(userId: number, departmentId: number): void {
     this.userDeptRepo.removePrimaryFlag(userId);
     const ud = this.userDeptRepo.findOne(userId, departmentId);
     if (ud) {
@@ -134,7 +134,7 @@ export class DepartmentUseCases {
     }
   }
 
-  removeUserFromDepartment(userId: string, departmentId: string): void {
+  removeUserFromDepartment(userId: number, departmentId: number): void {
     const ud = this.userDeptRepo.findOne(userId, departmentId);
     if (!ud) throw new Error('User not assigned to this department');
 
@@ -155,11 +155,11 @@ export class DepartmentUseCases {
     }
   }
 
-  getDepartmentUsers(departmentId: string): UserDepartment[] {
+  getDepartmentUsers(departmentId: number): UserDepartment[] {
     return this.userDeptRepo.findByDepartmentId(departmentId);
   }
 
-  getUserDepartments(userId: string): UserDepartment[] {
+  getUserDepartments(userId: number): UserDepartment[] {
     return this.userDeptRepo.findByUserId(userId);
   }
 }

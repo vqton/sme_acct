@@ -36,15 +36,15 @@ export class SQLiteUserDepartmentRepository implements UserDepartmentRepository 
     };
   }
 
-  findByUserId(userId: string): UserDepartment[] {
+  findByUserId(userId: number): UserDepartment[] {
     return (this.stmts.findByUserId.all(userId) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findByDepartmentId(departmentId: string): UserDepartment[] {
+  findByDepartmentId(departmentId: number): UserDepartment[] {
     return (this.stmts.findByDepartmentId.all(departmentId) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findOne(userId: string, departmentId: string): UserDepartment | null {
+  findOne(userId: number, departmentId: number): UserDepartment | null {
     const row = this.stmts.findOne.get(userId, departmentId) as Record<string, unknown> | undefined;
     return row ? this.toEntity(row) : null;
   }
@@ -60,22 +60,22 @@ export class SQLiteUserDepartmentRepository implements UserDepartmentRepository 
     return entity;
   }
 
-  removePrimaryFlag(userId: string): void {
+  removePrimaryFlag(userId: number): void {
     this.stmts.removePrimaryFlag.run(userId);
   }
 
-  delete(userId: string, departmentId: string): void {
+  delete(userId: number, departmentId: number): void {
     this.stmts.delete.run(userId, departmentId);
   }
 
-  countByDepartmentId(departmentId: string): number {
+  countByDepartmentId(departmentId: number): number {
     return (this.stmts.countByDepartmentId.get(departmentId) as { c: number }).c;
   }
 
   private toEntity(row: Record<string, unknown>): UserDepartment {
     return {
-      userId: row.user_id as string,
-      departmentId: row.department_id as string,
+      userId: row.user_id as number,
+      departmentId: row.department_id as number,
       isPrimary: (row.is_primary as number) === 1,
       jobTitle: row.job_title as string | undefined,
       isActive: (row.is_active as number) === 1,

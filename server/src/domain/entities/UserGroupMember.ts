@@ -1,5 +1,5 @@
 export interface UserGroupMember {
-  groupId: string;
-  userId: string;
+  groupId: number;
+  userId: number;
   joinedAt: Date;
 }

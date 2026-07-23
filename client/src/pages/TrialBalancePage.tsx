@@ -4,11 +4,11 @@ import { getTrialBalance, getFiscalPeriods } from '../services/api';
 
 export default function TrialBalancePage() {
   const [periods, setPeriods] = useState<any[]>([]);
-  const [selectedPeriod, setSelectedPeriod] = useState<string | undefined>(undefined);
+  const [selectedPeriod, setSelectedPeriod] = useState<number | undefined>(undefined);
   const [balances, setBalances] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const { message } = App.useApp();
-  const companyId = localStorage.getItem('currentCompanyId') || '';
+  const companyId = Number(localStorage.getItem('currentCompanyId'));
 
   useEffect(() => {
     if (!companyId) return;

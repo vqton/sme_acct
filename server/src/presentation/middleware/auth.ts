@@ -3,7 +3,7 @@ import { verifyToken } from '../../infrastructure/auth/jwt.js';
 import { hasAnyPermission, hasAllPermissions, type Permission } from '../../domain/entities/Role.js';
 
 export interface AuthenticatedUser {
-  userId: string;
+  userId: number;
   username: string;
   roles: string[];
 }

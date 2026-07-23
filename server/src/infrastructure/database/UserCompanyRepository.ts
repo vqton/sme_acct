@@ -10,14 +10,14 @@ export class SQLiteUserCompanyRepository implements UserCompanyRepository {
     this.db = db ?? getDb();
   }
 
-  findByUserId(userId: string): UserCompany[] {
+  findByUserId(userId: number): UserCompany[] {
     const rows = this.db
       .prepare(
         'SELECT user_id, company_id, role, is_active, joined_at FROM user_companies WHERE user_id = ?',
       )
       .all(userId) as {
-      user_id: string;
-      company_id: string;
+      user_id: number;
+      company_id: number;
       role: string | null;
       is_active: number;
       joined_at: string;
@@ -32,16 +32,16 @@ export class SQLiteUserCompanyRepository implements UserCompanyRepository {
   }
 
   findByUserIdAndCompanyId(
-    userId: string,
-    companyId: string,
+    userId: number,
+    companyId: number,
   ): UserCompany | null {
     const row = this.db
       .prepare(
         'SELECT user_id, company_id, role, is_active, joined_at FROM user_companies WHERE user_id = ? AND company_id = ?',
       )
       .get(userId, companyId) as {
-      user_id: string;
-      company_id: string;
+      user_id: number;
+      company_id: number;
       role: string | null;
       is_active: number;
       joined_at: string;

@@ -34,39 +34,39 @@ export class SQLiteCompanyBankAccountRepository implements CompanyBankAccountRep
     };
   }
 
-  findById(id: string): CompanyBankAccount | null {
+  findById(id: number): CompanyBankAccount | null {
     const row = this.stmts.findById.get(id) as Record<string, unknown> | undefined;
     return row ? this.toEntity(row) : null;
   }
 
-  findByCompanyId(companyId: string): CompanyBankAccount[] {
+  findByCompanyId(companyId: number): CompanyBankAccount[] {
     return (this.stmts.findByCompanyId.all(companyId) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findPrimaryTaxPaymentByCompanyId(companyId: string): CompanyBankAccount | null {
+  findPrimaryTaxPaymentByCompanyId(companyId: number): CompanyBankAccount | null {
     const row = this.stmts.findPrimaryTaxPaymentByCompanyId.get(companyId) as Record<string, unknown> | undefined;
     return row ? this.toEntity(row) : null;
   }
 
   save(entity: CompanyBankAccount): CompanyBankAccount {
     const params = this.toParams(entity);
-    const existing = this.stmts.findById.get(entity.id);
-    if (existing) {
+    if (entity.id) {
       this.stmts.update.run(params);
     } else {
-      this.stmts.insert.run(params);
+      const result = this.stmts.insert.run(params);
+      entity.id = Number(result.lastInsertRowid);
     }
     return entity;
   }
 
-  delete(id: string): void {
+  delete(id: number): void {
     this.stmts.delete.run(id);
   }
 
   private toEntity(row: Record<string, unknown>): CompanyBankAccount {
     return {
-      id: row.id as string,
-      companyId: row.company_id as string,
+      id: row.id as number,
+      companyId: row.company_id as number,
       accountNumber: row.account_number as string,
       accountName: row.account_name as string,
       bankName: row.bank_name as string,
@@ -83,7 +83,7 @@ export class SQLiteCompanyBankAccountRepository implements CompanyBankAccountRep
 
   private toParams(entity: CompanyBankAccount) {
     return {
-      id: entity.id,
+      id: entity.id || null,
       companyId: entity.companyId,
       accountNumber: entity.accountNumber,
       accountName: entity.accountName,

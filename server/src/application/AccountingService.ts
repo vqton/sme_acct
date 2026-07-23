@@ -23,40 +23,40 @@ export class AccountingService {
 
   // ─── Accounts ───────────────────────────────────────────
 
-  listAccounts(companyId: string): Account[] {
+  listAccounts(companyId: number): Account[] {
     return this.repos.accounts.findByCompanyId(companyId);
   }
 
-  getAccount(id: string): Account {
+  getAccount(id: number): Account {
     const acc = this.repos.accounts.findById(id);
     if (!acc) throw new Error('Account not found');
     return acc;
   }
 
-  getAccountByNumber(companyId: string, number: string): Account | null {
+  getAccountByNumber(companyId: number, number: string): Account | null {
     return this.repos.accounts.findByAccountNumber(companyId, number);
   }
 
-  createAccount(data: Partial<Account> & { companyId: string; accountNumber: string; name: string; category: number; nature: number }): Account {
+  createAccount(data: Partial<Account> & { companyId: number; accountNumber: string; name: string; category: number; nature: number }): Account {
     const existing = this.repos.accounts.findByAccountNumber(data.companyId, data.accountNumber);
     if (existing) throw new Error(`Account ${data.accountNumber} already exists`);
     const entity = createAccount(data as any);
     return this.repos.accounts.save(entity);
   }
 
-  updateAccount(id: string, data: Partial<Account>): Account {
+  updateAccount(id: number, data: Partial<Account>): Account {
     const existing = this.getAccount(id);
     const updated = { ...existing, ...data, updatedAt: new Date() };
     return this.repos.accounts.save(updated);
   }
 
-  deleteAccount(id: string): void {
+  deleteAccount(id: number): void {
     const children = this.repos.accounts.findByParentId(id);
     if (children.length > 0) throw new Error('Cannot delete account with child accounts');
     this.repos.accounts.delete(id);
   }
 
-  seedStandardAccounts(companyId: string): Account[] {
+  seedStandardAccounts(companyId: number): Account[] {
     const existing = this.repos.accounts.findByCompanyId(companyId);
     if (existing.length > 0) return existing;
 
@@ -84,11 +84,11 @@ export class AccountingService {
 
   // ─── Journal Entries ────────────────────────────────────
 
-  listJournalEntries(companyId: string): JournalEntry[] {
+  listJournalEntries(companyId: number): JournalEntry[] {
     return this.repos.journalEntries.findByCompanyId(companyId);
   }
 
-  getJournalEntry(id: string): JournalEntry {
+  getJournalEntry(id: number): JournalEntry {
     const entry = this.repos.journalEntries.findById(id);
     if (!entry) throw new Error('Journal entry not found');
     entry.lines = this.repos.journalEntries.findLinesByEntryId(id);
@@ -96,8 +96,8 @@ export class AccountingService {
   }
 
   createJournalEntry(data: {
-    companyId: string; entryDate: string; entryType: number;
-    description: string; periodId?: string; lines: Array<{ accountId: string; accountNumber: string; debitAmount: number; creditAmount: number; description?: string }>;
+    companyId: number; entryDate: string; entryType: number;
+    description: string; periodId?: number; lines: Array<{ accountId: number; accountNumber: string; debitAmount: number; creditAmount: number; description?: string }>;
   }): JournalEntry {
     let periodId = data.periodId;
     if (!periodId) {
@@ -139,7 +139,7 @@ export class AccountingService {
     });
   }
 
-  postJournalEntry(id: string, userId: string): JournalEntry {
+  postJournalEntry(id: number, userId: number): JournalEntry {
     const entry = this.getJournalEntry(id);
     const posted = postJournalEntry(entry);
     posted.postedByUserId = userId;
@@ -150,7 +150,7 @@ export class AccountingService {
     return saved;
   }
 
-  reverseJournalEntry(id: string, userId: string): { reversal: JournalEntry; original: JournalEntry } {
+  reverseJournalEntry(id: number, userId: number): { reversal: JournalEntry; original: JournalEntry } {
     const entry = this.getJournalEntry(id);
     const result = reverseJournalEntry(entry, userId);
     const savedReversal = this.repos.journalEntries.save(result.reversal);
@@ -159,7 +159,7 @@ export class AccountingService {
     return { reversal: savedReversal, original: savedOriginal };
   }
 
-  deleteJournalEntry(id: string): void {
+  deleteJournalEntry(id: number): void {
     const entry = this.repos.journalEntries.findById(id);
     if (!entry) return;
     if (entry.isPosted) throw new Error('Cannot delete a posted entry. Reverse it instead.');
@@ -198,7 +198,7 @@ export class AccountingService {
         : rb.credit - rb.debit;
 
       entries.push({
-        id: crypto.randomUUID(),
+        id: 0,
         companyId: entry.companyId,
         accountId: line.accountId,
         accountNumber: line.accountNumber,
@@ -220,7 +220,7 @@ export class AccountingService {
     this.updateAccountBalances(entry.companyId, entry.periodId);
   }
 
-  private updateAccountBalances(companyId: string, periodId: string): void {
+  private updateAccountBalances(companyId: number, periodId: number): void {
     const period = this.repos.fiscalPeriods.findById(periodId);
     if (!period) return;
 
@@ -263,7 +263,7 @@ export class AccountingService {
     }
   }
 
-  getLedgerEntries(companyId: string, accountId?: string, periodId?: string): LedgerEntry[] {
+  getLedgerEntries(companyId: number, accountId?: number, periodId?: number): LedgerEntry[] {
     if (accountId && periodId) {
       return this.repos.ledger.findByAccountInPeriod(companyId, accountId, periodId);
     }
@@ -278,25 +278,25 @@ export class AccountingService {
     return this.repos.ledger.findByPeriodId(companyId, periods[0].id);
   }
 
-  getAccountBalance(companyId: string, accountId: string, periodId: string): AccountBalance | null {
+  getAccountBalance(companyId: number, accountId: number, periodId: number): AccountBalance | null {
     return this.repos.ledger.getAccountBalance(companyId, accountId, periodId);
   }
 
-  getTrialBalance(companyId: string, periodId: string): AccountBalance[] {
+  getTrialBalance(companyId: number, periodId: number): AccountBalance[] {
     return this.repos.ledger.getAccountBalances(companyId, periodId);
   }
 
   // ─── Fiscal Periods ─────────────────────────────────────
 
-  getFiscalPeriods(companyId: string): FiscalPeriod[] {
+  getFiscalPeriods(companyId: number): FiscalPeriod[] {
     return this.repos.fiscalPeriods.findByCompanyId(companyId);
   }
 
-  getCurrentPeriod(companyId: string): FiscalPeriod | null {
+  getCurrentPeriod(companyId: number): FiscalPeriod | null {
     return this.repos.fiscalPeriods.findCurrentPeriod(companyId);
   }
 
-  openNewPeriod(companyId: string, year: number, month: number): FiscalPeriod {
+  openNewPeriod(companyId: number, year: number, month: number): FiscalPeriod {
     const existing = this.repos.fiscalPeriods.findByMonth(companyId, year, month);
     if (existing) throw new Error('Period already exists');
 
@@ -309,7 +309,7 @@ export class AccountingService {
     return this.repos.fiscalPeriods.save(period);
   }
 
-  closeFiscalPeriod(periodId: string, userId: string): FiscalPeriod {
+  closeFiscalPeriod(periodId: number, userId: number): FiscalPeriod {
     const period = this.repos.fiscalPeriods.findById(periodId);
     if (!period) throw new Error('Period not found');
     const closed = closePeriod(period, userId);

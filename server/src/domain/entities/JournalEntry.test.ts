@@ -4,16 +4,16 @@ import { JournalEntryType } from '../enums/AccountEnums.js';
 
 describe('JournalEntry', () => {
   const baseLines = [
-    { accountId: 'a1', accountNumber: '1111', debitAmount: 1000, creditAmount: 0 },
-    { accountId: 'a2', accountNumber: '5111', debitAmount: 0, creditAmount: 1000 },
+    { accountId: 1, accountNumber: '1111', debitAmount: 1000, creditAmount: 0 },
+    { accountId: 2, accountNumber: '5111', debitAmount: 0, creditAmount: 1000 },
   ];
 
   describe('createJournalEntry', () => {
     it('creates entry with balanced lines', () => {
       const entry = createJournalEntry({
-        companyId: 'c1',
+        companyId: 1,
         entryDate: '2026-01-15',
-        periodId: 'p1',
+        periodId: 1,
         entryType: JournalEntryType.ThuTien,
         description: 'Thu tiền bán hàng',
         lines: baseLines,
@@ -28,23 +28,23 @@ describe('JournalEntry', () => {
 
     it('throws when lines are unbalanced', () => {
       expect(() => createJournalEntry({
-        companyId: 'c1',
+        companyId: 1,
         entryDate: '2026-01-15',
-        periodId: 'p1',
+        periodId: 1,
         entryType: JournalEntryType.ThuTien,
         description: 'Unbalanced',
         lines: [
-          { accountId: 'a1', accountNumber: '1111', debitAmount: 1000, creditAmount: 0 },
-          { accountId: 'a2', accountNumber: '5111', debitAmount: 0, creditAmount: 500 },
+          { accountId: 1, accountNumber: '1111', debitAmount: 1000, creditAmount: 0 },
+          { accountId: 2, accountNumber: '5111', debitAmount: 0, creditAmount: 500 },
         ],
       })).toThrow('Total debit must equal total credit');
     });
 
     it('assigns ids to lines', () => {
       const entry = createJournalEntry({
-        companyId: 'c1',
+        companyId: 1,
         entryDate: '2026-01-15',
-        periodId: 'p1',
+        periodId: 1,
         entryType: JournalEntryType.ThuTien,
         description: 'Test',
         lines: baseLines,
@@ -58,9 +58,9 @@ describe('JournalEntry', () => {
   describe('postJournalEntry', () => {
     it('posts a valid entry', () => {
       const entry = createJournalEntry({
-        companyId: 'c1',
+        companyId: 1,
         entryDate: '2026-01-15',
-        periodId: 'p1',
+        periodId: 1,
         entryType: JournalEntryType.ThuTien,
         description: 'Test',
         lines: baseLines,
@@ -73,9 +73,9 @@ describe('JournalEntry', () => {
 
     it('throws when already posted', () => {
       const entry = createJournalEntry({
-        companyId: 'c1',
+        companyId: 1,
         entryDate: '2026-01-15',
-        periodId: 'p1',
+        periodId: 1,
         entryType: JournalEntryType.ThuTien,
         description: 'Test',
         lines: baseLines,
@@ -87,7 +87,7 @@ describe('JournalEntry', () => {
 
     it('throws when no lines', () => {
       expect(() => postJournalEntry({
-        id: '1', companyId: 'c1', entryDate: '2026-01-15', periodId: 'p1',
+        id: 1, companyId: 1, entryDate: '2026-01-15', periodId: 1,
         entryType: JournalEntryType.ThuTien, description: 'Test',
         entryNumber: '0001', totalDebit: 0, totalCredit: 0,
         isPosted: false, isReversed: false,
@@ -99,16 +99,16 @@ describe('JournalEntry', () => {
   describe('reverseJournalEntry', () => {
     it('creates reversal entry with opposite amounts', () => {
       const entry = createJournalEntry({
-        companyId: 'c1',
+        companyId: 1,
         entryDate: '2026-01-15',
-        periodId: 'p1',
+        periodId: 1,
         entryType: JournalEntryType.ThuTien,
         description: 'Test',
         lines: baseLines,
       });
 
       const posted = postJournalEntry(entry);
-      const { reversal, original } = reverseJournalEntry(posted, 'user-1');
+      const { reversal, original } = reverseJournalEntry(posted, 1);
 
       expect(reversal.isPosted).toBe(true);
       expect(original.isReversed).toBe(true);
@@ -120,15 +120,15 @@ describe('JournalEntry', () => {
 
     it('throws when entry not posted', () => {
       const entry = createJournalEntry({
-        companyId: 'c1',
+        companyId: 1,
         entryDate: '2026-01-15',
-        periodId: 'p1',
+        periodId: 1,
         entryType: JournalEntryType.ThuTien,
         description: 'Test',
         lines: baseLines,
       });
 
-      expect(() => reverseJournalEntry(entry, 'user-1')).toThrow('Cannot reverse an unposted entry');
+      expect(() => reverseJournalEntry(entry, 1)).toThrow('Cannot reverse an unposted entry');
     });
   });
 });

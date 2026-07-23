@@ -1,6 +1,6 @@
 export interface BusinessLine {
-  id: string;
-  companyId: string;
+  id: number;
+  companyId: number;
   vsicCode: string;
   vsicLevel: number;
   name: string;
@@ -13,10 +13,10 @@ export interface BusinessLine {
 }
 
 export function createBusinessLine(
-  data: Omit<BusinessLine, 'id' | 'createdAt'> & { id?: string; createdAt?: Date },
+  data: Omit<BusinessLine, 'id' | 'createdAt'> & { id?: number; createdAt?: Date },
 ): BusinessLine {
   return {
-    id: crypto.randomUUID(),
+    id: 0,
     createdAt: new Date(),
     ...data,
   };

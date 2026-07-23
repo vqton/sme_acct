@@ -8,7 +8,7 @@ export enum CompanyStatus {
 }
 
 export interface Company {
-  id: string;
+  id: number;
   name: string;
   nameVietnamese?: string;
   nameEnglish?: string;
@@ -31,22 +31,22 @@ export interface Company {
   dateOfOperationCommencement?: string;
   status: number;
   reasonForDissolution?: string;
-  taxOfficeId?: string;
+  taxOfficeId?: number;
   taxOfficeName?: string;
   taxDepartment?: string;
   managedByTaxAuthorityCode?: string;
   createdAt: string;
   updatedAt?: string;
-  createdByUserId?: string;
-  updatedByUserId?: string;
+  createdByUserId?: number;
+  updatedByUserId?: number;
   firstPeriodStartDate?: string;
   closedPeriodCount?: number;
   legalRepresentative?: string;
 }
 
 export interface LegalRepresentative {
-  id: string;
-  companyId: string;
+  id: number;
+  companyId: number;
   fullName: string;
   vneidNumber?: string;
   position: string;
@@ -62,8 +62,8 @@ export interface LegalRepresentative {
 }
 
 export interface CapitalContributor {
-  id: string;
-  companyId: string;
+  id: number;
+  companyId: number;
   contributorType: number;
   fullName: string;
   idNumber?: string;
@@ -78,8 +78,8 @@ export interface CapitalContributor {
 }
 
 export interface BusinessLine {
-  id: string;
-  companyId: string;
+  id: number;
+  companyId: number;
   vsicCode: string;
   vsicLevel: number;
   name: string;
@@ -92,8 +92,8 @@ export interface BusinessLine {
 }
 
 export interface CompanyBankAccount {
-  id: string;
-  companyId: string;
+  id: number;
+  companyId: number;
   accountNumber: string;
   accountName: string;
   bankName: string;
@@ -108,14 +108,14 @@ export interface CompanyBankAccount {
 }
 
 export interface User {
-  id: string;
+  id: number;
   username: string;
   email: string;
   fullName: string;
 }
 
 export interface UserListItem {
-  id: string;
+  id: number;
   username: string;
   email: string;
   fullName: string;
@@ -131,7 +131,7 @@ export interface UserListItem {
 }
 
 export interface UserGroup {
-  id: string;
+  id: number;
   name: string;
   description?: string;
   isActive: boolean;
@@ -143,7 +143,7 @@ export interface AuthResponse {
   token: string | null;
   refreshToken: string;
   user: {
-    id: string;
+    id: number;
     username: string;
     fullName: string;
   };
@@ -153,7 +153,7 @@ export interface AuthResponse {
 }
 
 export interface CompanyOption {
-  id: string;
+  id: number;
   name: string;
   role?: string;
 }
@@ -187,15 +187,15 @@ export interface TokenRefreshResponse {
 // ─── Accounting Types ─────────────────────────────────────
 
 export interface Account {
-  id: string;
-  companyId: string;
+  id: number;
+  companyId: number;
   accountNumber: string;
   name: string;
   nameEnglish?: string;
   category: number;
   nature: number;
   type: number;
-  parentId?: string;
+  parentId?: number;
   isActive: boolean;
   isSystem: boolean;
   allowTransactions: boolean;
@@ -211,11 +211,11 @@ export interface Account {
 }
 
 export interface JournalEntry {
-  id: string;
-  companyId: string;
+  id: number;
+  companyId: number;
   entryNumber: string;
   entryDate: string;
-  periodId: string;
+  periodId: number;
   entryType: number;
   description: string;
   descriptionEnglish?: string;
@@ -225,30 +225,30 @@ export interface JournalEntry {
   totalCredit: number;
   isPosted: boolean;
   isReversed: boolean;
-  reversedById?: string;
+  reversedById?: number;
   postedAt?: string;
   createdAt: string;
-  postedByUserId?: string;
-  createdByUserId?: string;
+  postedByUserId?: number;
+  createdByUserId?: number;
   lines: JournalLine[];
 }
 
 export interface JournalLine {
-  id: string;
-  journalEntryId: string;
-  accountId: string;
+  id: number;
+  journalEntryId: number;
+  accountId: number;
   accountNumber: string;
   description?: string;
   debitAmount: number;
   creditAmount: number;
-  costCenterId?: string;
-  departmentId?: string;
-  projectId?: string;
+  costCenterId?: number;
+  departmentId?: number;
+  projectId?: number;
 }
 
 export interface FiscalPeriod {
-  id: string;
-  companyId: string;
+  id: number;
+  companyId: number;
   year: number;
   month: number;
   periodName: string;
@@ -257,18 +257,18 @@ export interface FiscalPeriod {
   status: number;
   isOpeningBalancePeriod: boolean;
   closedAt?: string;
-  closedByUserId?: string;
+  closedByUserId?: number;
   createdAt: string;
   updatedAt?: string;
 }
 
 export interface LedgerEntry {
-  id: string;
-  companyId: string;
-  accountId: string;
+  id: number;
+  companyId: number;
+  accountId: number;
   accountNumber: string;
-  periodId: string;
-  journalEntryId: string;
+  periodId: number;
+  journalEntryId: number;
   entryNumber: string;
   entryDate: string;
   description: string;
@@ -277,17 +277,60 @@ export interface LedgerEntry {
   runningDebit: number;
   runningCredit: number;
   runningBalance: number;
-  costCenterId?: string;
-  departmentId?: string;
-  projectId?: string;
+  costCenterId?: number;
+  departmentId?: number;
+  projectId?: number;
   createdAt: string;
 }
 
+// ─── Department Types ─────────────────────────────────────
+
+export interface Department {
+  id: number;
+  companyId: number;
+  code: string;
+  name: string;
+  nameEnglish?: string;
+  departmentType: number;
+  parentId?: number;
+  path: string;
+  depth: number;
+  sortOrder: number;
+  managerUserId?: number;
+  managerTitle?: string;
+  deputyManagerUserId?: number;
+  defaultSalaryAccount?: string;
+  defaultExpenseAccount?: string;
+  hasBudgetControl: boolean;
+  budgetAlertThreshold: number;
+  budgetControlLevel: number;
+  status: number;
+  effectiveDate: string;
+  dissolutionDate?: string;
+  createdAt: string;
+  updatedAt?: string;
+  createdByUserId?: number;
+  updatedByUserId?: number;
+}
+
+export interface UserDepartment {
+  userId: number;
+  departmentId: number;
+  isPrimary: boolean;
+  jobTitle?: string;
+  isActive: boolean;
+  assignedAt: string;
+}
+
+export interface DepartmentTreeItem extends Department {
+  children: DepartmentTreeItem[];
+}
+
 export interface AccountBalance {
-  accountId: string;
+  accountId: number;
   accountNumber: string;
-  companyId: string;
-  periodId: string;
+  companyId: number;
+  periodId: number;
   openingDebit: number;
   openingCredit: number;
   periodDebit: number;

@@ -1,15 +1,15 @@
 import { AccountCategory, AccountNature, AccountType } from '../enums/AccountEnums.js';
 
 export interface Account {
-  id: string;
-  companyId: string;
+  id: number;
+  companyId: number;
   accountNumber: string;
   name: string;
   nameEnglish?: string;
   category: AccountCategory;
   nature: AccountNature;
   type: AccountType;
-  parentId?: string;
+  parentId?: number;
   isActive: boolean;
   isSystem: boolean;
   allowTransactions: boolean;
@@ -25,14 +25,14 @@ export interface Account {
 }
 
 export function createAccount(data: Partial<Account> & {
-  companyId: string;
+  companyId: number;
   accountNumber: string;
   name: string;
   category: AccountCategory;
   nature: AccountNature;
 }): Account {
   return {
-    id: crypto.randomUUID(),
+    id: 0,
     isActive: true,
     isSystem: false,
     allowTransactions: true,

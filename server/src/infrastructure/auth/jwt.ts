@@ -12,9 +12,9 @@ function getSecret(): string {
 }
 
 export interface TokenPayload {
-  userId: string;
+  userId: number;
   username: string;
-  companyId?: string;
+  companyId?: number;
   roles?: string[];
   jti?: string;
 }

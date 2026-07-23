@@ -6,20 +6,20 @@ import {
 } from '../enums/DepartmentEnums.js';
 
 export interface Department {
-  id: string;
-  companyId: string;
+  id: number;
+  companyId: number;
   code: string;
   name: string;
   nameEnglish?: string;
   departmentType: DepartmentType;
-  parentId?: string;
+  parentId?: number;
   path: string;
   depth: number;
   sortOrder: number;
 
-  managerUserId?: string;
+  managerUserId?: number;
   managerTitle?: string;
-  deputyManagerUserId?: string;
+  deputyManagerUserId?: number;
 
   defaultSalaryAccount?: string;
   defaultExpenseAccount?: string;
@@ -35,21 +35,21 @@ export interface Department {
 
   createdAt: Date;
   updatedAt?: Date;
-  createdByUserId?: string;
-  updatedByUserId?: string;
+  createdByUserId?: number;
+  updatedByUserId?: number;
 }
 
 export type CreateDepartmentInput = {
-  companyId: string;
+  companyId: number;
   code: string;
   name: string;
   nameEnglish?: string;
   departmentType?: DepartmentType;
-  parentId?: string;
+  parentId?: number;
   sortOrder?: number;
-  managerUserId?: string;
+  managerUserId?: number;
   managerTitle?: string;
-  deputyManagerUserId?: string;
+  deputyManagerUserId?: number;
   defaultSalaryAccount?: string;
   defaultExpenseAccount?: string;
   costAllocationMethod?: CostAllocationMethod;
@@ -57,11 +57,11 @@ export type CreateDepartmentInput = {
   budgetAlertThreshold?: number;
   budgetControlLevel?: BudgetControlLevel;
   effectiveDate?: string;
-  createdByUserId?: string;
+  createdByUserId?: number;
 };
 
 export function createDepartment(data: CreateDepartmentInput, parent?: Department): Department {
-  const id = crypto.randomUUID();
+  const id = 0;
   return {
     id,
     companyId: data.companyId,

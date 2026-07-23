@@ -1,6 +1,6 @@
 export interface UserDepartment {
-  userId: string;
-  departmentId: string;
+  userId: number;
+  departmentId: number;
   isPrimary: boolean;
   jobTitle?: string;
   isActive: boolean;
@@ -8,8 +8,8 @@ export interface UserDepartment {
 }
 
 export type CreateUserDepartmentInput = {
-  userId: string;
-  departmentId: string;
+  userId: number;
+  departmentId: number;
   isPrimary?: boolean;
   jobTitle?: string;
 };

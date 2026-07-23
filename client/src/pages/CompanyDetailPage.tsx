@@ -32,7 +32,8 @@ function fmt(n?: number): string {
 }
 
 export default function CompanyDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id: idStr } = useParams<{ id: string }>();
+  const id = idStr ? Number(idStr) : undefined;
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -83,7 +84,7 @@ export default function CompanyDetailPage() {
     }
   }
 
-  async function handleDeleteLegalRep(repId: string) {
+  async function handleDeleteLegalRep(repId: number) {
     if (!id || !confirm('Xóa người đại diện pháp luật này?')) return;
     try {
       await api.deleteLegalRep(id, repId);
@@ -120,6 +121,11 @@ export default function CompanyDetailPage() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
+          {company.id && (
+            <Link to={`/companies/${company.id}/departments`} style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 6, cursor: 'pointer', textDecoration: 'none' }}>
+              Phòng ban
+            </Link>
+          )}
           <Link to={`/companies/${company.id}/edit`} style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, color: '#fff', background: '#2563eb', border: 'none', borderRadius: 6, cursor: 'pointer', textDecoration: 'none' }}>
             Sửa
           </Link>
@@ -349,12 +355,12 @@ interface SubTabProps<T> {
   columns: Column<T>[];
   showAdd: boolean;
   setShowAdd: (v: boolean) => void;
-  onDelete?: (id: string) => void;
+  onDelete?: (id: number) => void;
   onAdd: (data: any) => Promise<void>;
   addForm: React.ReactNode;
 }
 
-function SubTab<T extends { id: string }>({ items, columns, showAdd, setShowAdd, onDelete, addForm }: SubTabProps<T>) {
+function SubTab<T extends { id: number }>({ items, columns, showAdd, setShowAdd, onDelete, addForm }: SubTabProps<T>) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>

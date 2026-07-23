@@ -4,7 +4,7 @@ import { FiscalPeriodStatus } from '../enums/AccountEnums.js';
 
 describe('FiscalPeriod', () => {
   const base = {
-    companyId: 'c1',
+    companyId: 1,
     year: 2026,
     month: 1,
     startDate: '2026-01-01',
@@ -22,22 +22,22 @@ describe('FiscalPeriod', () => {
   describe('closePeriod', () => {
     it('closes an open period', () => {
       const p = createFiscalPeriod(base);
-      const closed = closePeriod(p, 'user-1');
+      const closed = closePeriod(p, 1);
       expect(closed.status).toBe(FiscalPeriodStatus.Closed);
       expect(closed.closedAt).toBeDefined();
-      expect(closed.closedByUserId).toBe('user-1');
+      expect(closed.closedByUserId).toBe(1);
     });
 
     it('throws when already closed', () => {
       const p = createFiscalPeriod(base);
-      const closed = closePeriod(p, 'user-1');
-      expect(() => closePeriod(closed, 'user-1')).toThrow('already closed');
+      const closed = closePeriod(p, 1);
+      expect(() => closePeriod(closed, 1)).toThrow('already closed');
     });
 
     it('throws when locked', () => {
       const p = createFiscalPeriod(base);
       const locked = lockPeriod(p);
-      expect(() => closePeriod(locked, 'user-1')).toThrow('locked');
+      expect(() => closePeriod(locked, 1)).toThrow('locked');
     });
   });
 });

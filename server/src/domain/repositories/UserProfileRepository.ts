@@ -1,7 +1,7 @@
 import type { UserProfile } from '../entities/UserProfile.js';
 
 export interface UserProfileRepository {
-  findByUserId(userId: string): UserProfile | null;
+  findByUserId(userId: number): UserProfile | null;
   save(profile: UserProfile): UserProfile;
-  delete(userId: string): void;
+  delete(userId: number): void;
 }

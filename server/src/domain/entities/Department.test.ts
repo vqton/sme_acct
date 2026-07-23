@@ -16,10 +16,10 @@ import {
 
 describe('Department', () => {
   const baseInput = {
-    companyId: 'c1',
+    companyId: 1,
     code: 'TCKT',
     name: 'Trung tâm Kế toán – Tài chính',
-    createdByUserId: 'u1',
+    createdByUserId: 1,
   };
 
   describe('createDepartment', () => {
@@ -38,7 +38,7 @@ describe('Department', () => {
       expect(d.sortOrder).toBe(0);
       expect(d.effectiveDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(d.createdAt).toBeInstanceOf(Date);
-      expect(d.createdByUserId).toBe('u1');
+      expect(d.createdByUserId).toBe(1);
     });
 
     it('creates child department with computed path and depth', () => {
@@ -57,9 +57,9 @@ describe('Department', () => {
         ...baseInput,
         departmentType: DepartmentType.ProfitCenter,
         sortOrder: 5,
-        managerUserId: 'm1',
+        managerUserId: 2,
         managerTitle: 'Kế toán trưởng',
-        deputyManagerUserId: 'd1',
+        deputyManagerUserId: 3,
         defaultSalaryAccount: '6421',
         defaultExpenseAccount: '642',
         costAllocationMethod: CostAllocationMethod.Direct,
@@ -70,7 +70,7 @@ describe('Department', () => {
       });
       expect(d.departmentType).toBe(DepartmentType.ProfitCenter);
       expect(d.sortOrder).toBe(5);
-      expect(d.managerUserId).toBe('m1');
+      expect(d.managerUserId).toBe(2);
       expect(d.managerTitle).toBe('Kế toán trưởng');
       expect(d.defaultSalaryAccount).toBe('6421');
       expect(d.hasBudgetControl).toBe(true);

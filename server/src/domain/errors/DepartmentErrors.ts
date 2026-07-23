@@ -6,21 +6,21 @@ export class DuplicateDepartmentCodeError extends Error {
 }
 
 export class DepartmentNotFoundError extends Error {
-  constructor(id: string) {
+  constructor(id: number) {
     super(`Department not found: ${id}`);
     this.name = 'DepartmentNotFoundError';
   }
 }
 
 export class DepartmentHasChildrenError extends Error {
-  constructor(id: string) {
+  constructor(id: number) {
     super(`Department has children: ${id}`);
     this.name = 'DepartmentHasChildrenError';
   }
 }
 
 export class DepartmentHasMembersError extends Error {
-  constructor(id: string) {
+  constructor(id: number) {
     super(`Department has assigned users: ${id}`);
     this.name = 'DepartmentHasMembersError';
   }

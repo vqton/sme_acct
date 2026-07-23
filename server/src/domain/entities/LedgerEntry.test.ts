@@ -5,8 +5,8 @@ import type { LedgerEntry } from './LedgerEntry.js';
 describe('LedgerEntry', () => {
   describe('calculateBalance', () => {
     const makeEntry = (debit: number, credit: number): LedgerEntry => ({
-      id: '1', companyId: 'c1', accountId: 'a1', accountNumber: '1111',
-      periodId: 'p1', journalEntryId: 'je1', entryNumber: '0001',
+      id: 1, companyId: 1, accountId: 1, accountNumber: '1111',
+      periodId: 1, journalEntryId: 2, entryNumber: '0001',
       entryDate: '2026-01-15', description: 'Test',
       debitAmount: debit, creditAmount: credit,
       runningDebit: 0, runningCredit: 0, runningBalance: 0,

@@ -1,6 +1,6 @@
 export interface UserCompany {
-  userId: string;
-  companyId: string;
+  userId: number;
+  companyId: number;
   role?: string;
   isActive: boolean;
   joinedAt: Date;

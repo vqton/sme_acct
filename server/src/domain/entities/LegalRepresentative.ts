@@ -1,6 +1,6 @@
 export interface LegalRepresentative {
-  id: string;
-  companyId: string;
+  id: number;
+  companyId: number;
   fullName: string;
   vneidNumber?: string;
   position: string;
@@ -16,10 +16,10 @@ export interface LegalRepresentative {
 }
 
 export function createLegalRepresentative(
-  data: Omit<LegalRepresentative, 'id' | 'createdAt' | 'isActive'> & { isActive?: boolean },
+  data: Omit<LegalRepresentative, 'id' | 'createdAt' | 'isActive'> & { id?: number; isActive?: boolean },
 ): LegalRepresentative {
   return {
-    id: crypto.randomUUID(),
+    id: 0,
     isActive: true,
     createdAt: new Date(),
     ...data,

@@ -1,9 +1,9 @@
 import type { CompanyBankAccount } from '../entities/CompanyBankAccount.js';
 
 export interface CompanyBankAccountRepository {
-  findById(id: string): CompanyBankAccount | null;
-  findByCompanyId(companyId: string): CompanyBankAccount[];
-  findPrimaryTaxPaymentByCompanyId(companyId: string): CompanyBankAccount | null;
+  findById(id: number): CompanyBankAccount | null;
+  findByCompanyId(companyId: number): CompanyBankAccount[];
+  findPrimaryTaxPaymentByCompanyId(companyId: number): CompanyBankAccount | null;
   save(entity: CompanyBankAccount): CompanyBankAccount;
-  delete(id: string): void;
+  delete(id: number): void;
 }

@@ -5,12 +5,12 @@ import { getAccounts, getLedger, getFiscalPeriods } from '../services/api';
 export default function LedgerPage() {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [periods, setPeriods] = useState<any[]>([]);
-  const [selectedAccount, setSelectedAccount] = useState<string | undefined>(undefined);
-  const [selectedPeriod, setSelectedPeriod] = useState<string | undefined>(undefined);
+  const [selectedAccount, setSelectedAccount] = useState<number | undefined>(undefined);
+  const [selectedPeriod, setSelectedPeriod] = useState<number | undefined>(undefined);
   const [entries, setEntries] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const { message } = App.useApp();
-  const companyId = localStorage.getItem('currentCompanyId') || '';
+  const companyId = Number(localStorage.getItem('currentCompanyId'));
 
   useEffect(() => {
     if (!companyId) return;

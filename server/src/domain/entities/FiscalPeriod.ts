@@ -1,8 +1,8 @@
 import { FiscalPeriodStatus } from '../enums/AccountEnums.js';
 
 export interface FiscalPeriod {
-  id: string;
-  companyId: string;
+  id: number;
+  companyId: number;
   year: number;
   month: number;
   periodName: string;
@@ -11,20 +11,20 @@ export interface FiscalPeriod {
   status: FiscalPeriodStatus;
   isOpeningBalancePeriod: boolean;
   closedAt?: string;
-  closedByUserId?: string;
+  closedByUserId?: number;
   createdAt: Date;
   updatedAt?: Date;
 }
 
 export function createFiscalPeriod(data: Partial<FiscalPeriod> & {
-  companyId: string;
+  companyId: number;
   year: number;
   month: number;
   startDate: string;
   endDate: string;
 }): FiscalPeriod {
   return {
-    id: crypto.randomUUID(),
+    id: 0,
     periodName: `Tháng ${data.month}/${data.year}`,
     status: FiscalPeriodStatus.Open,
     isOpeningBalancePeriod: false,
@@ -38,7 +38,7 @@ export function openPeriod(period: FiscalPeriod): FiscalPeriod {
   return { ...period, status: FiscalPeriodStatus.Open };
 }
 
-export function closePeriod(period: FiscalPeriod, closedByUserId: string): FiscalPeriod {
+export function closePeriod(period: FiscalPeriod, closedByUserId: number): FiscalPeriod {
   if (period.status === FiscalPeriodStatus.Closed) throw new Error('Period already closed');
   if (period.status === FiscalPeriodStatus.Locked) throw new Error('Period is locked');
   return {

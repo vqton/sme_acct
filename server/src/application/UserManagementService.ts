@@ -63,13 +63,13 @@ export class UserManagementService {
     return this.userRepo.count(params ?? {});
   }
 
-  getUser(id: string): UserListItem | null {
+  getUser(id: number): UserListItem | null {
     const user = this.userRepo.findById(id);
     if (!user) return null;
     return this.toListItem(user);
   }
 
-  updateUser(id: string, input: UpdateUserInput): UserListItem {
+  updateUser(id: number, input: UpdateUserInput): UserListItem {
     const user = this.userRepo.findById(id);
     if (!user) throw new UserNotFoundError(id);
 
@@ -96,51 +96,51 @@ export class UserManagementService {
     return this.toListItem(this.userRepo.findById(id)!);
   }
 
-  deleteUser(id: string): void {
+  deleteUser(id: number): void {
     const user = this.userRepo.findById(id);
     if (!user) throw new UserNotFoundError(id);
     this.userRepo.delete(id);
   }
 
-  activateUser(id: string): UserListItem {
+  activateUser(id: number): UserListItem {
     const user = this.userRepo.findById(id);
     if (!user) throw new UserNotFoundError(id);
     const updated = this.userRepo.save({ ...user, isActive: true, updatedAt: new Date() });
     return this.toListItem(updated);
   }
 
-  deactivateUser(id: string): UserListItem {
+  deactivateUser(id: number): UserListItem {
     const user = this.userRepo.findById(id);
     if (!user) throw new UserNotFoundError(id);
     const updated = this.userRepo.save({ ...user, isActive: false, updatedAt: new Date() });
     return this.toListItem(updated);
   }
 
-  assignRole(userId: string, role: string): void {
+  assignRole(userId: number, role: string): void {
     const user = this.userRepo.findById(userId);
     if (!user) throw new UserNotFoundError(userId);
     this.roleRepo.assignRole(userId, role as any);
   }
 
-  removeRole(userId: string, role: string): void {
+  removeRole(userId: number, role: string): void {
     this.roleRepo.removeRole(userId, role as any);
   }
 
-  getUserRoles(userId: string): string[] {
+  getUserRoles(userId: number): string[] {
     return this.roleRepo.getUserRoles(userId).map((r) => r.toString());
   }
 
-  addUserToGroup(userId: string, groupId: string): void {
+  addUserToGroup(userId: number, groupId: number): void {
     const user = this.userRepo.findById(userId);
     if (!user) throw new UserNotFoundError(userId);
     this.groupRepo.addMember({ groupId, userId, joinedAt: new Date() });
   }
 
-  removeUserFromGroup(userId: string, groupId: string): void {
+  removeUserFromGroup(userId: number, groupId: number): void {
     this.groupRepo.removeMember(groupId, userId);
   }
 
-  getUserGroups(userId: string): UserGroup[] {
+  getUserGroups(userId: number): UserGroup[] {
     return this.groupRepo.getGroupsForUser(userId);
   }
 }

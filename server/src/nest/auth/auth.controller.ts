@@ -107,7 +107,7 @@ export class AuthController {
   }
 
   @Post('select-company')
-  selectCompany(@Body() body: { refreshToken: string; companyId: string }) {
+  selectCompany(@Body() body: { refreshToken: string; companyId: number }) {
     return this.authService.selectCompany(body.refreshToken, body.companyId);
   }
 

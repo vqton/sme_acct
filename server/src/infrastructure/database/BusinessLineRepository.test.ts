@@ -12,13 +12,13 @@ describe('SQLiteBusinessLineRepository', () => {
     db = new Database(':memory:');
     db.pragma('foreign_keys = ON');
     runMigrations(db);
-    db.prepare(`INSERT INTO companies (id, name, status) VALUES ('c1', 'Test Co', 1)`).run();
+    db.prepare(`INSERT INTO companies (id, name, status) VALUES (1, 'Test Co', 1)`).run();
     repo = new SQLiteBusinessLineRepository(db);
   });
 
   it('saves and finds by id', () => {
     const bl = createBusinessLine({
-      companyId: 'c1', vsicCode: '47110', vsicLevel: 4,
+      companyId: 1, vsicCode: '47110', vsicLevel: 4,
       name: 'Bán lẻ trong cửa hàng', isPrimary: true, startDate: '2024-01-15',
     });
     repo.save(bl);
@@ -30,17 +30,17 @@ describe('SQLiteBusinessLineRepository', () => {
 
   it('finds primary business line', () => {
     const bl1 = createBusinessLine({
-      companyId: 'c1', vsicCode: '47110', vsicLevel: 4,
+      companyId: 1, vsicCode: '47110', vsicLevel: 4,
       name: 'Primary', isPrimary: true, startDate: '2024-01-15',
     });
     const bl2 = createBusinessLine({
-      companyId: 'c1', vsicCode: '47210', vsicLevel: 4,
+      companyId: 1, vsicCode: '47210', vsicLevel: 4,
       name: 'Secondary', isPrimary: false, startDate: '2024-01-15',
     });
     repo.save(bl1);
     repo.save(bl2);
 
-    const primary = repo.findPrimaryByCompanyId('c1');
+    const primary = repo.findPrimaryByCompanyId(1);
     expect(primary).not.toBeNull();
     expect(primary!.vsicCode).toBe('47110');
   });

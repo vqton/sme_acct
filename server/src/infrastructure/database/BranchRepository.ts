@@ -33,27 +33,31 @@ export class SQLiteBranchRepository implements BranchRepository {
     };
   }
 
-  findById(id: string): Branch | null {
+  findById(id: number): Branch | null {
     const row = this.stmts.findById.get(id) as Record<string, unknown> | undefined;
     return row ? this.toEntity(row) : null;
   }
 
-  findByCompanyId(companyId: string): Branch[] {
+  findByCompanyId(companyId: number): Branch[] {
     return (this.stmts.findByCompanyId.all(companyId) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
   save(entity: Branch): Branch {
     const params = this.toParams(entity);
-    const existing = this.stmts.findById.get(entity.id);
-    if (existing) { this.stmts.update.run(params); } else { this.stmts.insert.run(params); }
+    if (entity.id) {
+      this.stmts.update.run(params);
+    } else {
+      const result = this.stmts.insert.run(params);
+      entity.id = Number(result.lastInsertRowid);
+    }
     return entity;
   }
 
-  delete(id: string): void { this.stmts.delete.run(id); }
+  delete(id: number): void { this.stmts.delete.run(id); }
 
   private toEntity(row: Record<string, unknown>): Branch {
     return {
-      id: row.id as string, companyId: row.company_id as string,
+      id: row.id as number, companyId: row.company_id as number,
       branchType: row.branch_type as number, name: row.name as string,
       address: row.address as string | undefined, taxCode: row.tax_code as string | undefined,
       phone: row.phone as string | undefined, managerName: row.manager_name as string | undefined,
@@ -65,7 +69,7 @@ export class SQLiteBranchRepository implements BranchRepository {
 
   private toParams(entity: Branch) {
     return {
-      id: entity.id, companyId: entity.companyId, branchType: entity.branchType, name: entity.name,
+      id: entity.id || null, companyId: entity.companyId, branchType: entity.branchType, name: entity.name,
       address: entity.address ?? null, taxCode: entity.taxCode ?? null, phone: entity.phone ?? null,
       managerName: entity.managerName ?? null, status: entity.status, dateOpened: entity.dateOpened,
       dateClosed: entity.dateClosed ?? null,

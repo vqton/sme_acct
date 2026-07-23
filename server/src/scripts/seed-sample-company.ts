@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import { getDb } from '../infrastructure/database/connection.js';
 import { SQLiteCompanyRepository } from '../infrastructure/database/CompanyRepository.js';
 import { SQLiteUserCompanyRepository } from '../infrastructure/database/UserCompanyRepository.js';
@@ -19,7 +18,7 @@ function main() {
   }
 
   const company = companyRepo.save({
-    id: crypto.randomUUID(),
+    id: 0,
     name: 'Công ty TNHH ABC',
     nameVietnamese: 'Công ty Trách Nhiệm Hữu Hạn ABC',
     nameEnglish: 'ABC Limited Liability Company',

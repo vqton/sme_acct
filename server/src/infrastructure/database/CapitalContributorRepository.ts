@@ -42,34 +42,34 @@ export class SQLiteCapitalContributorRepository implements CapitalContributorRep
     };
   }
 
-  findById(id: string): CapitalContributor | null {
+  findById(id: number): CapitalContributor | null {
     const row = this.stmts.findById.get(id) as Record<string, unknown> | undefined;
     return row ? this.toEntity(row) : null;
   }
 
-  findByCompanyId(companyId: string): CapitalContributor[] {
+  findByCompanyId(companyId: number): CapitalContributor[] {
     return (this.stmts.findByCompanyId.all(companyId) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
   save(entity: CapitalContributor): CapitalContributor {
     const params = this.toParams(entity);
-    const existing = this.stmts.findById.get(entity.id);
-    if (existing) {
+    if (entity.id) {
       this.stmts.update.run(params);
     } else {
-      this.stmts.insert.run(params);
+      const result = this.stmts.insert.run(params);
+      entity.id = Number(result.lastInsertRowid);
     }
     return entity;
   }
 
-  delete(id: string): void {
+  delete(id: number): void {
     this.stmts.delete.run(id);
   }
 
   private toEntity(row: Record<string, unknown>): CapitalContributor {
     return {
-      id: row.id as string,
-      companyId: row.company_id as string,
+      id: row.id as number,
+      companyId: row.company_id as number,
       contributorType: row.contributor_type as number,
       fullName: row.full_name as string,
       idNumber: row.id_number as string | undefined,
@@ -86,7 +86,7 @@ export class SQLiteCapitalContributorRepository implements CapitalContributorRep
 
   private toParams(entity: CapitalContributor) {
     return {
-      id: entity.id,
+      id: entity.id || null,
       companyId: entity.companyId,
       contributorType: entity.contributorType,
       fullName: entity.fullName,

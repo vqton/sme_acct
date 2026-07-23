@@ -46,7 +46,7 @@ export class SQLiteFiscalPeriodRepository implements FiscalPeriodRepository {
     };
   }
 
-  findById(id: string): FiscalPeriod | null {
+  findById(id: number): FiscalPeriod | null {
     const row = this.stmts.findById.get(id) as Record<string, unknown> | undefined;
     return row ? this.toEntity(row) : null;
   }
@@ -55,52 +55,52 @@ export class SQLiteFiscalPeriodRepository implements FiscalPeriodRepository {
     return (this.stmts.findAll.all() as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findByCompanyId(companyId: string): FiscalPeriod[] {
+  findByCompanyId(companyId: number): FiscalPeriod[] {
     return (this.stmts.findByCompanyId.all(companyId) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findByYear(companyId: string, year: number): FiscalPeriod[] {
+  findByYear(companyId: number, year: number): FiscalPeriod[] {
     return (this.stmts.findByYear.all(companyId, year) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findByMonth(companyId: string, year: number, month: number): FiscalPeriod | null {
+  findByMonth(companyId: number, year: number, month: number): FiscalPeriod | null {
     const row = this.stmts.findByMonth.get(companyId, year, month) as Record<string, unknown> | undefined;
     return row ? this.toEntity(row) : null;
   }
 
-  findOpenPeriods(companyId: string): FiscalPeriod[] {
+  findOpenPeriods(companyId: number): FiscalPeriod[] {
     return (this.stmts.findOpenPeriods.all(companyId) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findCurrentPeriod(companyId: string): FiscalPeriod | null {
+  findCurrentPeriod(companyId: number): FiscalPeriod | null {
     const row = this.stmts.findCurrentPeriod.get(companyId) as Record<string, unknown> | undefined;
     return row ? this.toEntity(row) : null;
   }
 
-  findLatestClosedPeriod(companyId: string): FiscalPeriod | null {
+  findLatestClosedPeriod(companyId: number): FiscalPeriod | null {
     const row = this.stmts.findLatestClosedPeriod.get(companyId) as Record<string, unknown> | undefined;
     return row ? this.toEntity(row) : null;
   }
 
   save(entity: FiscalPeriod): FiscalPeriod {
     const params = this.toParams(entity);
-    const existing = this.stmts.findById.get(entity.id);
-    if (existing) {
+    if (entity.id) {
       this.stmts.update.run(params);
     } else {
-      this.stmts.insert.run(params);
+      const result = this.stmts.insert.run(params);
+      entity.id = Number(result.lastInsertRowid);
     }
     return entity;
   }
 
-  delete(id: string): void {
+  delete(id: number): void {
     this.stmts.delete.run(id);
   }
 
   private toEntity(row: Record<string, unknown>): FiscalPeriod {
     return {
-      id: row.id as string,
-      companyId: row.company_id as string,
+      id: row.id as number,
+      companyId: row.company_id as number,
       year: row.year as number,
       month: row.month as number,
       periodName: row.period_name as string,
@@ -109,7 +109,7 @@ export class SQLiteFiscalPeriodRepository implements FiscalPeriodRepository {
       status: row.status as number,
       isOpeningBalancePeriod: !!(row.is_opening_balance_period as number),
       closedAt: row.closed_at as string ?? undefined,
-      closedByUserId: row.closed_by_user_id as string ?? undefined,
+      closedByUserId: row.closed_by_user_id as number ?? undefined,
       createdAt: row.created_at as unknown as Date,
       updatedAt: row.updated_at as unknown as Date | undefined,
     };
@@ -117,7 +117,7 @@ export class SQLiteFiscalPeriodRepository implements FiscalPeriodRepository {
 
   private toParams(entity: FiscalPeriod) {
     return {
-      id: entity.id,
+      id: entity.id || null,
       companyId: entity.companyId,
       year: entity.year,
       month: entity.month,

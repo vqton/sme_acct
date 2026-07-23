@@ -1,24 +1,24 @@
 import { JournalEntryType } from '../enums/AccountEnums.js';
 
 export interface JournalLine {
-  id: string;
-  journalEntryId: string;
-  accountId: string;
+  id: number;
+  journalEntryId: number;
+  accountId: number;
   accountNumber: string;
   description?: string;
   debitAmount: number;
   creditAmount: number;
-  costCenterId?: string;
-  departmentId?: string;
-  projectId?: string;
+  costCenterId?: number;
+  departmentId?: number;
+  projectId?: number;
 }
 
 export interface JournalEntry {
-  id: string;
-  companyId: string;
+  id: number;
+  companyId: number;
   entryNumber: string;
   entryDate: string;
-  periodId: string;
+  periodId: number;
   entryType: JournalEntryType;
   description: string;
   descriptionEnglish?: string;
@@ -28,18 +28,18 @@ export interface JournalEntry {
   totalCredit: number;
   isPosted: boolean;
   isReversed: boolean;
-  reversedById?: string;
+  reversedById?: number;
   postedAt?: string;
   createdAt: Date;
-  postedByUserId?: string;
-  createdByUserId?: string;
+  postedByUserId?: number;
+  createdByUserId?: number;
   lines: JournalLine[];
 }
 
 export type JournalEntryInput = Omit<Partial<JournalEntry>, 'lines'> & {
-  companyId: string;
+  companyId: number;
   entryDate: string;
-  periodId: string;
+  periodId: number;
   entryType: JournalEntryType;
   description: string;
   lines: Array<Omit<JournalLine, 'id' | 'journalEntryId'>>;
@@ -53,10 +53,10 @@ export function createJournalEntry(data: JournalEntryInput): JournalEntry {
     throw new Error('Total debit must equal total credit');
   }
 
-  const entryId = crypto.randomUUID();
+  const entryId = 0;
   const lines: JournalLine[] = data.lines.map((l) => ({
     ...l,
-    id: crypto.randomUUID(),
+    id: 0,
     journalEntryId: entryId,
   }));
 
@@ -97,7 +97,7 @@ export function postJournalEntry(entry: JournalEntry): JournalEntry {
   };
 }
 
-export function reverseJournalEntry(entry: JournalEntry, postedByUserId: string): { reversal: JournalEntry; original: JournalEntry } {
+export function reverseJournalEntry(entry: JournalEntry, postedByUserId: number): { reversal: JournalEntry; original: JournalEntry } {
   if (!entry.isPosted) throw new Error('Cannot reverse an unposted entry');
 
   const reversalLines: Array<Omit<JournalLine, 'id' | 'journalEntryId'>> = entry.lines.map((l) => ({

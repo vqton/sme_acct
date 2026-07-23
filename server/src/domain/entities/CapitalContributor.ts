@@ -1,6 +1,6 @@
 export interface CapitalContributor {
-  id: string;
-  companyId: string;
+  id: number;
+  companyId: number;
   contributorType: number;
   fullName: string;
   idNumber?: string;
@@ -15,10 +15,10 @@ export interface CapitalContributor {
 }
 
 export function createCapitalContributor(
-  data: Omit<CapitalContributor, 'id' | 'createdAt'> & { id?: string; createdAt?: Date },
+  data: Omit<CapitalContributor, 'id' | 'createdAt'> & { id?: number; createdAt?: Date },
 ): CapitalContributor {
   return {
-    id: crypto.randomUUID(),
+    id: 0,
     createdAt: new Date(),
     ...data,
   };

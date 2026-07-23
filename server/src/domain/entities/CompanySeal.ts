@@ -1,6 +1,6 @@
 export interface CompanySeal {
-  id: string;
-  companyId: string;
+  id: number;
+  companyId: number;
   sealRegistrationNumber?: string;
   sealImageUrl?: string;
   issuedBy?: string;
@@ -11,7 +11,7 @@ export interface CompanySeal {
 }
 
 export function createCompanySeal(
-  data: Omit<CompanySeal, 'id' | 'createdAt'> & { id?: string; createdAt?: Date },
+  data: Omit<CompanySeal, 'id' | 'createdAt'> & { id?: number; createdAt?: Date },
 ): CompanySeal {
-  return { id: crypto.randomUUID(), createdAt: new Date(), ...data };
+  return { id: 0, createdAt: new Date(), ...data };
 }

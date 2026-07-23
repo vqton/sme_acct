@@ -57,7 +57,7 @@ export function migrateCompanyExpansion(db: Database): void {
   // Seed default settings for companies that don't have them
   const companiesWithoutSettings = db.prepare(
     "SELECT c.id FROM companies c LEFT JOIN company_settings s ON c.id = s.company_id WHERE s.id IS NULL",
-  ).all() as { id: string }[];
+  ).all() as { id: number }[];
 
   const insertSettings = db.prepare(
     "INSERT OR IGNORE INTO company_settings (id, company_id, fiscal_year_start_month, currency_code, decimal_places, accounting_regime, tax_calculation_method, rounding_method) VALUES (?, ?, 1, 'VND', 0, 1, 1, 1)",

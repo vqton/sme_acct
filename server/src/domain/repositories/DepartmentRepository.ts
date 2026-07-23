@@ -5,13 +5,13 @@ export interface DepartmentTreeItem extends Department {
 }
 
 export interface DepartmentRepository {
-  findById(id: string): Department | null;
-  findByCompanyId(companyId: string): Department[];
-  findByCode(companyId: string, code: string): Department | null;
-  findChildren(parentId: string): Department[];
+  findById(id: number): Department | null;
+  findByCompanyId(companyId: number): Department[];
+  findByCode(companyId: number, code: string): Department | null;
+  findChildren(parentId: number): Department[];
   findSubtree(pathPrefix: string): Department[];
-  findAncestors(path: string, companyId: string): Department[];
+  findAncestors(path: string, companyId: number): Department[];
   save(entity: Department): Department;
   updateSubtreePaths(oldPathPrefix: string, newPathPrefix: string, depthDelta: number): void;
-  delete(id: string): void;
+  delete(id: number): void;
 }

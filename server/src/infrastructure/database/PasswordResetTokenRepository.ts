@@ -9,10 +9,10 @@ export class SQLitePasswordResetTokenRepository implements PasswordResetTokenRep
     this.db = db ?? getDb();
   }
 
-  save(entry: { userId: string; tokenHash: string; expiresAt: Date }): void {
+  save(entry: { userId: number; tokenHash: string; expiresAt: Date }): void {
     this.db.prepare(
-      'INSERT INTO password_reset_tokens (id, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)',
-    ).run(crypto.randomUUID(), entry.userId, entry.tokenHash, entry.expiresAt.toISOString());
+      'INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)',
+    ).run(entry.userId, entry.tokenHash, entry.expiresAt.toISOString());
   }
 
   findValid(tokenHash: string): PasswordResetToken | null {
@@ -23,7 +23,7 @@ export class SQLitePasswordResetTokenRepository implements PasswordResetTokenRep
     return row ? this.toEntity(row) : null;
   }
 
-  markUsed(id: string): void {
+  markUsed(id: number): void {
     this.db.prepare(
       "UPDATE password_reset_tokens SET used_at = datetime('now') WHERE id = ?",
     ).run(id);
@@ -37,8 +37,8 @@ export class SQLitePasswordResetTokenRepository implements PasswordResetTokenRep
 
   private toEntity(row: Record<string, unknown>): PasswordResetToken {
     return {
-      id: row.id as string,
-      userId: row.user_id as string,
+      id: row.id as number,
+      userId: row.user_id as number,
       tokenHash: row.token_hash as string,
       expiresAt: new Date(row.expires_at as string),
       createdAt: new Date(row.created_at as string),

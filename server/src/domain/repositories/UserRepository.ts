@@ -5,12 +5,12 @@ export interface UserSearchParams {
   query?: string;
   isActive?: boolean;
   role?: string;
-  groupId?: string;
+  groupId?: number;
   offset?: number;
   limit?: number;
 }
 
-export interface UserRepository extends Repository<User, string> {
+export interface UserRepository extends Repository<User, number> {
   findByUsername(username: string): User | null;
   findByEmail(email: string): User | null;
   search(params: UserSearchParams): User[];

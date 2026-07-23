@@ -40,7 +40,7 @@ export class CompanyUseCases {
     return this.repos.company.findAll();
   }
 
-  getById(id: string): Company {
+  getById(id: number): Company {
     const company = this.repos.company.findById(id);
     if (!company) throw new Error('Company not found');
     return company;
@@ -52,7 +52,7 @@ export class CompanyUseCases {
       if (existing) throw new Error('Tax code already registered');
     }
     return this.repos.company.save({
-      id: crypto.randomUUID(),
+      id: 0,
       name: data.name || '',
       status: data.status ?? 1,
       createdAt: new Date(),
@@ -60,78 +60,93 @@ export class CompanyUseCases {
     });
   }
 
-  update(id: string, data: Partial<Company>): Company {
+  update(id: number, data: Partial<Company>): Company {
     const company = this.getById(id);
     const updated = { ...company, ...data, updatedAt: new Date() };
     return this.repos.company.save(updated);
   }
 
-  delete(id: string): void {
+  delete(id: number): void {
     this.repos.company.delete(id);
   }
 
   // ─── Status Lifecycle ───────────────────────────────────
 
-  activate(id: string): Company {
+  activate(id: number): Company {
     const company = this.getById(id);
     return this.repos.company.save(this.service.activate(company));
   }
 
-  suspend(id: string): Company {
+  suspend(id: number): Company {
     const company = this.getById(id);
     return this.repos.company.save(this.service.suspend(company));
   }
 
-  dissolve(id: string, reason?: string): Company {
+  dissolve(id: number, reason?: string): Company {
     const company = this.getById(id);
     return this.repos.company.save(this.service.dissolve(company, reason));
   }
 
-  bankrupt(id: string): Company {
+  bankrupt(id: number): Company {
     const company = this.getById(id);
     return this.repos.company.save(this.service.bankrupt(company));
   }
 
-  convert(id: string): Company {
+  convert(id: number): Company {
     const company = this.getById(id);
     return this.repos.company.save(this.service.convert(company));
   }
 
-  merge(id: string): Company {
+  merge(id: number): Company {
     const company = this.getById(id);
     return this.repos.company.save(this.service.merge(company));
   }
 
   // ─── Legal Representatives ──────────────────────────────
 
-  getLegalReps(companyId: string): LegalRepresentative[] {
+  getLegalReps(companyId: number): LegalRepresentative[] {
     return this.repos.legalReps.findByCompanyId(companyId);
   }
 
-  addLegalRep(companyId: string, data: Parameters<typeof this.repos.legalReps.save>[0]): LegalRepresentative {
-    const entity = { ...data, id: crypto.randomUUID(), companyId, createdAt: new Date() };
+  addLegalRep(companyId: number, data: Partial<LegalRepresentative>): LegalRepresentative {
+    const entity: LegalRepresentative = {
+      id: 0,
+      companyId,
+      fullName: data.fullName ?? '',
+      position: data.position ?? '',
+      isPrimary: data.isPrimary ?? false,
+      isActive: data.isActive ?? true,
+      createdAt: new Date(),
+      vneidNumber: data.vneidNumber,
+      authorizationScope: data.authorizationScope,
+      digitalCertSerial: data.digitalCertSerial,
+      digitalCertProvider: data.digitalCertProvider,
+      digitalCertExpiry: data.digitalCertExpiry,
+      vneidVerifiedAt: data.vneidVerifiedAt,
+    };
     return this.repos.legalReps.save(entity);
   }
 
-  updateLegalRep(id: string, data: Partial<LegalRepresentative>): LegalRepresentative | null {
+  updateLegalRep(id: number, data: Partial<LegalRepresentative>): LegalRepresentative | null {
     const existing = this.repos.legalReps.findById(id);
     if (!existing) return null;
     return this.repos.legalReps.save({ ...existing, ...data, updatedAt: new Date() });
   }
 
-  deleteLegalRep(id: string): void {
+  deleteLegalRep(id: number): void {
     this.repos.legalReps.delete(id);
   }
 
   // ─── Capital Contributors ───────────────────────────────
 
-  getCapitalContributors(companyId: string): CapitalContributor[] {
+  getCapitalContributors(companyId: number): CapitalContributor[] {
     return this.repos.capitalContributors.findByCompanyId(companyId);
   }
 
-  addCapitalContributor(companyId: string, data: Partial<CapitalContributor>): CapitalContributor {
+  addCapitalContributor(companyId: number, data: Partial<CapitalContributor>): CapitalContributor {
     const entity = {
-      id: crypto.randomUUID(), companyId, createdAt: new Date(),
+      id: 0,
+      companyId, createdAt: new Date(),
       contributorType: data.contributorType ?? 1,
       fullName: data.fullName ?? '',
       contributorCategory: data.contributorCategory ?? 1,
@@ -145,13 +160,14 @@ export class CompanyUseCases {
 
   // ─── Business Lines ────────────────────────────────────
 
-  getBusinessLines(companyId: string): BusinessLine[] {
+  getBusinessLines(companyId: number): BusinessLine[] {
     return this.repos.businessLines.findByCompanyId(companyId);
   }
 
-  addBusinessLine(companyId: string, data: Partial<BusinessLine>): BusinessLine {
+  addBusinessLine(companyId: number, data: Partial<BusinessLine>): BusinessLine {
     const entity = {
-      id: crypto.randomUUID(), companyId, createdAt: new Date(),
+      id: 0,
+      companyId, createdAt: new Date(),
       vsicCode: data.vsicCode ?? '',
       vsicLevel: data.vsicLevel ?? 4,
       name: data.name ?? '',
@@ -163,13 +179,14 @@ export class CompanyUseCases {
 
   // ─── Bank Accounts ──────────────────────────────────────
 
-  getBankAccounts(companyId: string): CompanyBankAccount[] {
+  getBankAccounts(companyId: number): CompanyBankAccount[] {
     return this.repos.bankAccounts.findByCompanyId(companyId);
   }
 
-  addBankAccount(companyId: string, data: Partial<CompanyBankAccount>): CompanyBankAccount {
+  addBankAccount(companyId: number, data: Partial<CompanyBankAccount>): CompanyBankAccount {
     const entity = {
-      id: crypto.randomUUID(), companyId, createdAt: new Date(), isActive: true,
+      id: 0,
+      companyId, createdAt: new Date(), isActive: true,
       accountNumber: data.accountNumber ?? '',
       accountName: data.accountName ?? '',
       bankName: data.bankName ?? '',

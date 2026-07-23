@@ -4,11 +4,11 @@ import type { CompanyOption } from '../types';
 
 export interface AuthState {
   isAuthenticated: boolean;
-  user: { id: string; username: string; fullName: string } | null;
+  user: { id: number; username: string; fullName: string } | null;
   pendingCompanies: CompanyOption[];
   pending2FAToken: string | null;
   login: (username: string, password: string) => Promise<{ requiresCompanySelection: boolean; requires2FA: boolean; tempToken?: string; companies: CompanyOption[] }>;
-  selectCompany: (companyId: string) => Promise<void>;
+  selectCompany: (companyId: number) => Promise<void>;
   logout: () => Promise<void>;
   register: (input: { username: string; email: string; password: string; fullName: string }) => Promise<void>;
 }
@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { requiresCompanySelection: true, requires2FA: false, companies: data.companies };
   }, []);
 
-  const selectCompany = useCallback(async (companyId: string) => {
+  const selectCompany = useCallback(async (companyId: number) => {
     const data = await api.selectCompany(companyId);
     setUser(data.user);
     setPendingCompanies([]);

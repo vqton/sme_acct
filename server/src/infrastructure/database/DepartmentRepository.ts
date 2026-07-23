@@ -38,21 +38,21 @@ export class SQLiteDepartmentRepository implements DepartmentRepository {
     };
   }
 
-  findById(id: string): Department | null {
+  findById(id: number): Department | null {
     const row = this.stmts.findById.get(id) as Record<string, unknown> | undefined;
     return row ? this.toEntity(row) : null;
   }
 
-  findByCompanyId(companyId: string): Department[] {
+  findByCompanyId(companyId: number): Department[] {
     return (this.stmts.findByCompanyId.all(companyId) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findByCode(companyId: string, code: string): Department | null {
+  findByCode(companyId: number, code: string): Department | null {
     const row = this.stmts.findByCode.get(companyId, code) as Record<string, unknown> | undefined;
     return row ? this.toEntity(row) : null;
   }
 
-  findChildren(parentId: string): Department[] {
+  findChildren(parentId: number): Department[] {
     return (this.stmts.findChildren.all(parentId) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
@@ -60,17 +60,22 @@ export class SQLiteDepartmentRepository implements DepartmentRepository {
     return (this.stmts.findSubtree.all(pathPrefix + '%') as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findAncestors(path: string, companyId: string): Department[] {
+  findAncestors(path: string, companyId: number): Department[] {
     return (this.stmts.findAncestors.get(companyId, path) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
   save(entity: Department): Department {
     const params = this.toParams(entity);
-    const existing = this.stmts.findById.get(entity.id) as Record<string, unknown> | undefined;
-    if (existing) {
+    if (entity.id) {
       this.stmts.update.run(params);
     } else {
-      this.stmts.insert.run(params);
+      const result = this.stmts.insert.run(params);
+      entity.id = Number(result.lastInsertRowid);
+      const oldPath = entity.path;
+      entity.path = entity.path.replace(/\/0$/, `/${entity.id}`);
+      if (entity.path !== oldPath) {
+        this.stmts.update.run(this.toParams(entity));
+      }
     }
     return entity;
   }
@@ -79,25 +84,25 @@ export class SQLiteDepartmentRepository implements DepartmentRepository {
     this.stmts.updateSubtreePaths.run(oldPathPrefix, newPathPrefix, depthDelta, oldPathPrefix + '%');
   }
 
-  delete(id: string): void {
+  delete(id: number): void {
     this.stmts.delete.run(id);
   }
 
   private toEntity(row: Record<string, unknown>): Department {
     return {
-      id: row.id as string,
-      companyId: row.company_id as string,
+      id: row.id as number,
+      companyId: row.company_id as number,
       code: row.code as string,
       name: row.name as string,
       nameEnglish: row.name_english as string | undefined,
       departmentType: row.department_type as number,
-      parentId: row.parent_id as string | undefined,
+      parentId: row.parent_id as number | undefined,
       path: row.path as string,
       depth: row.depth as number,
       sortOrder: row.sort_order as number,
-      managerUserId: row.manager_user_id as string | undefined,
+      managerUserId: row.manager_user_id as number | undefined,
       managerTitle: row.manager_title as string | undefined,
-      deputyManagerUserId: row.deputy_manager_user_id as string | undefined,
+      deputyManagerUserId: row.deputy_manager_user_id as number | undefined,
       defaultSalaryAccount: row.default_salary_account as string | undefined,
       defaultExpenseAccount: row.default_expense_account as string | undefined,
       costAllocationMethod: row.cost_allocation_method as number | undefined,
@@ -109,14 +114,14 @@ export class SQLiteDepartmentRepository implements DepartmentRepository {
       dissolutionDate: row.dissolution_date as string | undefined,
       createdAt: row.created_at as unknown as Date,
       updatedAt: row.updated_at as unknown as Date | undefined,
-      createdByUserId: row.created_by_user_id as string | undefined,
-      updatedByUserId: row.updated_by_user_id as string | undefined,
+      createdByUserId: row.created_by_user_id as number | undefined,
+      updatedByUserId: row.updated_by_user_id as number | undefined,
     };
   }
 
   private toParams(entity: Department) {
     return {
-      id: entity.id,
+      id: entity.id || null,
       companyId: entity.companyId,
       code: entity.code,
       name: entity.name,

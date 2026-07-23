@@ -12,7 +12,7 @@ export class SQLiteAuditLogRepository implements AuditLogRepository {
 
   save(entry: Omit<AuditLog, 'id' | 'createdAt'>): void {
     this.db.prepare(
-      'INSERT INTO audit_logs (id, user_id, action, resource, resource_id, detail, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-    ).run(crypto.randomUUID(), entry.userId, entry.action, entry.resource, entry.resourceId, entry.detail, entry.ipAddress, entry.userAgent);
+      'INSERT INTO audit_logs (user_id, action, resource, resource_id, detail, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    ).run(entry.userId, entry.action, entry.resource, entry.resourceId, entry.detail, entry.ipAddress, entry.userAgent);
   }
 }

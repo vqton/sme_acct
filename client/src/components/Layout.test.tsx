@@ -13,7 +13,7 @@ vi.mock('react-router-dom', async () => {
   return { ...actual as any, useNavigate: () => mockNavigate };
 });
 
-let mockUser: { id: string; username: string; fullName: string } | null = { id: '1', username: 'admin', fullName: 'Admin' };
+let mockUser: { id: number; username: string; fullName: string } | null = { id: 1, username: 'admin', fullName: 'Admin' };
 let mockLocale: Locale = 'vi';
 const mockSetLocale = vi.fn((l: Locale) => { mockLocale = l; });
 const mockT = vi.fn((key: string) => {

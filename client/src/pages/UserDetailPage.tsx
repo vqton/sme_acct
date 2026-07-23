@@ -18,7 +18,8 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export default function UserDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id: idStr } = useParams<{ id: string }>();
+  const id = idStr ? Number(idStr) : undefined;
   const navigate = useNavigate();
   const [user, setUser] = useState<UserListItem | null>(null);
   const [groups, setGroups] = useState<UserGroup[]>([]);

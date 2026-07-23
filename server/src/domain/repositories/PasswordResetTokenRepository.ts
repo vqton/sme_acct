@@ -1,6 +1,6 @@
 export interface PasswordResetToken {
-  id: string;
-  userId: string;
+  id: number;
+  userId: number;
   tokenHash: string;
   expiresAt: Date;
   createdAt: Date;
@@ -10,6 +10,6 @@ export interface PasswordResetToken {
 export interface PasswordResetTokenRepository {
   save(entry: Omit<PasswordResetToken, 'id' | 'createdAt' | 'usedAt'>): void;
   findValid(tokenHash: string): PasswordResetToken | null;
-  markUsed(id: string): void;
+  markUsed(id: number): void;
   deleteExpired(): void;
 }

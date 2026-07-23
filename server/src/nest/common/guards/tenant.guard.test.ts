@@ -4,14 +4,13 @@ import Database from 'better-sqlite3';
 import { TenantGuard } from './tenant.guard.js';
 import { DB_PROVIDER } from '../database.module.js';
 import { runMigrations } from '../../../infrastructure/database/schema.js';
-import crypto from 'crypto';
 
 describe('TenantGuard', () => {
   let guard: TenantGuard;
   let db: Database.Database;
-  const userId = crypto.randomUUID();
-  const companyId1 = crypto.randomUUID();
-  const companyId2 = crypto.randomUUID();
+  const userId = 1;
+  const companyId1 = 100;
+  const companyId2 = 101;
 
   beforeAll(async () => {
     db = new Database(':memory:');
@@ -38,7 +37,7 @@ describe('TenantGuard', () => {
     guard = module.get(TenantGuard);
   });
 
-  function makeContext(user?: { userId: string; username: string; roles: string[] }, params: Record<string, string> = {}) {
+  function makeContext(user?: { userId: number; username: string; roles: string[] }, params: Record<string, string> = {}) {
     const req: any = { params, headers: {} };
     if (user) req.user = user;
     return {
@@ -51,7 +50,7 @@ describe('TenantGuard', () => {
   it('allows access when user belongs to company (via :id)', () => {
     const ctx = makeContext(
       { userId, username: 'tenantuser', roles: [] },
-      { id: companyId1 },
+      { id: String(companyId1) },
     );
     expect(guard.canActivate(ctx)).toBe(true);
   });
@@ -59,7 +58,7 @@ describe('TenantGuard', () => {
   it('allows access when user belongs to company (via :companyId)', () => {
     const ctx = makeContext(
       { userId, username: 'tenantuser', roles: [] },
-      { companyId: companyId2 },
+      { companyId: String(companyId2) },
     );
     expect(guard.canActivate(ctx)).toBe(true);
   });
@@ -67,13 +66,13 @@ describe('TenantGuard', () => {
   it('blocks access when user does not belong to company', () => {
     const ctx = makeContext(
       { userId, username: 'tenantuser', roles: [] },
-      { id: crypto.randomUUID() },
+      { id: '999' },
     );
     expect(() => guard.canActivate(ctx)).toThrow('Access to this company is not allowed');
   });
 
   it('returns 401 when user not authenticated', () => {
-    const ctx = makeContext(undefined, { id: companyId1 });
+    const ctx = makeContext(undefined, { id: String(companyId1) });
     expect(() => guard.canActivate(ctx)).toThrow('Authentication required');
   });
 

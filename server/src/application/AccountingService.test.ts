@@ -12,8 +12,8 @@ import { AccountCategory, AccountNature, AccountType, JournalEntryType } from '.
 describe('AccountingService', () => {
   let db: Database.Database;
   let service: AccountingService;
-  let companyId: string;
-  let accountId: string;
+  let companyId: number;
+  let accountId: number;
 
   beforeAll(() => {
     db = new Database(':memory:');
@@ -27,15 +27,12 @@ describe('AccountingService', () => {
       fiscalPeriods: new SQLiteFiscalPeriodRepository(db),
     };
     service = new AccountingService(repos);
-    companyId = 'acct-svc-c1';
 
     const companyRepo = new SQLiteCompanyRepository(db);
-    companyRepo.save({
-      id: companyId, name: 'Acct Test Co', status: 1, createdAt: new Date(),
-    });
+    companyId = companyRepo.save({ id: 0, name: 'Acct Test Co', status: 1, createdAt: new Date() }).id;
 
     accountId = repos.accounts.save({
-      id: 'svc-acc-1', companyId, accountNumber: '1111',
+      id: 0, companyId, accountNumber: '1111',
       name: 'Tiền mặt', category: AccountCategory.TaiSan,
       nature: AccountNature.DuNo, type: AccountType.TaiKhoanChiTiet,
       isActive: true, isSystem: false, allowTransactions: true,
@@ -45,7 +42,7 @@ describe('AccountingService', () => {
     }).id;
 
     repos.accounts.save({
-      id: 'svc-acc-2', companyId, accountNumber: '5111',
+      id: 0, companyId, accountNumber: '5111',
       name: 'Doanh thu', category: AccountCategory.DoanhThu,
       nature: AccountNature.DuCo, type: AccountType.TaiKhoanChiTiet,
       isActive: true, isSystem: false, allowTransactions: true,
@@ -55,7 +52,7 @@ describe('AccountingService', () => {
     });
 
     repos.fiscalPeriods.save({
-      id: 'svc-per-1', companyId, year: 2026, month: 1,
+      id: 0, companyId, year: 2026, month: 1,
       periodName: 'Tháng 1/2026', startDate: '2026-01-01', endDate: '2026-01-31',
       status: 1, isOpeningBalancePeriod: false,
       createdAt: new Date(),
@@ -66,8 +63,8 @@ describe('AccountingService', () => {
 
   it('seeds standard accounts', () => {
     const cRepo = new SQLiteCompanyRepository(db);
-    cRepo.save({ id: 'seed-c1', name: 'Seed Co', status: 1, createdAt: new Date() });
-    const accounts = service.seedStandardAccounts('seed-c1');
+    const seedCoId = cRepo.save({ id: 0, name: 'Seed Co', status: 1, createdAt: new Date() }).id;
+    const accounts = service.seedStandardAccounts(seedCoId);
     expect(accounts.length).toBeGreaterThan(50);
     const cash = accounts.find((a) => a.accountNumber === '111');
     expect(cash).toBeDefined();
@@ -82,7 +79,7 @@ describe('AccountingService', () => {
       description: 'Thu tiền bán hàng',
       lines: [
         { accountId, accountNumber: '1111', debitAmount: 1000000, creditAmount: 0 },
-        { accountId: 'svc-acc-2', accountNumber: '5111', debitAmount: 0, creditAmount: 1000000 },
+        { accountId, accountNumber: '5111', debitAmount: 0, creditAmount: 1000000 },
       ],
     });
     expect(entry.id).toBeDefined();
@@ -98,10 +95,10 @@ describe('AccountingService', () => {
       description: 'Test post',
       lines: [
         { accountId, accountNumber: '1111', debitAmount: 500000, creditAmount: 0 },
-        { accountId: 'svc-acc-2', accountNumber: '5111', debitAmount: 0, creditAmount: 500000 },
+        { accountId, accountNumber: '5111', debitAmount: 0, creditAmount: 500000 },
       ],
     });
-    const posted = service.postJournalEntry(entry.id, 'user-1');
+    const posted = service.postJournalEntry(entry.id, 1);
     expect(posted.isPosted).toBe(true);
 
     const ledger = service.getLedgerEntries(companyId, accountId);

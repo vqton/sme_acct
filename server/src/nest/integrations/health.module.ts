@@ -5,7 +5,7 @@ import { SQLiteHealthIndicator } from './sqlite.health.js';
 import { DatabaseModule } from '../common/database.module.js';
 
 @Module({
-  imports: [TerminusModule.forRoot({ errorLogService: false }), DatabaseModule],
+  imports: [TerminusModule.forRoot(), DatabaseModule],
   controllers: [HealthController],
   providers: [SQLiteHealthIndicator],
 })

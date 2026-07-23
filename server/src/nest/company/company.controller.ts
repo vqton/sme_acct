@@ -23,7 +23,7 @@ export class CompanyController {
   @Get(':id')
   @Permissions('company:read')
   getById(@Param('id') id: string) {
-    return this.companyUseCases.getById(id);
+    return this.companyUseCases.getById(+id);
   }
 
   @Post()
@@ -36,14 +36,14 @@ export class CompanyController {
   @Put(':id')
   @Permissions('company:update')
   update(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.companyUseCases.update(id, body);
+    return this.companyUseCases.update(+id, body);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Permissions('company:delete')
   delete(@Param('id') id: string): void {
-    this.companyUseCases.delete(id);
+    this.companyUseCases.delete(+id);
   }
 
   // ─── Status Lifecycle ─────────────────────────────────
@@ -51,37 +51,37 @@ export class CompanyController {
   @Post(':id/activate')
   @Permissions('company:update')
   activate(@Param('id') id: string) {
-    return this.companyUseCases.activate(id);
+    return this.companyUseCases.activate(+id);
   }
 
   @Post(':id/suspend')
   @Permissions('company:update')
   suspend(@Param('id') id: string) {
-    return this.companyUseCases.suspend(id);
+    return this.companyUseCases.suspend(+id);
   }
 
   @Post(':id/dissolve')
   @Permissions('company:update')
   dissolve(@Param('id') id: string, @Body() body: { reason?: string }) {
-    return this.companyUseCases.dissolve(id, body.reason);
+    return this.companyUseCases.dissolve(+id, body.reason);
   }
 
   @Post(':id/bankrupt')
   @Permissions('company:update')
   bankrupt(@Param('id') id: string) {
-    return this.companyUseCases.bankrupt(id);
+    return this.companyUseCases.bankrupt(+id);
   }
 
   @Post(':id/convert')
   @Permissions('company:update')
   convert(@Param('id') id: string) {
-    return this.companyUseCases.convert(id);
+    return this.companyUseCases.convert(+id);
   }
 
   @Post(':id/merge')
   @Permissions('company:update')
   merge(@Param('id') id: string) {
-    return this.companyUseCases.merge(id);
+    return this.companyUseCases.merge(+id);
   }
 
   // ─── Legal Representatives ─────────────────────────────
@@ -89,20 +89,20 @@ export class CompanyController {
   @Get(':id/legal-reps')
   @Permissions('company:read')
   getLegalReps(@Param('id') id: string) {
-    return this.companyUseCases.getLegalReps(id);
+    return this.companyUseCases.getLegalReps(+id);
   }
 
   @Post(':id/legal-reps')
   @HttpCode(HttpStatus.CREATED)
   @Permissions('company:create')
   addLegalRep(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.companyUseCases.addLegalRep(id, body);
+    return this.companyUseCases.addLegalRep(+id, body);
   }
 
   @Put(':companyId/legal-reps/:repId')
   @Permissions('company:update')
   updateLegalRep(@Param('companyId') companyId: string, @Param('repId') repId: string, @Body() body: Record<string, unknown>) {
-    const result = this.companyUseCases.updateLegalRep(repId, body);
+    const result = this.companyUseCases.updateLegalRep(+repId, body);
     if (!result) throw new Error('Legal representative not found');
     return result;
   }
@@ -111,7 +111,7 @@ export class CompanyController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @Permissions('company:update')
   deleteLegalRep(@Param('companyId') companyId: string, @Param('repId') repId: string): void {
-    this.companyUseCases.deleteLegalRep(repId);
+    this.companyUseCases.deleteLegalRep(+repId);
   }
 
   // ─── Capital Contributors ────────────────────────────
@@ -119,14 +119,14 @@ export class CompanyController {
   @Get(':id/contributors')
   @Permissions('company:read')
   getContributors(@Param('id') id: string) {
-    return this.companyUseCases.getCapitalContributors(id);
+    return this.companyUseCases.getCapitalContributors(+id);
   }
 
   @Post(':id/contributors')
   @HttpCode(HttpStatus.CREATED)
   @Permissions('company:create')
   addContributor(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.companyUseCases.addCapitalContributor(id, body);
+    return this.companyUseCases.addCapitalContributor(+id, body);
   }
 
   // ─── Business Lines ─────────────────────────────────
@@ -134,14 +134,14 @@ export class CompanyController {
   @Get(':id/business-lines')
   @Permissions('company:read')
   getBusinessLines(@Param('id') id: string) {
-    return this.companyUseCases.getBusinessLines(id);
+    return this.companyUseCases.getBusinessLines(+id);
   }
 
   @Post(':id/business-lines')
   @HttpCode(HttpStatus.CREATED)
   @Permissions('company:create')
   addBusinessLine(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.companyUseCases.addBusinessLine(id, body);
+    return this.companyUseCases.addBusinessLine(+id, body);
   }
 
   // ─── Bank Accounts ──────────────────────────────────
@@ -149,13 +149,13 @@ export class CompanyController {
   @Get(':id/bank-accounts')
   @Permissions('company:read')
   getBankAccounts(@Param('id') id: string) {
-    return this.companyUseCases.getBankAccounts(id);
+    return this.companyUseCases.getBankAccounts(+id);
   }
 
   @Post(':id/bank-accounts')
   @HttpCode(HttpStatus.CREATED)
   @Permissions('company:create')
   addBankAccount(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.companyUseCases.addBankAccount(id, body);
+    return this.companyUseCases.addBankAccount(+id, body);
   }
 }

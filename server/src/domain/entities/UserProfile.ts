@@ -1,5 +1,5 @@
 export interface UserProfile {
-  userId: string;
+  userId: number;
   phone?: string;
   position?: string;
   department?: string;

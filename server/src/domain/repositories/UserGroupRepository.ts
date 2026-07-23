@@ -2,13 +2,13 @@ import type { UserGroup } from '../entities/UserGroup.js';
 import type { UserGroupMember } from '../entities/UserGroupMember.js';
 
 export interface UserGroupRepository {
-  findById(id: string): UserGroup | null;
+  findById(id: number): UserGroup | null;
   findAll(): UserGroup[];
   save(group: UserGroup): UserGroup;
-  delete(id: string): void;
+  delete(id: number): void;
 
-  getMembers(groupId: string): UserGroupMember[];
+  getMembers(groupId: number): UserGroupMember[];
   addMember(member: UserGroupMember): void;
-  removeMember(groupId: string, userId: string): void;
-  getGroupsForUser(userId: string): UserGroup[];
+  removeMember(groupId: number, userId: number): void;
+  getGroupsForUser(userId: number): UserGroup[];
 }

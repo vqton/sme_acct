@@ -6,7 +6,7 @@ describe('Account', () => {
   describe('createAccount', () => {
     it('creates account with required fields', () => {
       const acc = createAccount({
-        companyId: 'c1',
+        companyId: 1,
         accountNumber: '1111',
         name: 'Tiền mặt VNĐ',
         category: AccountCategory.TaiSan,
@@ -14,7 +14,7 @@ describe('Account', () => {
       });
 
       expect(acc.id).toBeDefined();
-      expect(acc.companyId).toBe('c1');
+      expect(acc.companyId).toBe(1);
       expect(acc.accountNumber).toBe('1111');
       expect(acc.name).toBe('Tiền mặt VNĐ');
       expect(acc.category).toBe(AccountCategory.TaiSan);
@@ -23,7 +23,7 @@ describe('Account', () => {
 
     it('sets defaults', () => {
       const acc = createAccount({
-        companyId: 'c1',
+        companyId: 1,
         accountNumber: '1111',
         name: 'Tiền mặt',
         category: AccountCategory.TaiSan,
@@ -40,12 +40,12 @@ describe('Account', () => {
 
     it('sets type to chi tiet when parentId provided', () => {
       const acc = createAccount({
-        companyId: 'c1',
+        companyId: 1,
         accountNumber: '1111',
         name: 'Tiền mặt',
         category: AccountCategory.TaiSan,
         nature: AccountNature.DuNo,
-        parentId: 'parent-1',
+        parentId: 2,
       });
 
       expect(acc.type).toBe(AccountType.TaiKhoanChiTiet);

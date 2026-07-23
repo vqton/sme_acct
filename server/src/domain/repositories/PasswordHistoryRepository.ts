@@ -1,12 +1,12 @@
 export interface PasswordHistoryEntry {
-  id: string;
-  userId: string;
+  id: number;
+  userId: number;
   passwordHash: string;
   createdAt: Date;
 }
 
 export interface PasswordHistoryRepository {
   save(entry: Omit<PasswordHistoryEntry, 'id' | 'createdAt'>): void;
-  getRecentHashes(userId: string, limit: number): string[];
-  deleteAllForUser(userId: string): void;
+  getRecentHashes(userId: number, limit: number): string[];
+  deleteAllForUser(userId: number): void;
 }

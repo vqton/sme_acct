@@ -49,7 +49,7 @@ export class SQLiteAccountRepository implements AccountRepository {
     };
   }
 
-  findById(id: string): Account | null {
+  findById(id: number): Account | null {
     const row = this.stmts.findById.get(id) as Record<string, unknown> | undefined;
     return row ? this.toEntity(row) : null;
   }
@@ -58,71 +58,71 @@ export class SQLiteAccountRepository implements AccountRepository {
     return (this.stmts.findAll.all() as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findByCompanyId(companyId: string): Account[] {
+  findByCompanyId(companyId: number): Account[] {
     return (this.stmts.findByCompanyId.all(companyId) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findByAccountNumber(companyId: string, accountNumber: string): Account | null {
+  findByAccountNumber(companyId: number, accountNumber: string): Account | null {
     const row = this.stmts.findByAccountNumber.get(companyId, accountNumber) as Record<string, unknown> | undefined;
     return row ? this.toEntity(row) : null;
   }
 
-  findByParentId(parentId: string): Account[] {
+  findByParentId(parentId: number): Account[] {
     return (this.stmts.findByParentId.all(parentId) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findByCategory(companyId: string, category: number): Account[] {
+  findByCategory(companyId: number, category: number): Account[] {
     return (this.stmts.findByCategory.all(companyId, category) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findByType(companyId: string, type: number): Account[] {
+  findByType(companyId: number, type: number): Account[] {
     return (this.stmts.findByType.all(companyId, type) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findActive(companyId: string): Account[] {
+  findActive(companyId: number): Account[] {
     return (this.stmts.findActive.all(companyId) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findSystem(companyId: string): Account[] {
+  findSystem(companyId: number): Account[] {
     return (this.stmts.findSystem.all(companyId) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findLeafAccounts(companyId: string): Account[] {
+  findLeafAccounts(companyId: number): Account[] {
     return (this.stmts.findLeafAccounts.all(companyId) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  search(companyId: string, query: string): Account[] {
+  search(companyId: number, query: string): Account[] {
     const pattern = `%${query}%`;
     return (this.stmts.search.all(companyId, pattern, pattern) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
   save(entity: Account): Account {
     const params = this.toParams(entity);
-    const existing = this.stmts.findById.get(entity.id);
-    if (existing) {
+    if (entity.id) {
       this.stmts.update.run(params);
     } else {
       params.createdAt = entity.createdAt instanceof Date ? entity.createdAt.toISOString() : entity.createdAt;
-      this.stmts.insert.run(params);
+      const result = this.stmts.insert.run(params);
+      entity.id = Number(result.lastInsertRowid);
     }
     return entity;
   }
 
-  delete(id: string): void {
+  delete(id: number): void {
     this.stmts.delete.run(id);
   }
 
   private toEntity(row: Record<string, unknown>): Account {
     return {
-      id: row.id as string,
-      companyId: row.company_id as string,
+      id: row.id as number,
+      companyId: row.company_id as number,
       accountNumber: row.account_number as string,
       name: row.name as string,
       nameEnglish: row.name_english as string ?? undefined,
       category: row.category as number,
       nature: row.nature as number,
       type: row.type as number,
-      parentId: row.parent_id as string ?? undefined,
+      parentId: row.parent_id as number ?? undefined,
       isActive: !!(row.is_active as number),
       isSystem: !!(row.is_system as number),
       allowTransactions: !!(row.allow_transactions as number),
@@ -140,7 +140,7 @@ export class SQLiteAccountRepository implements AccountRepository {
 
   private toParams(entity: Account) {
     return {
-      id: entity.id,
+      id: entity.id || null,
       companyId: entity.companyId,
       accountNumber: entity.accountNumber,
       name: entity.name,

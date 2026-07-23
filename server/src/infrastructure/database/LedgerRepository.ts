@@ -46,29 +46,29 @@ export class SQLiteLedgerRepository implements LedgerRepository {
     };
   }
 
-  findByPeriodId(companyId: string, periodId: string): LedgerEntry[] {
+  findByPeriodId(companyId: number, periodId: number): LedgerEntry[] {
     return (this.stmts.findByPeriodId.all(companyId, periodId) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findByAccountId(companyId: string, accountId: string, fromDate?: string, toDate?: string): LedgerEntry[] {
+  findByAccountId(companyId: number, accountId: number, fromDate?: string, toDate?: string): LedgerEntry[] {
     if (fromDate && toDate) {
       return (this.stmts.findByAccountIdDateRange.all(companyId, accountId, fromDate, toDate) as Record<string, unknown>[]).map((r) => this.toEntity(r));
     }
     return (this.stmts.findByAccountId.all(companyId, accountId) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findByAccountInPeriod(companyId: string, accountId: string, periodId: string): LedgerEntry[] {
+  findByAccountInPeriod(companyId: number, accountId: number, periodId: number): LedgerEntry[] {
     return (this.stmts.findByAccountInPeriod.all(companyId, accountId, periodId) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  getAccountBalance(companyId: string, accountId: string, periodId: string): AccountBalance | null {
+  getAccountBalance(companyId: number, accountId: number, periodId: number): AccountBalance | null {
     const row = this.stmts.getAccountBalance.get(companyId, accountId, periodId) as Record<string, unknown> | undefined;
     if (!row) return null;
     return {
-      accountId: row.account_id as string,
+      accountId: row.account_id as number,
       accountNumber: row.account_number as string,
-      companyId: row.company_id as string,
-      periodId: row.period_id as string,
+      companyId: row.company_id as number,
+      periodId: row.period_id as number,
       openingDebit: (row.opening_debit as number) ?? 0,
       openingCredit: (row.opening_credit as number) ?? 0,
       periodDebit: (row.period_debit as number) ?? 0,
@@ -78,12 +78,12 @@ export class SQLiteLedgerRepository implements LedgerRepository {
     };
   }
 
-  getAccountBalances(companyId: string, periodId: string): AccountBalance[] {
+  getAccountBalances(companyId: number, periodId: number): AccountBalance[] {
     return (this.stmts.getAccountBalances.all(companyId, periodId) as Record<string, unknown>[]).map((r) => ({
-      accountId: r.account_id as string,
+      accountId: r.account_id as number,
       accountNumber: r.account_number as string,
-      companyId: r.company_id as string,
-      periodId: r.period_id as string,
+      companyId: r.company_id as number,
+      periodId: r.period_id as number,
       openingDebit: (r.opening_debit as number) ?? 0,
       openingCredit: (r.opening_credit as number) ?? 0,
       periodDebit: (r.period_debit as number) ?? 0,
@@ -94,16 +94,16 @@ export class SQLiteLedgerRepository implements LedgerRepository {
   }
 
   saveMany(entries: LedgerEntry[]): void {
-    const insert = this.db.prepare(`INSERT INTO ledger_entries (id, company_id, account_id, account_number, period_id, journal_entry_id, entry_number, entry_date, description, debit_amount, credit_amount, running_debit, running_credit, running_balance, cost_center_id, department_id, project_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+    const insert = this.db.prepare(`INSERT INTO ledger_entries (company_id, account_id, account_number, period_id, journal_entry_id, entry_number, entry_date, description, debit_amount, credit_amount, running_debit, running_credit, running_balance, cost_center_id, department_id, project_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
     const tx = this.db.transaction(() => {
       for (const e of entries) {
-        insert.run(e.id, e.companyId, e.accountId, e.accountNumber, e.periodId, e.journalEntryId, e.entryNumber, e.entryDate, e.description, e.debitAmount, e.creditAmount, e.runningDebit, e.runningCredit, e.runningBalance, e.costCenterId ?? null, e.departmentId ?? null, e.projectId ?? null, e.createdAt instanceof Date ? e.createdAt.toISOString() : e.createdAt);
+        insert.run(e.companyId, e.accountId, e.accountNumber, e.periodId, e.journalEntryId, e.entryNumber, e.entryDate, e.description, e.debitAmount, e.creditAmount, e.runningDebit, e.runningCredit, e.runningBalance, e.costCenterId ?? null, e.departmentId ?? null, e.projectId ?? null, e.createdAt instanceof Date ? e.createdAt.toISOString() : e.createdAt);
       }
     });
     tx();
   }
 
-  deleteByPeriodId(companyId: string, periodId: string): void {
+  deleteByPeriodId(companyId: number, periodId: number): void {
     this.stmts.deleteByPeriod.run(companyId, periodId);
     this.stmts.deleteBalancesByPeriod.run(companyId, periodId);
   }
@@ -123,18 +123,18 @@ export class SQLiteLedgerRepository implements LedgerRepository {
     });
   }
 
-  deleteByJournalEntryId(journalEntryId: string): void {
+  deleteByJournalEntryId(journalEntryId: number): void {
     this.stmts.deleteByJournalEntry.run(journalEntryId);
   }
 
   private toEntity(row: Record<string, unknown>): LedgerEntry {
     return {
-      id: row.id as string,
-      companyId: row.company_id as string,
-      accountId: row.account_id as string,
+      id: row.id as number,
+      companyId: row.company_id as number,
+      accountId: row.account_id as number,
       accountNumber: row.account_number as string,
-      periodId: row.period_id as string,
-      journalEntryId: row.journal_entry_id as string,
+      periodId: row.period_id as number,
+      journalEntryId: row.journal_entry_id as number,
       entryNumber: row.entry_number as string,
       entryDate: row.entry_date as string,
       description: row.description as string,
@@ -143,9 +143,9 @@ export class SQLiteLedgerRepository implements LedgerRepository {
       runningDebit: (row.running_debit as number) ?? 0,
       runningCredit: (row.running_credit as number) ?? 0,
       runningBalance: (row.running_balance as number) ?? 0,
-      costCenterId: row.cost_center_id as string ?? undefined,
-      departmentId: row.department_id as string ?? undefined,
-      projectId: row.project_id as string ?? undefined,
+      costCenterId: row.cost_center_id as number ?? undefined,
+      departmentId: row.department_id as number ?? undefined,
+      projectId: row.project_id as number ?? undefined,
       createdAt: row.created_at as unknown as Date,
     };
   }

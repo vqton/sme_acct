@@ -4,7 +4,7 @@ import { getDb } from './connection.js';
 export function runMigrations(db: Database): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS companies (
-      id TEXT PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       name_vietnamese TEXT,
       name_english TEXT,
@@ -38,8 +38,8 @@ export function runMigrations(db: Database): void {
       legal_representative TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT,
-      created_by_user_id TEXT,
-      updated_by_user_id TEXT,
+      created_by_user_id INTEGER,
+      updated_by_user_id INTEGER,
       first_period_start_date TEXT,
       closed_period_count INTEGER DEFAULT 0,
       created_by_company_type INTEGER
@@ -48,7 +48,7 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT NOT NULL UNIQUE,
       email TEXT NOT NULL UNIQUE,
       full_name TEXT NOT NULL,
@@ -61,8 +61,8 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS user_companies (
-      user_id TEXT NOT NULL,
-      company_id TEXT NOT NULL,
+      user_id INTEGER NOT NULL,
+      company_id INTEGER NOT NULL,
       role TEXT,
       is_active INTEGER NOT NULL DEFAULT 1,
       joined_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -72,8 +72,8 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS company_settings (
-      id TEXT PRIMARY KEY,
-      company_id TEXT NOT NULL UNIQUE,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL UNIQUE,
       fiscal_year_start_month INTEGER NOT NULL DEFAULT 1,
       currency_code TEXT NOT NULL DEFAULT 'VND',
       decimal_places INTEGER NOT NULL DEFAULT 0,
@@ -90,9 +90,9 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS refresh_tokens (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      company_id TEXT,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      company_id INTEGER,
       token_hash TEXT NOT NULL,
       ip_address TEXT,
       user_agent TEXT,
@@ -106,8 +106,8 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS audit_logs (
-      id TEXT PRIMARY KEY,
-      user_id TEXT,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
       action TEXT NOT NULL,
       resource TEXT,
       resource_id TEXT,
@@ -119,7 +119,7 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS user_roles (
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       role TEXT NOT NULL,
       PRIMARY KEY (user_id, role)
     )
@@ -145,8 +145,8 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS password_history (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       password_hash TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
@@ -161,8 +161,8 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS password_reset_tokens (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       token_hash TEXT NOT NULL,
       expires_at TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -180,8 +180,8 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS backup_codes (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       code_hash TEXT NOT NULL,
       used_at TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -191,8 +191,8 @@ export function runMigrations(db: Database): void {
   // New company module tables
   db.exec(`
     CREATE TABLE IF NOT EXISTS legal_representatives (
-      id TEXT PRIMARY KEY,
-      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       full_name TEXT NOT NULL,
       vneid_number TEXT,
       position TEXT NOT NULL,
@@ -210,8 +210,8 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS business_lines (
-      id TEXT PRIMARY KEY,
-      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       vsic_code TEXT NOT NULL,
       vsic_level INTEGER DEFAULT 4,
       name TEXT NOT NULL,
@@ -226,8 +226,8 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS capital_contributors (
-      id TEXT PRIMARY KEY,
-      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       contributor_type INTEGER NOT NULL DEFAULT 1,
       full_name TEXT NOT NULL,
       id_number TEXT,
@@ -244,8 +244,8 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS company_bank_accounts (
-      id TEXT PRIMARY KEY,
-      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       account_number TEXT NOT NULL,
       account_name TEXT NOT NULL,
       bank_name TEXT NOT NULL,
@@ -262,8 +262,8 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS company_branches (
-      id TEXT PRIMARY KEY,
-      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       branch_type INTEGER NOT NULL DEFAULT 1,
       name TEXT NOT NULL,
       address TEXT,
@@ -280,11 +280,11 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS company_former_names (
-      id TEXT PRIMARY KEY,
-      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       name TEXT NOT NULL,
       changed_at TEXT NOT NULL DEFAULT (datetime('now')),
-      changed_by_user_id TEXT,
+      changed_by_user_id INTEGER,
       reason TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
@@ -292,8 +292,8 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS company_licenses (
-      id TEXT PRIMARY KEY,
-      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       license_type INTEGER NOT NULL,
       license_number TEXT NOT NULL,
       issued_by TEXT NOT NULL,
@@ -308,8 +308,8 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS company_seals (
-      id TEXT PRIMARY KEY,
-      company_id TEXT NOT NULL UNIQUE REFERENCES companies(id) ON DELETE CASCADE,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL UNIQUE REFERENCES companies(id) ON DELETE CASCADE,
       seal_registration_number TEXT,
       seal_image_url TEXT,
       issued_by TEXT,
@@ -322,8 +322,8 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS company_documents (
-      id TEXT PRIMARY KEY,
-      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       document_type INTEGER NOT NULL,
       file_name TEXT NOT NULL,
       file_url TEXT NOT NULL,
@@ -337,8 +337,8 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS audit_firm_assignments (
-      id TEXT PRIMARY KEY,
-      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       audit_firm_name TEXT NOT NULL,
       audit_firm_tax_code TEXT,
       audit_firm_address TEXT,
@@ -364,27 +364,27 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS capital_change_history (
-      id TEXT PRIMARY KEY,
-      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       previous_charter_capital REAL,
       new_charter_capital REAL NOT NULL,
       change_reason TEXT,
       changed_at TEXT NOT NULL DEFAULT (datetime('now')),
-      changed_by_user_id TEXT
+      changed_by_user_id INTEGER
     )
   `);
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS company_correction_reasons (
-      id TEXT PRIMARY KEY,
-      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       field_name TEXT NOT NULL,
       previous_value TEXT,
       new_value TEXT NOT NULL,
       reason_code TEXT NOT NULL,
       reason_detail TEXT,
       correction_date TEXT NOT NULL DEFAULT (datetime('now')),
-      corrected_by_user_id TEXT
+      corrected_by_user_id INTEGER
     )
   `);
 
@@ -415,8 +415,8 @@ export function runMigrations(db: Database): void {
     ['vneid_registration_date', "ALTER TABLE companies ADD COLUMN vneid_registration_date TEXT"],
     ['vneid_status', "ALTER TABLE companies ADD COLUMN vneid_status INTEGER DEFAULT 1"],
     ['last_vneid_sync_at', "ALTER TABLE companies ADD COLUMN last_vneid_sync_at TEXT"],
-    ['created_by_user_id', "ALTER TABLE companies ADD COLUMN created_by_user_id TEXT"],
-    ['updated_by_user_id', "ALTER TABLE companies ADD COLUMN updated_by_user_id TEXT"],
+    ['created_by_user_id', "ALTER TABLE companies ADD COLUMN created_by_user_id INTEGER"],
+    ['updated_by_user_id', "ALTER TABLE companies ADD COLUMN updated_by_user_id INTEGER"],
     ['first_period_start_date', "ALTER TABLE companies ADD COLUMN first_period_start_date TEXT"],
     ['closed_period_count', "ALTER TABLE companies ADD COLUMN closed_period_count INTEGER DEFAULT 0"],
     ['created_by_company_type', "ALTER TABLE companies ADD COLUMN created_by_company_type INTEGER"],
@@ -432,15 +432,15 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS accounts (
-      id TEXT PRIMARY KEY,
-      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       account_number TEXT NOT NULL,
       name TEXT NOT NULL,
       name_english TEXT,
       category INTEGER NOT NULL,
       nature INTEGER NOT NULL,
       type INTEGER NOT NULL DEFAULT 1,
-      parent_id TEXT,
+      parent_id INTEGER,
       is_active INTEGER NOT NULL DEFAULT 1,
       is_system INTEGER NOT NULL DEFAULT 0,
       allow_transactions INTEGER NOT NULL DEFAULT 1,
@@ -459,8 +459,8 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS fiscal_periods (
-      id TEXT PRIMARY KEY,
-      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       year INTEGER NOT NULL,
       month INTEGER NOT NULL,
       period_name TEXT NOT NULL,
@@ -469,7 +469,7 @@ export function runMigrations(db: Database): void {
       status INTEGER NOT NULL DEFAULT 1,
       is_opening_balance_period INTEGER NOT NULL DEFAULT 0,
       closed_at TEXT,
-      closed_by_user_id TEXT,
+      closed_by_user_id INTEGER,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT,
       UNIQUE(company_id, year, month)
@@ -478,11 +478,11 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS journal_entries (
-      id TEXT PRIMARY KEY,
-      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       entry_number TEXT NOT NULL,
       entry_date TEXT NOT NULL,
-      period_id TEXT NOT NULL REFERENCES fiscal_periods(id),
+      period_id INTEGER NOT NULL REFERENCES fiscal_periods(id),
       entry_type INTEGER NOT NULL DEFAULT 9,
       description TEXT NOT NULL,
       description_english TEXT,
@@ -492,25 +492,25 @@ export function runMigrations(db: Database): void {
       total_credit REAL NOT NULL DEFAULT 0,
       is_posted INTEGER NOT NULL DEFAULT 0,
       is_reversed INTEGER NOT NULL DEFAULT 0,
-      reversed_by_id TEXT,
+      reversed_by_id INTEGER,
       posted_at TEXT,
-      posted_by_user_id TEXT,
-      created_by_user_id TEXT,
+      posted_by_user_id INTEGER,
+      created_by_user_id INTEGER,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS journal_entry_lines (
-      id TEXT PRIMARY KEY,
-      journal_entry_id TEXT NOT NULL REFERENCES journal_entries(id) ON DELETE CASCADE,
-      account_id TEXT NOT NULL REFERENCES accounts(id),
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      journal_entry_id INTEGER NOT NULL REFERENCES journal_entries(id) ON DELETE CASCADE,
+      account_id INTEGER NOT NULL REFERENCES accounts(id),
       account_number TEXT NOT NULL,
       description TEXT,
       debit_amount REAL NOT NULL DEFAULT 0,
       credit_amount REAL NOT NULL DEFAULT 0,
       cost_center_id TEXT,
-      department_id TEXT,
+      department_id INTEGER,
       project_id TEXT,
       line_index INTEGER NOT NULL DEFAULT 0
     )
@@ -518,12 +518,12 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS ledger_entries (
-      id TEXT PRIMARY KEY,
-      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-      account_id TEXT NOT NULL REFERENCES accounts(id),
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      account_id INTEGER NOT NULL REFERENCES accounts(id),
       account_number TEXT NOT NULL,
-      period_id TEXT NOT NULL REFERENCES fiscal_periods(id),
-      journal_entry_id TEXT NOT NULL REFERENCES journal_entries(id),
+      period_id INTEGER NOT NULL REFERENCES fiscal_periods(id),
+      journal_entry_id INTEGER NOT NULL REFERENCES journal_entries(id),
       entry_number TEXT NOT NULL,
       entry_date TEXT NOT NULL,
       description TEXT NOT NULL,
@@ -533,7 +533,7 @@ export function runMigrations(db: Database): void {
       running_credit REAL NOT NULL DEFAULT 0,
       running_balance REAL NOT NULL DEFAULT 0,
       cost_center_id TEXT,
-      department_id TEXT,
+      department_id INTEGER,
       project_id TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
@@ -541,10 +541,10 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS account_balances (
-      account_id TEXT NOT NULL REFERENCES accounts(id),
+      account_id INTEGER NOT NULL REFERENCES accounts(id),
       account_number TEXT NOT NULL,
-      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-      period_id TEXT NOT NULL REFERENCES fiscal_periods(id),
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      period_id INTEGER NOT NULL REFERENCES fiscal_periods(id),
       opening_debit REAL NOT NULL DEFAULT 0,
       opening_credit REAL NOT NULL DEFAULT 0,
       period_debit REAL NOT NULL DEFAULT 0,
@@ -576,7 +576,7 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS user_groups (
-      id TEXT PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
       description TEXT,
       is_active INTEGER NOT NULL DEFAULT 1,
@@ -587,8 +587,8 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS user_group_members (
-      group_id TEXT NOT NULL REFERENCES user_groups(id) ON DELETE CASCADE,
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      group_id INTEGER NOT NULL REFERENCES user_groups(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       joined_at TEXT NOT NULL DEFAULT (datetime('now')),
       PRIMARY KEY (group_id, user_id)
     )
@@ -596,7 +596,7 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS user_profiles (
-      user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
       phone TEXT,
       position TEXT,
       department TEXT,
@@ -610,19 +610,19 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS departments (
-      id TEXT PRIMARY KEY,
-      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
       code TEXT NOT NULL,
       name TEXT NOT NULL,
       name_english TEXT,
       department_type INTEGER NOT NULL DEFAULT 1,
-      parent_id TEXT REFERENCES departments(id) ON DELETE SET NULL,
+      parent_id INTEGER REFERENCES departments(id) ON DELETE SET NULL,
       path TEXT NOT NULL,
       depth INTEGER NOT NULL DEFAULT 0,
       sort_order INTEGER NOT NULL DEFAULT 0,
-      manager_user_id TEXT,
+      manager_user_id INTEGER,
       manager_title TEXT,
-      deputy_manager_user_id TEXT,
+      deputy_manager_user_id INTEGER,
       default_salary_account TEXT,
       default_expense_account TEXT,
       cost_allocation_method INTEGER,
@@ -634,8 +634,8 @@ export function runMigrations(db: Database): void {
       dissolution_date TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT,
-      created_by_user_id TEXT,
-      updated_by_user_id TEXT,
+      created_by_user_id INTEGER,
+      updated_by_user_id INTEGER,
       UNIQUE(company_id, code)
     )
   `);
@@ -652,8 +652,8 @@ export function runMigrations(db: Database): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS user_departments (
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      department_id TEXT NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      department_id INTEGER NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
       is_primary INTEGER NOT NULL DEFAULT 0,
       job_title TEXT,
       is_active INTEGER NOT NULL DEFAULT 1,

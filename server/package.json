@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "seed:admin": "tsx src/scripts/seed-admin-user.ts",
-    "seed:company": "tsx src/scripts/seed-sample-company.ts"
+    "seed:company": "tsx src/scripts/seed-sample-company.ts",
+    "seed:departments": "tsx src/scripts/seed-departments.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.28",

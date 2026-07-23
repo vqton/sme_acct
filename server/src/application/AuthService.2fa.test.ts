@@ -21,8 +21,9 @@ describe('2FA / TOTP', () => {
   let companyRepo: SQLiteCompanyRepository;
   let userCompanyRepo: SQLiteUserCompanyRepository;
 
+  let nextCompanyId = 1;
   function seedCompany(overrides?: Partial<Company>): Company {
-    const id = overrides?.id ?? crypto.randomUUID();
+    const id = overrides?.id ?? nextCompanyId++;
     const company: Company = {
       id,
       name: overrides?.name ?? 'Test Company',

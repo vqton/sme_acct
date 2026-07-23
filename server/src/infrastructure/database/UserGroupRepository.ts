@@ -11,7 +11,7 @@ export class SQLiteUserGroupRepository implements UserGroupRepository {
     this.db = db ?? getDb();
   }
 
-  findById(id: string): UserGroup | null {
+  findById(id: number): UserGroup | null {
     const row = this.db.prepare('SELECT * FROM user_groups WHERE id = ?').get(id) as Record<string, unknown> | undefined;
     return row ? this.toEntity(row) : null;
   }
@@ -21,26 +21,26 @@ export class SQLiteUserGroupRepository implements UserGroupRepository {
   }
 
   save(group: UserGroup): UserGroup {
-    const existing = this.db.prepare('SELECT id FROM user_groups WHERE id = ?').get(group.id);
-    if (existing) {
+    if (group.id) {
       this.db.prepare(`
         UPDATE user_groups SET name=@name, description=@description, is_active=@isActive, updated_at=@updatedAt
         WHERE id=@id
       `).run(this.toParams(group));
     } else {
-      this.db.prepare(`
+      const result = this.db.prepare(`
         INSERT INTO user_groups (id, name, description, is_active, created_at, updated_at)
         VALUES (@id, @name, @description, @isActive, @createdAt, @updatedAt)
       `).run(this.toParams(group));
+      group.id = Number(result.lastInsertRowid);
     }
     return group;
   }
 
-  delete(id: string): void {
+  delete(id: number): void {
     this.db.prepare('DELETE FROM user_groups WHERE id = ?').run(id);
   }
 
-  getMembers(groupId: string): UserGroupMember[] {
+  getMembers(groupId: number): UserGroupMember[] {
     return this.db.prepare('SELECT * FROM user_group_members WHERE group_id = ?').all(groupId) as UserGroupMember[];
   }
 
@@ -49,11 +49,11 @@ export class SQLiteUserGroupRepository implements UserGroupRepository {
       .run(member.groupId, member.userId, member.joinedAt.toISOString());
   }
 
-  removeMember(groupId: string, userId: string): void {
+  removeMember(groupId: number, userId: number): void {
     this.db.prepare('DELETE FROM user_group_members WHERE group_id = ? AND user_id = ?').run(groupId, userId);
   }
 
-  getGroupsForUser(userId: string): UserGroup[] {
+  getGroupsForUser(userId: number): UserGroup[] {
     const rows = this.db.prepare(`
       SELECT g.* FROM user_groups g
       JOIN user_group_members m ON g.id = m.group_id
@@ -65,7 +65,7 @@ export class SQLiteUserGroupRepository implements UserGroupRepository {
 
   private toEntity(row: Record<string, unknown>): UserGroup {
     return {
-      id: row.id as string,
+      id: row.id as number,
       name: row.name as string,
       description: (row.description as string) ?? undefined,
       isActive: !!(row.is_active as number),
@@ -76,7 +76,7 @@ export class SQLiteUserGroupRepository implements UserGroupRepository {
 
   private toParams(group: UserGroup) {
     return {
-      id: group.id,
+      id: group.id || null,
       name: group.name,
       description: group.description ?? null,
       isActive: group.isActive ? 1 : 0,

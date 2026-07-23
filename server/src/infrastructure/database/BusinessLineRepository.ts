@@ -34,39 +34,39 @@ export class SQLiteBusinessLineRepository implements BusinessLineRepository {
     };
   }
 
-  findById(id: string): BusinessLine | null {
+  findById(id: number): BusinessLine | null {
     const row = this.stmts.findById.get(id) as Record<string, unknown> | undefined;
     return row ? this.toEntity(row) : null;
   }
 
-  findByCompanyId(companyId: string): BusinessLine[] {
+  findByCompanyId(companyId: number): BusinessLine[] {
     return (this.stmts.findByCompanyId.all(companyId) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findPrimaryByCompanyId(companyId: string): BusinessLine | null {
+  findPrimaryByCompanyId(companyId: number): BusinessLine | null {
     const row = this.stmts.findPrimaryByCompanyId.get(companyId) as Record<string, unknown> | undefined;
     return row ? this.toEntity(row) : null;
   }
 
   save(entity: BusinessLine): BusinessLine {
     const params = this.toParams(entity);
-    const existing = this.stmts.findById.get(entity.id);
-    if (existing) {
+    if (entity.id) {
       this.stmts.update.run(params);
     } else {
-      this.stmts.insert.run(params);
+      const result = this.stmts.insert.run(params);
+      entity.id = Number(result.lastInsertRowid);
     }
     return entity;
   }
 
-  delete(id: string): void {
+  delete(id: number): void {
     this.stmts.delete.run(id);
   }
 
   private toEntity(row: Record<string, unknown>): BusinessLine {
     return {
-      id: row.id as string,
-      companyId: row.company_id as string,
+      id: row.id as number,
+      companyId: row.company_id as number,
       vsicCode: row.vsic_code as string,
       vsicLevel: row.vsic_level as number,
       name: row.name as string,
@@ -81,7 +81,7 @@ export class SQLiteBusinessLineRepository implements BusinessLineRepository {
 
   private toParams(entity: BusinessLine) {
     return {
-      id: entity.id,
+      id: entity.id || null,
       companyId: entity.companyId,
       vsicCode: entity.vsicCode,
       vsicLevel: entity.vsicLevel,

@@ -46,7 +46,7 @@ export class SQLiteCompanyRepository implements CompanyRepository {
     };
   }
 
-  findById(id: string): Company | null {
+  findById(id: number): Company | null {
     const row = this.stmts.findById.get(id) as Record<string, unknown> | undefined;
     return row ? this.toEntity(row) : null;
   }
@@ -71,22 +71,22 @@ export class SQLiteCompanyRepository implements CompanyRepository {
 
   save(entity: Company): Company {
     const params = this.toParams(entity);
-    const existing = this.stmts.findById.get(entity.id);
-    if (existing) {
+    if (entity.id) {
       this.stmts.update.run(params);
     } else {
-      this.stmts.insert.run(params);
+      const result = this.stmts.insert.run(params);
+      entity.id = Number(result.lastInsertRowid);
     }
     return entity;
   }
 
-  delete(id: string): void {
+  delete(id: number): void {
     this.stmts.delete.run(id);
   }
 
   private toEntity(row: Record<string, unknown>): Company {
     return {
-      id: row.id as string,
+      id: row.id as number,
       name: row.name as string,
       nameVietnamese: row.name_vietnamese as string | undefined,
       nameEnglish: row.name_english as string | undefined,
@@ -119,8 +119,8 @@ export class SQLiteCompanyRepository implements CompanyRepository {
       lastVNeIDSyncAt: row.last_vneid_sync_at as string | undefined,
       createdAt: row.created_at as unknown as Date,
       updatedAt: row.updated_at as unknown as Date | undefined,
-      createdByUserId: row.created_by_user_id as string | undefined,
-      updatedByUserId: row.updated_by_user_id as string | undefined,
+      createdByUserId: row.created_by_user_id as number | undefined,
+      updatedByUserId: row.updated_by_user_id as number | undefined,
       firstPeriodStartDate: row.first_period_start_date as string | undefined,
       closedPeriodCount: row.closed_period_count as number | undefined,
       legalRepresentative: row.legal_representative as string | undefined,
@@ -129,7 +129,7 @@ export class SQLiteCompanyRepository implements CompanyRepository {
 
   private toParams(entity: Company) {
     return {
-      id: entity.id,
+      id: entity.id || null,
       name: entity.name,
       nameVietnamese: entity.nameVietnamese ?? null,
       nameEnglish: entity.nameEnglish ?? null,

@@ -4,7 +4,8 @@ import { api } from '../services/api';
 import type { Company } from '../types';
 
 export default function CompanyFormPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id: idStr } = useParams<{ id: string }>();
+  const id = idStr ? Number(idStr) : undefined;
   const navigate = useNavigate();
   const isEdit = !!id;
 

@@ -1,11 +1,11 @@
 import type { Repository } from './Repository.js';
 import type { FiscalPeriod } from '../entities/FiscalPeriod.js';
 
-export interface FiscalPeriodRepository extends Repository<FiscalPeriod, string> {
-  findByCompanyId(companyId: string): FiscalPeriod[];
-  findByYear(companyId: string, year: number): FiscalPeriod[];
-  findByMonth(companyId: string, year: number, month: number): FiscalPeriod | null;
-  findOpenPeriods(companyId: string): FiscalPeriod[];
-  findCurrentPeriod(companyId: string): FiscalPeriod | null;
-  findLatestClosedPeriod(companyId: string): FiscalPeriod | null;
+export interface FiscalPeriodRepository extends Repository<FiscalPeriod, number> {
+  findByCompanyId(companyId: number): FiscalPeriod[];
+  findByYear(companyId: number, year: number): FiscalPeriod[];
+  findByMonth(companyId: number, year: number, month: number): FiscalPeriod | null;
+  findOpenPeriods(companyId: number): FiscalPeriod[];
+  findCurrentPeriod(companyId: number): FiscalPeriod | null;
+  findLatestClosedPeriod(companyId: number): FiscalPeriod | null;
 }

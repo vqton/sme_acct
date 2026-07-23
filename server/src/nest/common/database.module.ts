@@ -1,5 +1,5 @@
 import { Module, Global } from '@nestjs/common';
-import Database from 'better-sqlite3';
+import Database, { type Database as DatabaseType } from 'better-sqlite3';
 import { getDb } from '../../infrastructure/database/connection.js';
 import { runMigrations } from '../../infrastructure/database/schema.js';
 
@@ -17,7 +17,7 @@ export const DB_PROVIDER = 'DB_CONNECTION';
 })
 export class DatabaseModule {}
 
-export function createTestDbProvider(db?: Database.Database) {
+export function createTestDbProvider(db?: DatabaseType): { provide: string; useFactory: () => DatabaseType } {
   return {
     provide: DB_PROVIDER,
     useFactory: () => {

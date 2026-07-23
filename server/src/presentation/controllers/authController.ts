@@ -118,12 +118,12 @@ router.get('/sessions', authMiddleware, (req: AuthRequest, res: Response) => {
 
 router.delete('/sessions/:id', authMiddleware, (req: AuthRequest, res: Response) => {
   try {
-    const session = refreshTokenRepo.findById(req.params.id);
+    const session = refreshTokenRepo.findById(+req.params.id);
     if (!session || session.userId !== req.user!.userId) {
       res.status(404).json({ error: 'Session not found' });
       return;
     }
-    refreshTokenRepo.revoke(req.params.id);
+    refreshTokenRepo.revoke(+req.params.id);
     res.json({ ok: true });
   } catch {
     res.status(500).json({ error: 'Failed to revoke session' });

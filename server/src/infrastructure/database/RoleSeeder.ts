@@ -1,5 +1,4 @@
 import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
 import type { UserRepository } from '../../domain/repositories/UserRepository.js';
 import type { RoleRepository } from '../../domain/repositories/RoleRepository.js';
 import { ROLES } from '../../domain/entities/Role.js';
@@ -33,12 +32,15 @@ export class RoleSeeder {
 
     const passwordHash = bcrypt.hashSync(password, 10);
     const user = this.userRepo.save({
-      id: crypto.randomUUID(),
+      id: 0,
       username,
       email,
       fullName: 'System Administrator',
       passwordHash,
       isActive: true,
+      twoFactorEnabled: false,
+      failedLoginAttempts: 0,
+      lockoutUntil: null,
       createdAt: new Date(),
     });
 

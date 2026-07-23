@@ -24,12 +24,12 @@ router.use(authMiddleware);
 router.get('/accounts', requirePermission('company:read'), (req: AuthRequest, res: Response) => {
   const companyId = req.query.companyId as string;
   if (!companyId) { res.status(400).json({ error: 'companyId required' }); return; }
-  res.json(createService().listAccounts(companyId));
+  res.json(createService().listAccounts(+companyId));
 });
 
 router.get('/accounts/:id', requirePermission('company:read'), (req: AuthRequest, res: Response) => {
   try {
-    res.json(createService().getAccount(req.params.id));
+    res.json(createService().getAccount(+req.params.id));
   } catch (e: any) {
     res.status(404).json({ error: e.message });
   }
@@ -46,7 +46,7 @@ router.post('/accounts', requirePermission('company:create'), (req: AuthRequest,
 
 router.put('/accounts/:id', requirePermission('company:update'), (req: AuthRequest, res: Response) => {
   try {
-    res.json(createService().updateAccount(req.params.id, req.body));
+    res.json(createService().updateAccount(+req.params.id, req.body));
   } catch (e: any) {
     res.status(404).json({ error: e.message });
   }
@@ -54,7 +54,7 @@ router.put('/accounts/:id', requirePermission('company:update'), (req: AuthReque
 
 router.delete('/accounts/:id', requirePermission('company:delete'), (req: AuthRequest, res: Response) => {
   try {
-    createService().deleteAccount(req.params.id);
+    createService().deleteAccount(+req.params.id);
     res.status(204).send();
   } catch (e: any) {
     res.status(400).json({ error: e.message });
@@ -75,12 +75,12 @@ router.post('/accounts/seed', requirePermission('company:create'), (req: AuthReq
 router.get('/journal-entries', requirePermission('company:read'), (req: AuthRequest, res: Response) => {
   const companyId = req.query.companyId as string;
   if (!companyId) { res.status(400).json({ error: 'companyId required' }); return; }
-  res.json(createService().listJournalEntries(companyId));
+  res.json(createService().listJournalEntries(+companyId));
 });
 
 router.get('/journal-entries/:id', requirePermission('company:read'), (req: AuthRequest, res: Response) => {
   try {
-    res.json(createService().getJournalEntry(req.params.id));
+    res.json(createService().getJournalEntry(+req.params.id));
   } catch (e: any) {
     res.status(404).json({ error: e.message });
   }
@@ -97,7 +97,7 @@ router.post('/journal-entries', requirePermission('company:create'), (req: AuthR
 
 router.post('/journal-entries/:id/post', requirePermission('transaction:approve'), (req: AuthRequest, res: Response) => {
   try {
-    const entry = createService().postJournalEntry(req.params.id, req.user!.userId);
+    const entry = createService().postJournalEntry(+req.params.id, req.user!.userId);
     res.json(entry);
   } catch (e: any) {
     res.status(400).json({ error: e.message });
@@ -106,7 +106,7 @@ router.post('/journal-entries/:id/post', requirePermission('transaction:approve'
 
 router.post('/journal-entries/:id/reverse', requirePermission('transaction:approve'), (req: AuthRequest, res: Response) => {
   try {
-    const result = createService().reverseJournalEntry(req.params.id, req.user!.userId);
+    const result = createService().reverseJournalEntry(+req.params.id, req.user!.userId);
     res.json(result);
   } catch (e: any) {
     res.status(400).json({ error: e.message });
@@ -115,7 +115,7 @@ router.post('/journal-entries/:id/reverse', requirePermission('transaction:appro
 
 router.delete('/journal-entries/:id', requirePermission('company:delete'), (req: AuthRequest, res: Response) => {
   try {
-    createService().deleteJournalEntry(req.params.id);
+    createService().deleteJournalEntry(+req.params.id);
     res.status(204).send();
   } catch (e: any) {
     res.status(400).json({ error: e.message });
@@ -125,21 +125,21 @@ router.delete('/journal-entries/:id', requirePermission('company:delete'), (req:
 // ─── Ledger ──────────────────────────────────────────────
 
 router.get('/ledger', requirePermission('report:read'), (req: AuthRequest, res: Response) => {
-  const { companyId, accountId, periodId } = req.query as any;
+  const { companyId, accountId, periodId } = req.query as Record<string, string | undefined>;
   if (!companyId) { res.status(400).json({ error: 'companyId required' }); return; }
-  res.json(createService().getLedgerEntries(companyId, accountId, periodId));
+  res.json(createService().getLedgerEntries(+companyId, accountId ? +accountId : undefined, periodId ? +periodId : undefined));
 });
 
 router.get('/ledger/balances', requirePermission('report:read'), (req: AuthRequest, res: Response) => {
-  const { companyId, periodId } = req.query as any;
+  const { companyId, periodId } = req.query as Record<string, string | undefined>;
   if (!companyId || !periodId) { res.status(400).json({ error: 'companyId and periodId required' }); return; }
-  res.json(createService().getTrialBalance(companyId, periodId));
+  res.json(createService().getTrialBalance(+companyId, +periodId));
 });
 
 router.get('/ledger/balances/:accountId', requirePermission('report:read'), (req: AuthRequest, res: Response) => {
-  const { companyId, periodId } = req.query as any;
+  const { companyId, periodId } = req.query as Record<string, string | undefined>;
   if (!companyId || !periodId) { res.status(400).json({ error: 'companyId and periodId required' }); return; }
-  const bal = createService().getAccountBalance(companyId, req.params.accountId, periodId);
+  const bal = createService().getAccountBalance(+companyId, +req.params.accountId, +periodId);
   if (!bal) { res.status(404).json({ error: 'Balance not found' }); return; }
   res.json(bal);
 });
@@ -149,13 +149,13 @@ router.get('/ledger/balances/:accountId', requirePermission('report:read'), (req
 router.get('/fiscal-periods', requirePermission('company:read'), (req: AuthRequest, res: Response) => {
   const companyId = req.query.companyId as string;
   if (!companyId) { res.status(400).json({ error: 'companyId required' }); return; }
-  res.json(createService().getFiscalPeriods(companyId));
+  res.json(createService().getFiscalPeriods(+companyId));
 });
 
 router.get('/fiscal-periods/current', requirePermission('company:read'), (req: AuthRequest, res: Response) => {
   const companyId = req.query.companyId as string;
   if (!companyId) { res.status(400).json({ error: 'companyId required' }); return; }
-  const period = createService().getCurrentPeriod(companyId);
+  const period = createService().getCurrentPeriod(+companyId);
   if (!period) { res.status(404).json({ error: 'No open period' }); return; }
   res.json(period);
 });
@@ -171,7 +171,7 @@ router.post('/fiscal-periods', requirePermission('settings:manage'), (req: AuthR
 
 router.post('/fiscal-periods/:id/close', requirePermission('settings:manage'), (req: AuthRequest, res: Response) => {
   try {
-    const period = createService().closeFiscalPeriod(req.params.id, req.user!.userId);
+    const period = createService().closeFiscalPeriod(+req.params.id, req.user!.userId);
     res.json(period);
   } catch (e: any) {
     res.status(400).json({ error: e.message });

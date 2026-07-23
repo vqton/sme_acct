@@ -1,8 +1,8 @@
 import type { CapitalContributor } from '../entities/CapitalContributor.js';
 
 export interface CapitalContributorRepository {
-  findById(id: string): CapitalContributor | null;
-  findByCompanyId(companyId: string): CapitalContributor[];
+  findById(id: number): CapitalContributor | null;
+  findByCompanyId(companyId: number): CapitalContributor[];
   save(entity: CapitalContributor): CapitalContributor;
-  delete(id: string): void;
+  delete(id: number): void;
 }

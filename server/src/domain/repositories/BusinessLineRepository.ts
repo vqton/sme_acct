@@ -1,9 +1,9 @@
 import type { BusinessLine } from '../entities/BusinessLine.js';
 
 export interface BusinessLineRepository {
-  findById(id: string): BusinessLine | null;
-  findByCompanyId(companyId: string): BusinessLine[];
-  findPrimaryByCompanyId(companyId: string): BusinessLine | null;
+  findById(id: number): BusinessLine | null;
+  findByCompanyId(companyId: number): BusinessLine[];
+  findPrimaryByCompanyId(companyId: number): BusinessLine | null;
   save(entity: BusinessLine): BusinessLine;
-  delete(id: string): void;
+  delete(id: number): void;
 }

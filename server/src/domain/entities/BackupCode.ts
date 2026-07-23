@@ -1,6 +1,6 @@
 export interface BackupCode {
-  id: string;
-  userId: string;
+  id: number;
+  userId: number;
   codeHash: string;
   usedAt: Date | null;
   createdAt: Date;

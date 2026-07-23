@@ -20,7 +20,7 @@ export default function JournalEntryListPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { message } = App.useApp();
-  const companyId = localStorage.getItem('currentCompanyId') || '';
+  const companyId = Number(localStorage.getItem('currentCompanyId'));
 
   const fetchEntries = async () => {
     if (!companyId) return;
@@ -34,7 +34,7 @@ export default function JournalEntryListPage() {
 
   useEffect(() => { fetchEntries(); }, [companyId]);
 
-  const handlePost = async (id: string) => {
+  const handlePost = async (id: number) => {
     try {
       await postJournalEntry(id);
       message.success('Đã ghi sổ');
@@ -44,7 +44,7 @@ export default function JournalEntryListPage() {
     }
   };
 
-  const handleReverse = (id: string) => {
+  const handleReverse = (id: number) => {
     Modal.confirm({
       title: 'Đảo ngược chứng từ?',
       content: 'Sẽ tạo chứng từ đảo ngược với số tiền đối ứng.',
@@ -56,7 +56,7 @@ export default function JournalEntryListPage() {
     });
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: number) => {
     Modal.confirm({
       title: 'Xóa chứng từ?',
       content: 'Chỉ xóa được chứng từ chưa ghi sổ.',

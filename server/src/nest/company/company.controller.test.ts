@@ -8,15 +8,14 @@ import { DB_PROVIDER } from '../common/database.module.js';
 import { runMigrations } from '../../infrastructure/database/schema.js';
 import { HttpExceptionFilter } from '../common/filters/http-exception.filter.js';
 import { generateToken } from '../../infrastructure/auth/jwt.js';
-import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 
 describe('NestJS CompanyController', () => {
   let app: INestApplication;
   let db: Database.Database;
   let authToken: string;
-  const userId = crypto.randomUUID();
-  const seededCompanyId = crypto.randomUUID();
+  const userId = 1;
+  const seededCompanyId = 100;
 
   beforeAll(async () => {
     db = new Database(':memory:');

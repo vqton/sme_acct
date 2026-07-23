@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import bcrypt from 'bcryptjs';
 import { createTestDb } from '../test/helpers/db.js';
-import { seedUser } from '../test/helpers/auth.js';
+import { seedUser, seedCompany } from '../test/helpers/auth.js';
 import { AuthService } from './AuthService.js';
 import { verifyToken } from '../infrastructure/auth/jwt.js';
 import { SQLiteAuditLogRepository } from '../infrastructure/database/AuditLogRepository.js';
@@ -9,8 +9,6 @@ import { SQLiteRefreshTokenRepository } from '../infrastructure/database/Refresh
 import { SQLiteUserCompanyRepository } from '../infrastructure/database/UserCompanyRepository.js';
 import { SQLiteCompanyRepository } from '../infrastructure/database/CompanyRepository.js';
 import { SQLiteUserRepository } from '../infrastructure/database/UserRepository.js';
-import type { Company } from '../domain/entities/Company.js';
-import { CompanyStatus } from '../domain/entities/Company.js';
 
 describe('Session management', () => {
   let db: ReturnType<typeof createTestDb>;
@@ -19,19 +17,6 @@ describe('Session management', () => {
   let userCompanyRepo: SQLiteUserCompanyRepository;
   let companyRepo: SQLiteCompanyRepository;
   let userRepo: SQLiteUserRepository;
-
-  function seedCompany(overrides?: Partial<Company>): Company {
-    const id = overrides?.id ?? crypto.randomUUID();
-    const company: Company = {
-      id,
-      name: overrides?.name ?? 'Test Company',
-      status: CompanyStatus.Active,
-      createdAt: new Date(),
-      ...overrides,
-    };
-    companyRepo.save(company);
-    return company;
-  }
 
   beforeEach(() => {
     db = createTestDb();
@@ -56,7 +41,7 @@ describe('Session management', () => {
   describe('refresh token stores session metadata', () => {
     it('saves ip_address and user_agent on login', () => {
       const user = seedUser(db, { username: 'sess1' });
-      const company = seedCompany({ name: 'S1' });
+      const company = seedCompany(db, { name: 'S1' });
       userCompanyRepo.create({ userId: user.id, companyId: company.id, isActive: true, joinedAt: new Date() });
 
       service.login(
@@ -74,7 +59,7 @@ describe('Session management', () => {
   describe('listActiveSessions', () => {
     it('returns all active sessions for a user', () => {
       const user = seedUser(db, { username: 'sess2' });
-      const company = seedCompany({ name: 'S2' });
+      const company = seedCompany(db, { name: 'S2' });
       userCompanyRepo.create({ userId: user.id, companyId: company.id, isActive: true, joinedAt: new Date() });
 
       service.login({ username: 'sess2', password: 'TestPass123!' }, { ipAddress: '10.0.0.1', userAgent: 'Chrome' });
@@ -86,7 +71,7 @@ describe('Session management', () => {
 
     it('excludes revoked sessions', () => {
       const user = seedUser(db, { username: 'sess3' });
-      const company = seedCompany({ name: 'S3' });
+      const company = seedCompany(db, { name: 'S3' });
       userCompanyRepo.create({ userId: user.id, companyId: company.id, isActive: true, joinedAt: new Date() });
 
       service.login({ username: 'sess3', password: 'TestPass123!' }, { ipAddress: '10.0.0.1', userAgent: 'Chrome' });
@@ -102,7 +87,7 @@ describe('Session management', () => {
   describe('revokeSession', () => {
     it('revokes a specific session without affecting others', () => {
       const user = seedUser(db, { username: 'sess4' });
-      const company = seedCompany({ name: 'S4' });
+      const company = seedCompany(db, { name: 'S4' });
       userCompanyRepo.create({ userId: user.id, companyId: company.id, isActive: true, joinedAt: new Date() });
 
       const first = service.login({ username: 'sess4', password: 'TestPass123!' }, { ipAddress: '10.0.0.1', userAgent: 'Chrome' });
@@ -116,9 +101,9 @@ describe('Session management', () => {
     });
 
     it('ignores revoke for a token that does not belong to the user', () => {
-      const user1 = seedUser(db, { username: 'u1', id: 'user-1' });
-      const user2 = seedUser(db, { username: 'u2', id: 'user-2', email: 'u2@example.com' });
-      const company = seedCompany({ name: 'SC' });
+      const user1 = seedUser(db, { username: 'u1' });
+      const user2 = seedUser(db, { username: 'u2', email: 'u2@example.com' });
+      const company = seedCompany(db, { name: 'SC' });
       userCompanyRepo.create({ userId: user1.id, companyId: company.id, isActive: true, joinedAt: new Date() });
       userCompanyRepo.create({ userId: user2.id, companyId: company.id, isActive: true, joinedAt: new Date() });
 
@@ -126,9 +111,9 @@ describe('Session management', () => {
       service.login({ username: 'u2', password: 'TestPass123!' });
 
       // Try to revoke u1's session as u2 — should be ignored
-      service.revokeSession('user-2', u1Session.refreshToken);
+      service.revokeSession(user2.id, u1Session.refreshToken);
 
-      const u1Sessions = service.listActiveSessions('user-1');
+      const u1Sessions = service.listActiveSessions(user1.id);
       expect(u1Sessions).toHaveLength(1);
     });
   });
@@ -136,7 +121,7 @@ describe('Session management', () => {
   describe('revokeAllSessions', () => {
     it('revokes all sessions for a user', () => {
       const user = seedUser(db, { username: 'sess5' });
-      const company = seedCompany({ name: 'S5' });
+      const company = seedCompany(db, { name: 'S5' });
       userCompanyRepo.create({ userId: user.id, companyId: company.id, isActive: true, joinedAt: new Date() });
 
       service.login({ username: 'sess5', password: 'TestPass123!' });

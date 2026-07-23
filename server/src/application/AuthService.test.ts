@@ -161,7 +161,7 @@ describe('AuthService', () => {
       expect(result.user.id).toBe(user.id);
       expect(result.user.username).toBe('validuser');
 
-      const payload = verifyToken(result.token);
+      const payload = verifyToken(result.token!);
       expect(payload.userId).toBe(user.id);
     });
 
@@ -227,7 +227,7 @@ describe('AuthService', () => {
     });
 
     it('does not throw for non-existent user', () => {
-      expect(() => service.logout('non-existent-id')).not.toThrow();
+      expect(() => service.logout(9999)).not.toThrow();
     });
   });
 

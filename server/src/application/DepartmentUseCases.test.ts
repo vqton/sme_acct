@@ -12,10 +12,10 @@ describe('DepartmentUseCases', () => {
   let deptRepo: SQLiteDepartmentRepository;
   let userDeptRepo: SQLiteUserDepartmentRepository;
   let useCases: DepartmentUseCases;
-  const companyId = 'c-uc';
+  let companyId: number;
 
-  function seedUser(id: string) {
-    db.prepare('INSERT OR IGNORE INTO users (id, username, email, full_name, password_hash, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+  function seedUser(id: number) {
+    db.prepare('INSERT INTO users (id, username, email, full_name, password_hash, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
       .run(id, `user_${id}`, `${id}@test.com`, `User ${id}`, 'hash', 1, new Date().toISOString());
   }
 
@@ -28,7 +28,7 @@ describe('DepartmentUseCases', () => {
     useCases = new DepartmentUseCases(deptRepo, userDeptRepo);
 
     const companyRepo = new SQLiteCompanyRepository(db);
-    companyRepo.save({ id: companyId, name: 'UC Test Co', status: 1, createdAt: new Date() });
+    companyId = companyRepo.save({ id: 0, name: 'UC Test Co', status: 1, createdAt: new Date() }).id;
   });
 
   afterAll(() => db.close());
@@ -55,7 +55,7 @@ describe('DepartmentUseCases', () => {
     });
 
     it('rejects non-existent parent', () => {
-      expect(() => useCases.create({ companyId, code: 'BAD', name: 'Bad Parent', parentId: 'nonexist' })).toThrow('not found');
+      expect(() => useCases.create({ companyId, code: 'BAD', name: 'Bad Parent', parentId: 99999 })).toThrow('not found');
     });
   });
 
@@ -67,7 +67,7 @@ describe('DepartmentUseCases', () => {
     });
 
     it('throws on missing', () => {
-      expect(() => useCases.getById('nonexist')).toThrow('not found');
+      expect(() => useCases.getById(99999)).toThrow('not found');
     });
 
     it('lists all for company', () => {
@@ -155,48 +155,48 @@ describe('DepartmentUseCases', () => {
 
   describe('user-department assignment', () => {
     it('assigns user to department', () => {
-      seedUser('u1');
+      seedUser(100);
       const d = useCases.create({ companyId, code: 'ASGN', name: 'Assign' });
-      const ud = useCases.assignUser({ userId: 'u1', departmentId: d.id, isPrimary: true, jobTitle: 'Head' });
-      expect(ud.userId).toBe('u1');
+      const ud = useCases.assignUser({ userId: 100, departmentId: d.id, isPrimary: true, jobTitle: 'Head' });
+      expect(ud.userId).toBe(100);
       expect(ud.isPrimary).toBe(true);
     });
 
     it('removes old primary flag when setting new primary', () => {
-      seedUser('u2');
+      seedUser(200);
       const d1 = useCases.create({ companyId, code: 'ASGN1', name: 'Assign 1' });
       const d2 = useCases.create({ companyId, code: 'ASGN2', name: 'Assign 2' });
-      useCases.assignUser({ userId: 'u2', departmentId: d1.id, isPrimary: true });
-      useCases.assignUser({ userId: 'u2', departmentId: d2.id, isPrimary: true });
-      const list = useCases.getUserDepartments('u2');
+      useCases.assignUser({ userId: 200, departmentId: d1.id, isPrimary: true });
+      useCases.assignUser({ userId: 200, departmentId: d2.id, isPrimary: true });
+      const list = useCases.getUserDepartments(200);
       expect(list.filter((ud) => ud.isPrimary)).toHaveLength(1);
       expect(list.find((ud) => ud.departmentId === d2.id)!.isPrimary).toBe(true);
     });
 
     it('lists department users', () => {
-      seedUser('u3');
+      seedUser(300);
       const d = useCases.create({ companyId, code: 'MEM', name: 'Members' });
-      useCases.assignUser({ userId: 'u3', departmentId: d.id, isPrimary: true });
+      useCases.assignUser({ userId: 300, departmentId: d.id, isPrimary: true });
       const members = useCases.getDepartmentUsers(d.id);
       expect(members).toHaveLength(1);
-      expect(members[0].userId).toBe('u3');
+      expect(members[0].userId).toBe(300);
     });
 
     it('removes user from department', () => {
-      seedUser('u4');
+      seedUser(400);
       const d1 = useCases.create({ companyId, code: 'REM1', name: 'Remove 1' });
       const d2 = useCases.create({ companyId, code: 'REM2', name: 'Remove 2' });
-      useCases.assignUser({ userId: 'u4', departmentId: d1.id, isPrimary: false });
-      useCases.assignUser({ userId: 'u4', departmentId: d2.id, isPrimary: true });
-      useCases.removeUserFromDepartment('u4', d1.id);
-      expect(useCases.getUserDepartments('u4')).toHaveLength(1);
+      useCases.assignUser({ userId: 400, departmentId: d1.id, isPrimary: false });
+      useCases.assignUser({ userId: 400, departmentId: d2.id, isPrimary: true });
+      useCases.removeUserFromDepartment(400, d1.id);
+      expect(useCases.getUserDepartments(400)).toHaveLength(1);
     });
 
     it('rejects removing user from last department', () => {
-      seedUser('u5');
+      seedUser(500);
       const d = useCases.create({ companyId, code: 'LAST', name: 'Last Dept' });
-      useCases.assignUser({ userId: 'u5', departmentId: d.id, isPrimary: true });
-      expect(() => useCases.removeUserFromDepartment('u5', d.id)).toThrow('must belong to at least 1');
+      useCases.assignUser({ userId: 500, departmentId: d.id, isPrimary: true });
+      expect(() => useCases.removeUserFromDepartment(500, d.id)).toThrow('must belong to at least 1');
     });
   });
 });

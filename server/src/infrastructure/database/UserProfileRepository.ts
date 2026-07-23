@@ -10,7 +10,7 @@ export class SQLiteUserProfileRepository implements UserProfileRepository {
     this.db = db ?? getDb();
   }
 
-  findByUserId(userId: string): UserProfile | null {
+  findByUserId(userId: number): UserProfile | null {
     const row = this.db.prepare('SELECT * FROM user_profiles WHERE user_id = ?').get(userId) as Record<string, unknown> | undefined;
     if (!row) return null;
     return this.toEntity(row);
@@ -33,13 +33,13 @@ export class SQLiteUserProfileRepository implements UserProfileRepository {
     return profile;
   }
 
-  delete(userId: string): void {
+  delete(userId: number): void {
     this.db.prepare('DELETE FROM user_profiles WHERE user_id = ?').run(userId);
   }
 
   private toEntity(row: Record<string, unknown>): UserProfile {
     return {
-      userId: row.user_id as string,
+      userId: row.user_id as number,
       phone: (row.phone as string) ?? undefined,
       position: (row.position as string) ?? undefined,
       department: (row.department as string) ?? undefined,

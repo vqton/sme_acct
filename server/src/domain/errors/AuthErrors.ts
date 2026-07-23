@@ -55,7 +55,7 @@ export class NoCompaniesAssignedError extends Error {
 }
 
 export class CompanyAccessError extends Error {
-  constructor(companyId: string) {
+  constructor(companyId: number) {
     super(`User is not a member of company ${companyId}`);
     this.name = 'CompanyAccessError';
   }

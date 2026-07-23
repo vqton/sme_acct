@@ -12,8 +12,9 @@ describe('SQLiteJournalEntryRepository', () => {
   let repo: SQLiteJournalEntryRepository;
   let accRepo: SQLiteAccountRepository;
   let periodRepo: SQLiteFiscalPeriodRepository;
-  let accountId: string;
-  let periodId: string;
+  let accountId: number;
+  let periodId: number;
+  let companyId: number;
 
   beforeAll(() => {
     db = new Database(':memory:');
@@ -24,12 +25,11 @@ describe('SQLiteJournalEntryRepository', () => {
     periodRepo = new SQLiteFiscalPeriodRepository(db);
 
     const companyRepo = new SQLiteCompanyRepository(db);
-    companyRepo.save({
-      id: 'c-je', name: 'Test Company JE', status: 1, createdAt: new Date(),
-    });
+    const company = companyRepo.save({ id: 0, name: 'Test Company JE', status: 1, createdAt: new Date() });
+    companyId = company.id;
 
     accountId = accRepo.save({
-      id: 'je-acc-1', companyId: 'c-je', accountNumber: '1111',
+      id: 0, companyId, accountNumber: '1111',
       name: 'Tiền mặt', category: AccountCategory.TaiSan,
       nature: AccountNature.DuNo, type: AccountType.TaiKhoanChiTiet,
       isActive: true, isSystem: false, allowTransactions: true,
@@ -39,7 +39,7 @@ describe('SQLiteJournalEntryRepository', () => {
     }).id;
 
     periodId = periodRepo.save({
-      id: 'je-per-1', companyId: 'c-je', year: 2026, month: 1,
+      id: 0, companyId, year: 2026, month: 1,
       periodName: 'Tháng 1/2026',
       startDate: '2026-01-01', endDate: '2026-01-31',
       status: FiscalPeriodStatus.Open, isOpeningBalancePeriod: false,
@@ -51,34 +51,34 @@ describe('SQLiteJournalEntryRepository', () => {
 
   it('saves and finds journal entry', () => {
     const entry = repo.save({
-      id: 'je-1', companyId: 'c-je', entryNumber: 'PC202601-0001',
+      id: 0, companyId, entryNumber: 'PC202601-0001',
       entryDate: '2026-01-15', periodId, entryType: JournalEntryType.ThuTien,
       description: 'Thu tiền bán hàng',
       totalDebit: 1000, totalCredit: 1000,
       isPosted: false, isReversed: false,
       createdAt: new Date(),
       lines: [
-        { id: 'jl-1', journalEntryId: 'je-1', accountId, accountNumber: '1111', debitAmount: 1000, creditAmount: 0 },
-        { id: 'jl-2', journalEntryId: 'je-1', accountId: 'je-acc-1', accountNumber: '5111', debitAmount: 0, creditAmount: 1000 },
+        { id: 0, journalEntryId: 0, accountId, accountNumber: '1111', debitAmount: 1000, creditAmount: 0 },
+        { id: 0, journalEntryId: 0, accountId, accountNumber: '5111', debitAmount: 0, creditAmount: 1000 },
       ],
     });
-    expect(entry.id).toBe('je-1');
+    expect(entry.id).toBeDefined();
 
-    const found = repo.findById('je-1');
+    const found = repo.findById(entry.id);
     expect(found).not.toBeNull();
     expect(found!.description).toBe('Thu tiền bán hàng');
 
-    const lines = repo.findLinesByEntryId('je-1');
+    const lines = repo.findLinesByEntryId(entry.id);
     expect(lines).toHaveLength(2);
   });
 
   it('generates next entry number', () => {
-    const num = repo.getNextEntryNumber('c-je', 2026, 1);
+    const num = repo.getNextEntryNumber(companyId, 2026, 1);
     expect(num).toContain('PC202601');
   });
 
   it('finds by company and period', () => {
-    const entries = repo.findByCompanyId('c-je');
+    const entries = repo.findByCompanyId(companyId);
     expect(entries.length).toBeGreaterThanOrEqual(1);
   });
 });

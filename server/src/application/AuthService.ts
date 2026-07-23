@@ -41,8 +41,8 @@ export interface LoginInput {
 export interface LoginResult {
   token: string | null;
   refreshToken: string;
-  user: { id: string; username: string; fullName: string };
-  companies: { id: string; name: string; role?: string }[];
+  user: { id: number; username: string; fullName: string };
+  companies: { id: number; name: string; role?: string }[];
   requires2FA?: boolean;
   tempToken?: string;
 }
@@ -50,9 +50,9 @@ export interface LoginResult {
 export interface TokenRefreshResult {
   token: string;
   refreshToken: string;
-  user: { id: string; username: string; fullName: string };
-  companyId?: string;
-  companies?: { id: string; name: string; role?: string }[];
+  user: { id: number; username: string; fullName: string };
+  companyId?: number;
+  companies?: { id: number; name: string; role?: string }[];
 }
 
 const PASSWORD_RULES = {
@@ -106,12 +106,12 @@ export class AuthService {
     private backupCodeRepo?: BackupCodeRepository,
   ) {}
 
-  private createAccessToken(userId: string, username: string, companyId?: string): string {
+  private createAccessToken(userId: number, username: string, companyId?: number): string {
     const roles = this.roleRepo?.getUserRoles(userId) ?? [];
     return generateToken({ userId, username, companyId, roles, jti: crypto.randomUUID() });
   }
 
-  private audit(ctx: RequestContext | undefined, entry: { userId: string | null; action: string; resource: string | null; resourceId: string | null; detail: string | null }): void {
+  private audit(ctx: RequestContext | undefined, entry: { userId: number | null; action: string; resource: string | null; resourceId: number | null; detail: string | null }): void {
     this.auditRepo?.save({
       ...entry,
       ipAddress: ctx?.ipAddress ?? null,
@@ -119,7 +119,7 @@ export class AuthService {
     });
   }
 
-  register(input: RegisterInput, ctx?: RequestContext): { id: string; username: string; email: string; fullName: string } {
+  register(input: RegisterInput, ctx?: RequestContext): { id: number; username: string; email: string; fullName: string } {
     const username = input.username.trim();
     const email = input.email.trim().toLowerCase();
 
@@ -140,12 +140,15 @@ export class AuthService {
 
     const passwordHash = bcrypt.hashSync(input.password, 10);
     const user = this.userRepo.save({
-      id: crypto.randomUUID(),
+      id: 0,
       username,
       email,
       fullName: input.fullName.trim(),
       passwordHash,
       isActive: true,
+      twoFactorEnabled: false,
+      failedLoginAttempts: 0,
+      lockoutUntil: null,
       createdAt: new Date(),
     });
 
@@ -295,7 +298,7 @@ export class AuthService {
     };
   }
 
-  selectCompany(refreshTokenStr: string, companyId: string): TokenRefreshResult {
+  selectCompany(refreshTokenStr: string, companyId: number): TokenRefreshResult {
     if (!this.refreshTokenRepo) {
       throw new Error('Refresh token repository not configured');
     }
@@ -378,7 +381,7 @@ export class AuthService {
     };
   }
 
-  changePassword(userId: string, oldPassword: string, newPassword: string, ctx?: RequestContext): void {
+  changePassword(userId: number, oldPassword: string, newPassword: string, ctx?: RequestContext): void {
     const user = this.userRepo.findById(userId);
     if (!user) throw new InvalidCredentialsError();
 
@@ -416,7 +419,7 @@ export class AuthService {
     });
   }
 
-  revokeAllSessions(userId: string, ctx?: RequestContext): void {
+  revokeAllSessions(userId: number, ctx?: RequestContext): void {
     this.refreshTokenRepo?.revokeAllForUser(userId);
 
     this.audit(ctx, {
@@ -428,7 +431,7 @@ export class AuthService {
     });
   }
 
-  listActiveSessions(userId: string): { id: string; ipAddress?: string; userAgent?: string; deviceName?: string; createdAt: Date; lastUsedAt?: Date }[] {
+  listActiveSessions(userId: number): { id: number; ipAddress?: string; userAgent?: string; deviceName?: string; createdAt: Date; lastUsedAt?: Date }[] {
     if (!this.refreshTokenRepo) return [];
     return this.refreshTokenRepo.findAllActiveForUser(userId).map((t) => ({
       id: t.id,
@@ -440,7 +443,7 @@ export class AuthService {
     }));
   }
 
-  revokeSession(userId: string, refreshTokenStr: string, ctx?: RequestContext): void {
+  revokeSession(userId: number, refreshTokenStr: string, ctx?: RequestContext): void {
     if (!this.refreshTokenRepo) return;
 
     const hash = crypto.createHash('sha256').update(refreshTokenStr).digest('hex');
@@ -458,7 +461,7 @@ export class AuthService {
     });
   }
 
-  logout(userId: string, ctx?: RequestContext): void {
+  logout(userId: number, ctx?: RequestContext): void {
     this.refreshTokenRepo?.revokeAllForUser(userId);
 
     this.audit(ctx, {
@@ -547,7 +550,7 @@ export class AuthService {
 
   // --- 2FA / TOTP ---
 
-  setupTwoFactor(userId: string): { secret: string; backupCodes: string[] } {
+  setupTwoFactor(userId: number): { secret: string; backupCodes: string[] } {
     const user = this.userRepo.findById(userId);
     if (!user) throw new InvalidCredentialsError();
 
@@ -582,7 +585,7 @@ export class AuthService {
     return { secret, backupCodes };
   }
 
-  verifyAndEnableTwoFactor(userId: string, totpCode: string): void {
+  verifyAndEnableTwoFactor(userId: number, totpCode: string): void {
     const user = this.userRepo.findById(userId);
     if (!user || !user.totpSecret) throw new InvalidCredentialsError();
 
@@ -610,9 +613,9 @@ export class AuthService {
   }
 
   verifyTwoFactorLogin(tempToken: string, totpCodeOrBackup: string): TokenRefreshResult {
-    let payload: { userId: string; purpose: string };
+    let payload: { userId: number; purpose: string };
     try {
-      payload = jwt.verify(tempToken, process.env.JWT_SECRET!, { issuer: 'sme-acct', audience: 'sme-acct-client' }) as { userId: string; purpose: string };
+      payload = jwt.verify(tempToken, process.env.JWT_SECRET!, { issuer: 'sme-acct', audience: 'sme-acct-client' }) as { userId: number; purpose: string };
     } catch {
       throw new InvalidCredentialsError();
     }
@@ -651,7 +654,7 @@ export class AuthService {
     throw new InvalidTOTPError();
   }
 
-  disableTwoFactor(userId: string, totpCode: string): void {
+  disableTwoFactor(userId: number, totpCode: string): void {
     const user = this.userRepo.findById(userId);
     if (!user || !user.totpSecret) throw new InvalidCredentialsError();
 
@@ -678,7 +681,7 @@ export class AuthService {
     });
   }
 
-  private completeLogin(user: { id: string; username: string; fullName: string; totpSecret?: string }): TokenRefreshResult {
+  private completeLogin(user: { id: number; username: string; fullName: string; totpSecret?: string }): TokenRefreshResult {
     // Re-fetch full user to get company info
     const fullUser = this.userRepo.findById(user.id);
     if (!fullUser) throw new InvalidCredentialsError();
@@ -699,15 +702,15 @@ export class AuthService {
     };
   }
 
-  private createRefreshToken(userId: string, companyId?: string, ctx?: RequestContext): string {
+  private createRefreshToken(userId: number, companyId?: number, ctx?: RequestContext): string {
     const { token, hash } = generateRefreshToken();
     this.refreshTokenRepo?.save({
-      id: crypto.randomUUID(),
+      id: 0,
       userId,
       companyId,
       tokenHash: hash,
-      ipAddress: ctx?.ipAddress,
-      userAgent: ctx?.userAgent,
+      ipAddress: ctx?.ipAddress ?? undefined,
+      userAgent: ctx?.userAgent ?? undefined,
       expiresAt: new Date(Date.now() + REFRESH_TOKEN_DAYS * 86400000),
       createdAt: new Date(),
       revokedAt: null,

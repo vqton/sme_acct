@@ -1,6 +1,6 @@
 export interface Branch {
-  id: string;
-  companyId: string;
+  id: number;
+  companyId: number;
   branchType: number;
   name: string;
   address?: string;
@@ -15,7 +15,7 @@ export interface Branch {
 }
 
 export function createBranch(
-  data: Omit<Branch, 'id' | 'createdAt'> & { id?: string; createdAt?: Date },
+  data: Omit<Branch, 'id' | 'createdAt'> & { id?: number; createdAt?: Date },
 ): Branch {
-  return { id: crypto.randomUUID(), createdAt: new Date(), ...data };
+  return { id: 0, createdAt: new Date(), ...data };
 }

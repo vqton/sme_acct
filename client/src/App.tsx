@@ -24,6 +24,8 @@ import UsersPage from './pages/UsersPage';
 import UserDetailPage from './pages/UserDetailPage';
 import UserFormPage from './pages/UserFormPage';
 import UserGroupsPage from './pages/UserGroupsPage';
+import DepartmentsPage from './pages/DepartmentsPage';
+import DepartmentDetailPage from './pages/DepartmentDetailPage';
 import ModuleStub from './pages/ModuleStub';
 
 function AppRoutes() {
@@ -73,6 +75,10 @@ function AppRoutes() {
           <Route path="/accounting/payroll" element={<ModuleStub name="Tiền lương" description="Quản lý bảng lương, BHXH, BHYT, BHTN" />} />
           <Route path="/accounting/reports" element={<ModuleStub name="Báo cáo tài chính" description="B01-DN, B02-DN, B03-DN, B09-DN và báo cáo quản trị" />} />
           <Route path="/accounting/system" element={<ModuleStub name="Tham số hệ thống" description="Cấu hình hệ thống, tham số kế toán" />} />
+
+          {/* Departments (company-scoped) */}
+          <Route path="/companies/:companyId/departments" element={<DepartmentsPage />} />
+          <Route path="/companies/:companyId/departments/:id" element={<DepartmentDetailPage />} />
 
           {/* User Management */}
           <Route path="/users" element={<UsersPage />} />

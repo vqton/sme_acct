@@ -42,7 +42,7 @@ export class SQLiteUserRepository implements UserRepository {
     };
   }
 
-  findById(id: string): User | null {
+  findById(id: number): User | null {
     const row = this.stmts.findById.get(id) as Record<string, unknown> | undefined;
     return row ? this.toEntity(row) : null;
   }
@@ -63,16 +63,16 @@ export class SQLiteUserRepository implements UserRepository {
 
   save(entity: User): User {
     const params = this.toParams(entity);
-    const existing = this.stmts.findById.get(entity.id);
-    if (existing) {
+    if (entity.id) {
       this.stmts.update.run(params);
     } else {
-      this.stmts.insert.run(params);
+      const result = this.stmts.insert.run(params);
+      entity.id = Number(result.lastInsertRowid);
     }
     return entity;
   }
 
-  delete(id: string): void {
+  delete(id: number): void {
     this.stmts.delete.run(id);
   }
 
@@ -139,7 +139,7 @@ export class SQLiteUserRepository implements UserRepository {
 
   private toEntity(row: Record<string, unknown>): User {
     return {
-      id: row.id as string,
+      id: row.id as number,
       username: row.username as string,
       email: row.email as string,
       fullName: row.full_name as string,
@@ -156,7 +156,7 @@ export class SQLiteUserRepository implements UserRepository {
 
   private toParams(entity: User) {
     return {
-      id: entity.id,
+      id: entity.id || null,
       username: entity.username,
       email: entity.email,
       fullName: entity.fullName,

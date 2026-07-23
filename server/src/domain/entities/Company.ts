@@ -2,7 +2,7 @@ import { CompanyType } from '../enums/CompanyEnums.js';
 import { Address } from '../valueObjects/Address.js';
 
 export interface Company {
-  id: string;
+  id: number;
   name: string;
   nameVietnamese?: string;
   nameEnglish?: string;
@@ -43,8 +43,8 @@ export interface Company {
 
   createdAt: Date;
   updatedAt?: Date;
-  createdByUserId?: string;
-  updatedByUserId?: string;
+  createdByUserId?: number;
+  updatedByUserId?: number;
 
   firstPeriodStartDate?: string;
   closedPeriodCount?: number;
@@ -64,7 +64,7 @@ export enum CompanyStatus {
 
 export function createCompany(data: Partial<Company> & { name: string; status: CompanyStatus }): Company {
   return {
-    id: crypto.randomUUID(),
+    id: 0,
     createdAt: new Date(),
     ...data,
   };

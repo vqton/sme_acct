@@ -42,7 +42,7 @@ describe('RoleSeeder', () => {
     const seeder = new RoleSeeder(new SQLiteUserRepository(db), new SQLiteRoleRepository(db));
     seeder.seed();
 
-    const admin = db.prepare('SELECT id FROM users WHERE username = ?').get('admin') as { id: string } | undefined;
+    const admin = db.prepare('SELECT id FROM users WHERE username = ?').get('admin') as { id: number } | undefined;
     expect(admin).toBeDefined();
 
     const roles = db.prepare('SELECT role FROM user_roles WHERE user_id = ?').all(admin!.id) as { role: string }[];

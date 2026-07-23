@@ -31,7 +31,7 @@ router.get('/', requirePermission('user:read'), (req: AuthRequest, res: Response
     query,
     isActive: isActive !== undefined ? isActive === 'true' : undefined,
     role,
-    groupId,
+    groupId: groupId ? +groupId : undefined,
     offset: offset ? parseInt(offset, 10) : undefined,
     limit: limit ? parseInt(limit, 10) : undefined,
   });
@@ -39,14 +39,14 @@ router.get('/', requirePermission('user:read'), (req: AuthRequest, res: Response
     query,
     isActive: isActive !== undefined ? isActive === 'true' : undefined,
     role,
-    groupId,
+    groupId: groupId ? +groupId : undefined,
   });
   res.json({ data: users, total });
 });
 
 router.get('/:id', requirePermission('user:read'), (req: AuthRequest, res: Response) => {
   const { userService } = createServices();
-  const user = userService.getUser(req.params.id);
+  const user = userService.getUser(+req.params.id);
   if (!user) { res.status(404).json({ error: 'User not found' }); return; }
   res.json(user);
 });
@@ -54,7 +54,7 @@ router.get('/:id', requirePermission('user:read'), (req: AuthRequest, res: Respo
 router.put('/:id', requirePermission('user:update'), (req: AuthRequest, res: Response) => {
   const { userService } = createServices();
   try {
-    const user = userService.updateUser(req.params.id, req.body);
+    const user = userService.updateUser(+req.params.id, req.body);
     res.json(user);
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Update failed';
@@ -66,7 +66,7 @@ router.put('/:id', requirePermission('user:update'), (req: AuthRequest, res: Res
 router.delete('/:id', requirePermission('user:delete'), (req: AuthRequest, res: Response) => {
   const { userService } = createServices();
   try {
-    userService.deleteUser(req.params.id);
+    userService.deleteUser(+req.params.id);
     res.status(204).send();
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Delete failed';
@@ -79,7 +79,7 @@ router.delete('/:id', requirePermission('user:delete'), (req: AuthRequest, res: 
 router.post('/:id/activate', requirePermission('user:update'), (req: AuthRequest, res: Response) => {
   const { userService } = createServices();
   try {
-    const user = userService.activateUser(req.params.id);
+    const user = userService.activateUser(+req.params.id);
     res.json(user);
   } catch (err) {
     res.status(404).json({ error: err instanceof Error ? err.message : 'Activate failed' });
@@ -89,7 +89,7 @@ router.post('/:id/activate', requirePermission('user:update'), (req: AuthRequest
 router.post('/:id/deactivate', requirePermission('user:update'), (req: AuthRequest, res: Response) => {
   const { userService } = createServices();
   try {
-    const user = userService.deactivateUser(req.params.id);
+    const user = userService.deactivateUser(+req.params.id);
     res.json(user);
   } catch (err) {
     res.status(404).json({ error: err instanceof Error ? err.message : 'Deactivate failed' });
@@ -100,15 +100,15 @@ router.post('/:id/deactivate', requirePermission('user:update'), (req: AuthReque
 
 router.get('/:id/roles', requirePermission('user:read'), (req: AuthRequest, res: Response) => {
   const { userService } = createServices();
-  const roles = userService.getUserRoles(req.params.id);
+  const roles = userService.getUserRoles(+req.params.id);
   res.json({ roles });
 });
 
 router.post('/:id/roles', requirePermission('user:update'), (req: AuthRequest, res: Response) => {
   const { userService } = createServices();
   try {
-    userService.assignRole(req.params.id, req.body.role);
-    const roles = userService.getUserRoles(req.params.id);
+    userService.assignRole(+req.params.id, req.body.role);
+    const roles = userService.getUserRoles(+req.params.id);
     res.json({ roles });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Assign role failed';
@@ -118,22 +118,22 @@ router.post('/:id/roles', requirePermission('user:update'), (req: AuthRequest, r
 
 router.delete('/:id/roles/:role', requirePermission('user:update'), (req: AuthRequest, res: Response) => {
   const { userService } = createServices();
-  userService.removeRole(req.params.id, req.params.role);
-  res.json({ roles: userService.getUserRoles(req.params.id) });
+  userService.removeRole(+req.params.id, req.params.role);
+  res.json({ roles: userService.getUserRoles(+req.params.id) });
 });
 
 // ─── User Groups ────────────────────────────────────────────
 
 router.get('/:id/groups', requirePermission('user:read'), (req: AuthRequest, res: Response) => {
   const { userService } = createServices();
-  const groups = userService.getUserGroups(req.params.id);
+  const groups = userService.getUserGroups(+req.params.id);
   res.json({ data: groups });
 });
 
 router.post('/:id/groups/:groupId', requirePermission('user:update'), (req: AuthRequest, res: Response) => {
   const { userService } = createServices();
   try {
-    userService.addUserToGroup(req.params.id, req.params.groupId);
+    userService.addUserToGroup(+req.params.id, +req.params.groupId);
     res.status(201).json({ ok: true });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed';
@@ -143,7 +143,7 @@ router.post('/:id/groups/:groupId', requirePermission('user:update'), (req: Auth
 
 router.delete('/:id/groups/:groupId', requirePermission('user:update'), (req: AuthRequest, res: Response) => {
   const { userService } = createServices();
-  userService.removeUserFromGroup(req.params.id, req.params.groupId);
+  userService.removeUserFromGroup(+req.params.id, +req.params.groupId);
   res.json({ ok: true });
 });
 
@@ -170,7 +170,7 @@ router.post('/groups', requirePermission('user:create'), (req: AuthRequest, res:
 router.put('/groups/:id', requirePermission('user:update'), (req: AuthRequest, res: Response) => {
   const { groupService } = createServices();
   try {
-    const group = groupService.updateGroup(req.params.id, req.body);
+    const group = groupService.updateGroup(+req.params.id, req.body);
     res.json(group);
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Update failed';
@@ -182,7 +182,7 @@ router.put('/groups/:id', requirePermission('user:update'), (req: AuthRequest, r
 router.delete('/groups/:id', requirePermission('user:delete'), (req: AuthRequest, res: Response) => {
   const { groupService } = createServices();
   try {
-    groupService.deleteGroup(req.params.id);
+    groupService.deleteGroup(+req.params.id);
     res.status(204).send();
   } catch {
     res.status(404).json({ error: 'Group not found' });
@@ -192,7 +192,7 @@ router.delete('/groups/:id', requirePermission('user:delete'), (req: AuthRequest
 router.post('/groups/:id/toggle', requirePermission('user:update'), (req: AuthRequest, res: Response) => {
   const { groupService } = createServices();
   try {
-    const group = groupService.toggleGroupActive(req.params.id, req.body.isActive);
+    const group = groupService.toggleGroupActive(+req.params.id, req.body.isActive);
     res.json(group);
   } catch {
     res.status(404).json({ error: 'Group not found' });

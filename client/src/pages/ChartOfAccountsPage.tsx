@@ -21,7 +21,7 @@ export default function ChartOfAccountsPage() {
   const [editing, setEditing] = useState<any>(null);
   const [form] = Form.useForm();
   const { message } = App.useApp();
-  const companyId = localStorage.getItem('currentCompanyId') || '';
+  const companyId = Number(localStorage.getItem('currentCompanyId'));
 
   const fetchAccounts = async () => {
     if (!companyId) return;
@@ -46,7 +46,7 @@ export default function ChartOfAccountsPage() {
     }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: number) => {
     Modal.confirm({
       title: 'Xóa tài khoản?',
       content: 'Hành động này không thể hoàn tác.',

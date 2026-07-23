@@ -26,7 +26,8 @@ interface FormData {
 }
 
 export default function UserFormPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id: idStr } = useParams<{ id: string }>();
+  const id = idStr ? Number(idStr) : undefined;
   const navigate = useNavigate();
   const isEdit = !!id;
 

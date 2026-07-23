@@ -1,7 +1,7 @@
 export interface RefreshToken {
-  id: string;
-  userId: string;
-  companyId?: string;
+  id: number;
+  userId: number;
+  companyId?: number;
   tokenHash: string;
   ipAddress?: string;
   userAgent?: string;

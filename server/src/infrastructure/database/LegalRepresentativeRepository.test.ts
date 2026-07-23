@@ -13,14 +13,14 @@ describe('SQLLegalRepresentativeRepository', () => {
     db.pragma('foreign_keys = ON');
     runMigrations(db);
 
-    db.prepare(`INSERT INTO companies (id, name, status) VALUES ('c1', 'Test Co', 1)`).run();
+    db.prepare(`INSERT INTO companies (id, name, status) VALUES (1, 'Test Co', 1)`).run();
 
     repo = new SQLLegalRepresentativeRepository(db);
   });
 
   it('saves and finds by id', () => {
     const lr = createLegalRepresentative({
-      companyId: 'c1', fullName: 'Nguyễn Văn A', position: 'Director', isPrimary: true,
+      companyId: 1, fullName: 'Nguyễn Văn A', position: 'Director', isPrimary: true,
     });
     repo.save(lr);
     const found = repo.findById(lr.id);
@@ -31,48 +31,48 @@ describe('SQLLegalRepresentativeRepository', () => {
 
   it('finds by company id', () => {
     const lr1 = createLegalRepresentative({
-      companyId: 'c1', fullName: 'A', position: 'Director', isPrimary: true,
+      companyId: 1, fullName: 'A', position: 'Director', isPrimary: true,
     });
     const lr2 = createLegalRepresentative({
-      companyId: 'c1', fullName: 'B', position: 'Manager', isPrimary: false,
+      companyId: 1, fullName: 'B', position: 'Manager', isPrimary: false,
     });
     repo.save(lr1);
     repo.save(lr2);
 
-    const list = repo.findByCompanyId('c1');
+    const list = repo.findByCompanyId(1);
     expect(list).toHaveLength(2);
   });
 
   it('returns empty list for unknown company', () => {
-    expect(repo.findByCompanyId('unknown')).toHaveLength(0);
+    expect(repo.findByCompanyId(999)).toHaveLength(0);
   });
 
   it('finds primary legal rep', () => {
     const lr1 = createLegalRepresentative({
-      companyId: 'c1', fullName: 'A', position: 'Director', isPrimary: true,
+      companyId: 1, fullName: 'A', position: 'Director', isPrimary: true,
     });
     const lr2 = createLegalRepresentative({
-      companyId: 'c1', fullName: 'B', position: 'Manager', isPrimary: false,
+      companyId: 1, fullName: 'B', position: 'Manager', isPrimary: false,
     });
     repo.save(lr1);
     repo.save(lr2);
 
-    const primary = repo.findPrimaryByCompanyId('c1');
+    const primary = repo.findPrimaryByCompanyId(1);
     expect(primary).not.toBeNull();
     expect(primary!.fullName).toBe('A');
   });
 
   it('returns null for primary when none set', () => {
     const lr = createLegalRepresentative({
-      companyId: 'c1', fullName: 'A', position: 'Director', isPrimary: false,
+      companyId: 1, fullName: 'A', position: 'Director', isPrimary: false,
     });
     repo.save(lr);
-    expect(repo.findPrimaryByCompanyId('c1')).toBeNull();
+    expect(repo.findPrimaryByCompanyId(1)).toBeNull();
   });
 
   it('updates existing record', () => {
     const lr = createLegalRepresentative({
-      companyId: 'c1', fullName: 'Original', position: 'Director', isPrimary: true,
+      companyId: 1, fullName: 'Original', position: 'Director', isPrimary: true,
     });
     repo.save(lr);
 
@@ -87,7 +87,7 @@ describe('SQLLegalRepresentativeRepository', () => {
 
   it('deletes by id', () => {
     const lr = createLegalRepresentative({
-      companyId: 'c1', fullName: 'A', position: 'Director', isPrimary: true,
+      companyId: 1, fullName: 'A', position: 'Director', isPrimary: true,
     });
     repo.save(lr);
     repo.delete(lr.id);
@@ -96,9 +96,9 @@ describe('SQLLegalRepresentativeRepository', () => {
 
   it('filters inactive reps from primary query', () => {
     const lr = createLegalRepresentative({
-      companyId: 'c1', fullName: 'A', position: 'Director', isPrimary: true, isActive: false,
+      companyId: 1, fullName: 'A', position: 'Director', isPrimary: true, isActive: false,
     });
     repo.save(lr);
-    expect(repo.findPrimaryByCompanyId('c1')).toBeNull();
+    expect(repo.findPrimaryByCompanyId(1)).toBeNull();
   });
 });

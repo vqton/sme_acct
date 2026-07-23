@@ -8,14 +8,13 @@ import { DB_PROVIDER } from '../common/database.module.js';
 import { CompanyModule } from '../company/company.module.js';
 import { runMigrations } from '../../infrastructure/database/schema.js';
 import { generateToken } from '../../infrastructure/auth/jwt.js';
-import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 
 describe('DashboardController', () => {
   let app: INestApplication;
   let db: Database.Database;
   let authToken: string;
-  const userId = crypto.randomUUID();
+  const userId = 1;
 
   beforeAll(async () => {
     db = new Database(':memory:');
@@ -29,26 +28,26 @@ describe('DashboardController', () => {
     authToken = generateToken({ userId, username: 'dashadmin', roles: ['he-thong'] });
 
     // Seed companies
-    const co1 = crypto.randomUUID();
+    const co1 = 100;
     db.prepare(`INSERT INTO companies (id, name, status, charter_capital, paid_in_capital, created_at)
       VALUES (?, ?, 1, 10000000000, 5000000000, ?)`).run(co1, 'Công ty A', new Date().toISOString());
-    const co2 = crypto.randomUUID();
+    const co2 = 101;
     db.prepare(`INSERT INTO companies (id, name, status, charter_capital, paid_in_capital, created_at)
       VALUES (?, ?, 2, 5000000000, 2500000000, ?)`).run(co2, 'Công ty B', new Date().toISOString());
 
     // Seed legal reps
     db.prepare(`INSERT INTO legal_representatives (id, company_id, full_name, position, is_primary, is_active, created_at)
-      VALUES (?, ?, 'Nguyen Van A', 'Giam doc', 1, 1, ?)`).run(crypto.randomUUID(), co1, new Date().toISOString());
+      VALUES (?, ?, 'Nguyen Van A', 'Giam doc', 1, 1, ?)`).run(1, co1, new Date().toISOString());
     db.prepare(`INSERT INTO legal_representatives (id, company_id, full_name, position, is_primary, is_active, created_at)
-      VALUES (?, ?, 'Nguyen Van B', 'Pho giam doc', 1, 1, ?)`).run(crypto.randomUUID(), co2, new Date().toISOString());
+      VALUES (?, ?, 'Nguyen Van B', 'Pho giam doc', 1, 1, ?)`).run(2, co2, new Date().toISOString());
 
     // Seed contributors
     db.prepare(`INSERT INTO capital_contributors (id, company_id, contributor_type, full_name, contributor_category, capital_contribution, ownership_ratio, contribution_date, is_founder, created_at)
-      VALUES (?, ?, 1, 'Nguyen Van C', 1, 5000000000, 50, '2024-01-01', 1, ?)`).run(crypto.randomUUID(), co1, new Date().toISOString());
+      VALUES (?, ?, 1, 'Nguyen Van C', 1, 5000000000, 50, '2024-01-01', 1, ?)`).run(1, co1, new Date().toISOString());
 
     // Seed bank accounts
     db.prepare(`INSERT INTO company_bank_accounts (id, company_id, account_number, account_name, bank_name, currency_code, is_primary_tax_payment, is_active, opened_date, created_at)
-      VALUES (?, ?, '123456789', 'Company A', 'VCB', 'VND', 1, 1, '2024-01-01', ?)`).run(crypto.randomUUID(), co1, new Date().toISOString());
+      VALUES (?, ?, '123456789', 'Company A', 'VCB', 'VND', 1, 1, '2024-01-01', ?)`).run(1, co1, new Date().toISOString());
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [DashboardModule, CompanyModule],

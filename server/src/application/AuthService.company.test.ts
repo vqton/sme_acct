@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import bcrypt from 'bcryptjs';
 import { createTestDb } from '../test/helpers/db.js';
-import { seedUser } from '../test/helpers/auth.js';
+import { seedUser, seedCompany } from '../test/helpers/auth.js';
 import { AuthService } from './AuthService.js';
 import { verifyToken } from '../infrastructure/auth/jwt.js';
 import { SQLiteAuditLogRepository } from '../infrastructure/database/AuditLogRepository.js';
@@ -9,8 +9,6 @@ import { SQLiteRefreshTokenRepository } from '../infrastructure/database/Refresh
 import { SQLiteUserCompanyRepository } from '../infrastructure/database/UserCompanyRepository.js';
 import { SQLiteCompanyRepository } from '../infrastructure/database/CompanyRepository.js';
 import { SQLiteUserRepository } from '../infrastructure/database/UserRepository.js';
-import type { Company } from '../domain/entities/Company.js';
-import { CompanyStatus } from '../domain/entities/Company.js';
 
 describe('AuthService — company switching', () => {
   let db: ReturnType<typeof createTestDb>;
@@ -18,19 +16,6 @@ describe('AuthService — company switching', () => {
   let userCompanyRepo: SQLiteUserCompanyRepository;
   let companyRepo: SQLiteCompanyRepository;
   let userRepo: SQLiteUserRepository;
-
-  function seedCompany(overrides?: Partial<Company>): Company {
-    const id = overrides?.id ?? crypto.randomUUID();
-    const company: Company = {
-      id,
-      name: overrides?.name ?? 'Test Company',
-      status: CompanyStatus.Active,
-      createdAt: new Date(),
-      ...overrides,
-    };
-    companyRepo.save(company);
-    return company;
-  }
 
   beforeEach(() => {
     db = createTestDb();
@@ -55,7 +40,7 @@ describe('AuthService — company switching', () => {
   describe('login — single company', () => {
     it('auto-selects company and includes companyId in JWT', () => {
       const user = seedUser(db, { username: 'alice' });
-      const company = seedCompany({ name: 'Acme Corp' });
+      const company = seedCompany(db, { name: 'Acme Corp' });
       userCompanyRepo.create({
         userId: user.id,
         companyId: company.id,
@@ -70,7 +55,7 @@ describe('AuthService — company switching', () => {
       expect(result.companies[0].id).toBe(company.id);
       expect(result.companies[0].name).toBe('Acme Corp');
 
-      const payload = verifyToken(result.token);
+      const payload = verifyToken(result.token!);
       expect(payload.companyId).toBe(company.id);
     });
   });
@@ -78,8 +63,8 @@ describe('AuthService — company switching', () => {
   describe('login — multiple companies', () => {
     it('returns companies list without a token', () => {
       const user = seedUser(db, { username: 'bob' });
-      const c1 = seedCompany({ name: 'Company A' });
-      const c2 = seedCompany({ name: 'Company B' });
+      const c1 = seedCompany(db, { name: 'Company A' });
+      const c2 = seedCompany(db, { name: 'Company B' });
       userCompanyRepo.create({ userId: user.id, companyId: c1.id, isActive: true, joinedAt: new Date() });
       userCompanyRepo.create({ userId: user.id, companyId: c2.id, isActive: true, joinedAt: new Date() });
 
@@ -104,8 +89,8 @@ describe('AuthService — company switching', () => {
   describe('selectCompany', () => {
     it('issues JWT with companyId for a valid company the user belongs to', () => {
       const user = seedUser(db, { username: 'carol' });
-      const c1 = seedCompany({ name: 'C1' });
-      const c2 = seedCompany({ name: 'C2' });
+      const c1 = seedCompany(db, { name: 'C1' });
+      const c2 = seedCompany(db, { name: 'C2' });
       userCompanyRepo.create({ userId: user.id, companyId: c1.id, isActive: true, joinedAt: new Date() });
       userCompanyRepo.create({ userId: user.id, companyId: c2.id, isActive: true, joinedAt: new Date() });
 
@@ -125,8 +110,8 @@ describe('AuthService — company switching', () => {
 
     it('throws if company not in user_companies', () => {
       const user = seedUser(db, { username: 'dave' });
-      const c1 = seedCompany({ name: 'C1' });
-      const c2 = seedCompany({ name: 'C2' });
+      const c1 = seedCompany(db, { name: 'C1' });
+      const c2 = seedCompany(db, { name: 'C2' });
       userCompanyRepo.create({ userId: user.id, companyId: c1.id, isActive: true, joinedAt: new Date() });
 
       const loginResult = service.login({ username: 'dave', password: 'TestPass123!' });
@@ -136,14 +121,14 @@ describe('AuthService — company switching', () => {
     });
 
     it('throws if refresh token is invalid', () => {
-      expect(() => service.selectCompany('bad-token', 'any')).toThrow();
+      expect(() => service.selectCompany('bad-token', 0)).toThrow();
     });
   });
 
   describe('refreshToken — preserves companyId', () => {
     it('keeps companyId in refreshed token', () => {
       const user = seedUser(db, { username: 'eve' });
-      const company = seedCompany({ name: 'Eve Corp' });
+      const company = seedCompany(db, { name: 'Eve Corp' });
       userCompanyRepo.create({ userId: user.id, companyId: company.id, isActive: true, joinedAt: new Date() });
 
       const loginResult = service.login({ username: 'eve', password: 'TestPass123!' });

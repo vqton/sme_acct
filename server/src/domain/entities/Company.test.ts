@@ -29,10 +29,11 @@ describe('Company', () => {
       expect(c.enterpriseCode).toBe('2501234567');
     });
 
-    it('sets default id as uuid', () => {
+    it('sets id as placeholder for auto-increment', () => {
       const c1 = createCompany({ name: 'A', status: CompanyStatus.Active });
       const c2 = createCompany({ name: 'B', status: CompanyStatus.Active });
-      expect(c1.id).not.toBe(c2.id);
+      expect(c1.id).toBe(0);
+      expect(c2.id).toBe(0);
     });
   });
 
@@ -61,7 +62,7 @@ describe('Company', () => {
   describe('Company interface shape', () => {
     it('accepts full company with all fields', () => {
       const c: Company = {
-        id: 'test-id',
+        id: 1,
         name: 'Full Co',
         nameVietnamese: 'Cty đầy đủ',
         nameEnglish: 'Full Co Ltd',
@@ -90,8 +91,8 @@ describe('Company', () => {
         managedByTaxAuthorityCode: 'CT-HCM',
         createdAt: new Date('2024-01-15'),
         updatedAt: new Date('2024-06-01'),
-        createdByUserId: 'user-1',
-        updatedByUserId: 'user-2',
+        createdByUserId: 1,
+        updatedByUserId: 2,
         firstPeriodStartDate: '2024-01-01',
         closedPeriodCount: 5,
       };

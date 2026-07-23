@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import type { UserGroup } from '../domain/entities/UserGroup.js';
 import type { UserGroupRepository } from '../domain/repositories/UserGroupRepository.js';
 import { UserGroupNotFoundError, UserGroupNameTakenError } from '../domain/errors/UserManagementErrors.js';
@@ -27,7 +26,7 @@ export class UserGroupService {
     }
 
     const group: UserGroup = {
-      id: crypto.randomUUID(),
+      id: 0,
       name: input.name.trim(),
       description: input.description?.trim(),
       isActive: true,
@@ -40,11 +39,11 @@ export class UserGroupService {
     return this.groupRepo.findAll();
   }
 
-  getGroup(id: string): UserGroup | null {
+  getGroup(id: number): UserGroup | null {
     return this.groupRepo.findById(id);
   }
 
-  updateGroup(id: string, input: UpdateGroupInput): UserGroup {
+  updateGroup(id: number, input: UpdateGroupInput): UserGroup {
     const group = this.groupRepo.findById(id);
     if (!group) throw new UserGroupNotFoundError(id);
 
@@ -64,13 +63,13 @@ export class UserGroupService {
     return this.groupRepo.save(updated);
   }
 
-  deleteGroup(id: string): void {
+  deleteGroup(id: number): void {
     const group = this.groupRepo.findById(id);
     if (!group) throw new UserGroupNotFoundError(id);
     this.groupRepo.delete(id);
   }
 
-  toggleGroupActive(id: string, isActive: boolean): UserGroup {
+  toggleGroupActive(id: number, isActive: boolean): UserGroup {
     const group = this.groupRepo.findById(id);
     if (!group) throw new UserGroupNotFoundError(id);
     const updated: UserGroup = { ...group, isActive, updatedAt: new Date() };

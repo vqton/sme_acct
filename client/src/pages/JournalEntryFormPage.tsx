@@ -15,16 +15,16 @@ const entryTypeOptions = [
 export default function JournalEntryFormPage() {
   const [form] = Form.useForm();
   const [accounts, setAccounts] = useState<any[]>([]);
-  const [lines, setLines] = useState<Array<{ accountId?: string; accountNumber?: string; debitAmount: number; creditAmount: number; description?: string }>>([{ accountId: undefined, accountNumber: undefined, debitAmount: 0, creditAmount: 0 }]);
+  const [lines, setLines] = useState<Array<{ accountId?: number; accountNumber?: string; debitAmount: number; creditAmount: number; description?: string }>>([{ accountId: undefined, accountNumber: undefined, debitAmount: 0, creditAmount: 0 }]);
 
-  function updateLine(i: number, patch: Partial<{ accountId: string; accountNumber: string; debitAmount: number; creditAmount: number; description: string }>) {
+  function updateLine(i: number, patch: Partial<{ accountId: number; accountNumber: string; debitAmount: number; creditAmount: number; description: string }>) {
     const next = lines.map((l, idx) => idx === i ? { ...l, debitAmount: 0, creditAmount: 0, ...patch } : l);
     setLines(next);
   }
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const { message } = App.useApp();
-  const companyId = localStorage.getItem('currentCompanyId') || '';
+  const companyId = Number(localStorage.getItem('currentCompanyId'));
 
   useEffect(() => {
     getAccounts(companyId).then(setAccounts).catch(() => {});

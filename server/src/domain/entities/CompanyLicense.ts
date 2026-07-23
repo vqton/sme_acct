@@ -1,6 +1,6 @@
 export interface CompanyLicense {
-  id: string;
-  companyId: string;
+  id: number;
+  companyId: number;
   licenseType: number;
   licenseNumber: string;
   issuedBy: string;
@@ -13,7 +13,7 @@ export interface CompanyLicense {
 }
 
 export function createCompanyLicense(
-  data: Omit<CompanyLicense, 'id' | 'createdAt'> & { id?: string; createdAt?: Date },
+  data: Omit<CompanyLicense, 'id' | 'createdAt'> & { id?: number; createdAt?: Date },
 ): CompanyLicense {
-  return { id: crypto.randomUUID(), createdAt: new Date(), ...data };
+  return { id: 0, createdAt: new Date(), ...data };
 }

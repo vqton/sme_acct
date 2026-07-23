@@ -12,13 +12,13 @@ describe('SQLiteCompanyBankAccountRepository', () => {
     db = new Database(':memory:');
     db.pragma('foreign_keys = ON');
     runMigrations(db);
-    db.prepare(`INSERT INTO companies (id, name, status) VALUES ('c1', 'Test Co', 1)`).run();
+    db.prepare(`INSERT INTO companies (id, name, status) VALUES (1, 'Test Co', 1)`).run();
     repo = new SQLiteCompanyBankAccountRepository(db);
   });
 
   it('saves and finds bank account', () => {
     const ba = createCompanyBankAccount({
-      companyId: 'c1',
+      companyId: 1,
       accountNumber: '1234567890',
       accountName: 'Test Co A/C',
       bankName: 'Vietcombank',
@@ -37,27 +37,27 @@ describe('SQLiteCompanyBankAccountRepository', () => {
 
   it('finds primary tax payment account', () => {
     const ba1 = createCompanyBankAccount({
-      companyId: 'c1', accountNumber: '111', accountName: 'Primary', bankName: 'VCB',
+      companyId: 1, accountNumber: '111', accountName: 'Primary', bankName: 'VCB',
       currencyCode: 'VND', isPrimaryTaxPayment: true, openedDate: '2024-01-15',
     });
     const ba2 = createCompanyBankAccount({
-      companyId: 'c1', accountNumber: '222', accountName: 'Secondary', bankName: 'BIDV',
+      companyId: 1, accountNumber: '222', accountName: 'Secondary', bankName: 'BIDV',
       currencyCode: 'VND', isPrimaryTaxPayment: false, openedDate: '2024-01-15',
     });
     repo.save(ba1);
     repo.save(ba2);
 
-    const primary = repo.findPrimaryTaxPaymentByCompanyId('c1');
+    const primary = repo.findPrimaryTaxPaymentByCompanyId(1);
     expect(primary).not.toBeNull();
     expect(primary!.accountNumber).toBe('111');
   });
 
   it('returns null when no primary tax account set', () => {
     const ba = createCompanyBankAccount({
-      companyId: 'c1', accountNumber: '111', accountName: 'A', bankName: 'VCB',
+      companyId: 1, accountNumber: '111', accountName: 'A', bankName: 'VCB',
       currencyCode: 'VND', isPrimaryTaxPayment: false, openedDate: '2024-01-15',
     });
     repo.save(ba);
-    expect(repo.findPrimaryTaxPaymentByCompanyId('c1')).toBeNull();
+    expect(repo.findPrimaryTaxPaymentByCompanyId(1)).toBeNull();
   });
 });

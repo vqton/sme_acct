@@ -2,7 +2,7 @@ import type {
   AuthResponse, Company, TokenRefreshResponse, DashboardData,
   LegalRepresentative, CapitalContributor, BusinessLine, CompanyBankAccount,
   Account, JournalEntry, FiscalPeriod, LedgerEntry, AccountBalance,
-  UserListItem, UserGroup,
+  UserListItem, UserGroup, Department, UserDepartment,
 } from '../types';
 
 const BASE = '/api';
@@ -29,12 +29,12 @@ export function clearTokens(): void {
   localStorage.removeItem('user');
 }
 
-export function getUser(): { id: string; username: string; fullName: string } | null {
+export function getUser(): { id: number; username: string; fullName: string } | null {
   const raw = localStorage.getItem('user');
   return raw ? JSON.parse(raw) : null;
 }
 
-function setUser(user: { id: string; username: string; fullName: string }): void {
+function setUser(user: { id: number; username: string; fullName: string }): void {
   localStorage.setItem('user', JSON.stringify(user));
 }
 
@@ -132,7 +132,7 @@ export const api = {
     return data;
   },
 
-  selectCompany: async (companyId: string): Promise<AuthResponse> => {
+  selectCompany: async (companyId: number): Promise<AuthResponse> => {
     const refreshToken = getRefreshToken();
     if (!refreshToken) throw new Error('No refresh token');
     const data = await request<AuthResponse>('/auth/select-company', {
@@ -153,7 +153,7 @@ export const api = {
   },
 
   register: async (input: { username: string; email: string; password: string; fullName: string }) => {
-    return request<{ id: string; username: string; email: string; fullName: string }>('/auth/register', {
+    return request<{ id: number; username: string; email: string; fullName: string }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(input),
     });
@@ -173,75 +173,75 @@ export const api = {
   getDashboard: () => request<DashboardData>('/dashboard'),
 
   getCompanies: () => request<Company[]>('/companies'),
-  getCompany: (id: string) => request<Company>(`/companies/${id}`),
+  getCompany: (id: number) => request<Company>(`/companies/${id}`),
   createCompany: (data: Partial<Company>) =>
     request<Company>('/companies', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-  updateCompany: (id: string, data: Partial<Company>) =>
+  updateCompany: (id: number, data: Partial<Company>) =>
     request<Company>(`/companies/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
-  deleteCompany: (id: string) =>
+  deleteCompany: (id: number) =>
     request<void>(`/companies/${id}`, { method: 'DELETE' }),
 
   // Status transitions
-  activateCompany: (id: string) =>
+  activateCompany: (id: number) =>
     request<Company>(`/companies/${id}/activate`, { method: 'POST' }),
-  suspendCompany: (id: string) =>
+  suspendCompany: (id: number) =>
     request<Company>(`/companies/${id}/suspend`, { method: 'POST' }),
-  dissolveCompany: (id: string, reason?: string) =>
+  dissolveCompany: (id: number, reason?: string) =>
     request<Company>(`/companies/${id}/dissolve`, {
       method: 'POST',
       body: JSON.stringify({ reason }),
     }),
-  bankruptCompany: (id: string) =>
+  bankruptCompany: (id: number) =>
     request<Company>(`/companies/${id}/bankrupt`, { method: 'POST' }),
-  convertCompany: (id: string) =>
+  convertCompany: (id: number) =>
     request<Company>(`/companies/${id}/convert`, { method: 'POST' }),
-  mergeCompany: (id: string) =>
+  mergeCompany: (id: number) =>
     request<Company>(`/companies/${id}/merge`, { method: 'POST' }),
 
   // Legal Representatives
-  getLegalReps: (companyId: string) =>
+  getLegalReps: (companyId: number) =>
     request<LegalRepresentative[]>(`/companies/${companyId}/legal-reps`),
-  addLegalRep: (companyId: string, data: Partial<LegalRepresentative>) =>
+  addLegalRep: (companyId: number, data: Partial<LegalRepresentative>) =>
     request<LegalRepresentative>(`/companies/${companyId}/legal-reps`, {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-  updateLegalRep: (companyId: string, repId: string, data: Partial<LegalRepresentative>) =>
+  updateLegalRep: (companyId: number, repId: number, data: Partial<LegalRepresentative>) =>
     request<LegalRepresentative>(`/companies/${companyId}/legal-reps/${repId}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
-  deleteLegalRep: (companyId: string, repId: string) =>
+  deleteLegalRep: (companyId: number, repId: number) =>
     request<void>(`/companies/${companyId}/legal-reps/${repId}`, { method: 'DELETE' }),
 
   // Capital Contributors
-  getCapitalContributors: (companyId: string) =>
+  getCapitalContributors: (companyId: number) =>
     request<CapitalContributor[]>(`/companies/${companyId}/contributors`),
-  addCapitalContributor: (companyId: string, data: Partial<CapitalContributor>) =>
+  addCapitalContributor: (companyId: number, data: Partial<CapitalContributor>) =>
     request<CapitalContributor>(`/companies/${companyId}/contributors`, {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   // Business Lines
-  getBusinessLines: (companyId: string) =>
+  getBusinessLines: (companyId: number) =>
     request<BusinessLine[]>(`/companies/${companyId}/business-lines`),
-  addBusinessLine: (companyId: string, data: Partial<BusinessLine>) =>
+  addBusinessLine: (companyId: number, data: Partial<BusinessLine>) =>
     request<BusinessLine>(`/companies/${companyId}/business-lines`, {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   // Bank Accounts
-  getBankAccounts: (companyId: string) =>
+  getBankAccounts: (companyId: number) =>
     request<CompanyBankAccount[]>(`/companies/${companyId}/bank-accounts`),
-  addBankAccount: (companyId: string, data: Partial<CompanyBankAccount>) =>
+  addBankAccount: (companyId: number, data: Partial<CompanyBankAccount>) =>
     request<CompanyBankAccount>(`/companies/${companyId}/bank-accounts`, {
       method: 'POST',
       body: JSON.stringify(data),
@@ -249,121 +249,121 @@ export const api = {
 
   // ─── Accounting ─────────────────────────────────────────
 
-  getAccounts: (companyId: string) =>
+  getAccounts: (companyId: number) =>
     request<Account[]>(`/accounting/accounts?companyId=${companyId}`),
-  getAccount: (id: string) =>
+  getAccount: (id: number) =>
     request<Account>(`/accounting/accounts/${id}`),
   createAccount: (data: Partial<Account>) =>
     request<Account>('/accounting/accounts', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-  updateAccount: (id: string, data: Partial<Account>) =>
+  updateAccount: (id: number, data: Partial<Account>) =>
     request<Account>(`/accounting/accounts/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
-  deleteAccount: (id: string) =>
+  deleteAccount: (id: number) =>
     request<void>(`/accounting/accounts/${id}`, { method: 'DELETE' }),
-  seedAccounts: (companyId: string) =>
+  seedAccounts: (companyId: number) =>
     request<Account[]>('/accounting/accounts/seed', {
       method: 'POST',
       body: JSON.stringify({ companyId }),
     }),
 
-  getJournalEntries: (companyId: string) =>
+  getJournalEntries: (companyId: number) =>
     request<JournalEntry[]>(`/accounting/journal-entries?companyId=${companyId}`),
-  getJournalEntry: (id: string) =>
+  getJournalEntry: (id: number) =>
     request<JournalEntry>(`/accounting/journal-entries/${id}`),
   createJournalEntry: (data: any) =>
     request<JournalEntry>('/accounting/journal-entries', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-  postJournalEntry: (id: string) =>
+  postJournalEntry: (id: number) =>
     request<JournalEntry>(`/accounting/journal-entries/${id}/post`, { method: 'POST' }),
-  reverseJournalEntry: (id: string) =>
+  reverseJournalEntry: (id: number) =>
     request<{ reversal: JournalEntry; original: JournalEntry }>(`/accounting/journal-entries/${id}/reverse`, { method: 'POST' }),
-  deleteJournalEntry: (id: string) =>
+  deleteJournalEntry: (id: number) =>
     request<void>(`/accounting/journal-entries/${id}`, { method: 'DELETE' }),
 
-  getLedger: (companyId: string, accountId?: string, periodId?: string) => {
+  getLedger: (companyId: number, accountId?: number, periodId?: number) => {
     let path = `/accounting/ledger?companyId=${companyId}`;
     if (accountId) path += `&accountId=${accountId}`;
     if (periodId) path += `&periodId=${periodId}`;
     return request<LedgerEntry[]>(path);
   },
-  getTrialBalance: (companyId: string, periodId: string) =>
+  getTrialBalance: (companyId: number, periodId: number) =>
     request<AccountBalance[]>(`/accounting/ledger/balances?companyId=${companyId}&periodId=${periodId}`),
 
-  getFiscalPeriods: (companyId: string) =>
+  getFiscalPeriods: (companyId: number) =>
     request<FiscalPeriod[]>(`/accounting/fiscal-periods?companyId=${companyId}`),
-  getCurrentPeriod: (companyId: string) =>
+  getCurrentPeriod: (companyId: number) =>
     request<FiscalPeriod>(`/accounting/fiscal-periods/current?companyId=${companyId}`),
-  createFiscalPeriod: (data: { companyId: string; year: number; month: number }) =>
+  createFiscalPeriod: (data: { companyId: number; year: number; month: number }) =>
     request<FiscalPeriod>('/accounting/fiscal-periods', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-  closeFiscalPeriod: (id: string) =>
+  closeFiscalPeriod: (id: number) =>
     request<FiscalPeriod>(`/accounting/fiscal-periods/${id}/close`, { method: 'POST' }),
 };
 
 // Standalone exports for direct imports
-export function getAccounts(companyId: string) { return api.getAccounts(companyId); }
+export function getAccounts(companyId: number) { return api.getAccounts(companyId); }
 export function createAccount(data: any) { return api.createAccount(data); }
-export function updateAccount(id: string, data: any) { return api.updateAccount(id, data); }
-export function deleteAccount(id: string) { return api.deleteAccount(id); }
-export function seedAccounts(companyId: string) { return api.seedAccounts(companyId); }
-export function getJournalEntries(companyId: string) { return api.getJournalEntries(companyId); }
+export function updateAccount(id: number, data: any) { return api.updateAccount(id, data); }
+export function deleteAccount(id: number) { return api.deleteAccount(id); }
+export function seedAccounts(companyId: number) { return api.seedAccounts(companyId); }
+export function getJournalEntries(companyId: number) { return api.getJournalEntries(companyId); }
 export function createJournalEntry(data: any) { return api.createJournalEntry(data); }
-export function postJournalEntry(id: string) { return api.postJournalEntry(id); }
-export function reverseJournalEntry(id: string) { return api.reverseJournalEntry(id); }
-export function deleteJournalEntry(id: string) { return api.deleteJournalEntry(id); }
-export function getLedger(companyId: string, accountId?: string, periodId?: string) { return api.getLedger(companyId, accountId, periodId); }
-export function getTrialBalance(companyId: string, periodId: string) { return api.getTrialBalance(companyId, periodId); }
-export function getFiscalPeriods(companyId: string) { return api.getFiscalPeriods(companyId); }
+export function postJournalEntry(id: number) { return api.postJournalEntry(id); }
+export function reverseJournalEntry(id: number) { return api.reverseJournalEntry(id); }
+export function deleteJournalEntry(id: number) { return api.deleteJournalEntry(id); }
+export function getLedger(companyId: number, accountId?: number, periodId?: number) { return api.getLedger(companyId, accountId, periodId); }
+export function getTrialBalance(companyId: number, periodId: number) { return api.getTrialBalance(companyId, periodId); }
+export function getFiscalPeriods(companyId: number) { return api.getFiscalPeriods(companyId); }
 
 // ─── User Management ──────────────────────────────────────
 
 export const userApi = {
-  listUsers: (params?: { query?: string; isActive?: boolean; role?: string; groupId?: string; offset?: number; limit?: number }) => {
+  listUsers: (params?: { query?: string; isActive?: boolean; role?: string; groupId?: number; offset?: number; limit?: number }) => {
     const sp = new URLSearchParams();
     if (params?.query) sp.set('query', params.query);
     if (params?.isActive !== undefined) sp.set('isActive', String(params.isActive));
     if (params?.role) sp.set('role', params.role);
-    if (params?.groupId) sp.set('groupId', params.groupId);
+    if (params?.groupId) sp.set('groupId', String(params.groupId));
     if (params?.offset !== undefined) sp.set('offset', String(params.offset));
     if (params?.limit !== undefined) sp.set('limit', String(params.limit));
     const qs = sp.toString();
     return request<{ data: UserListItem[]; total: number }>(`/users${qs ? `?${qs}` : ''}`);
   },
 
-  getUser: (id: string) => request<UserListItem>(`/users/${id}`),
+  getUser: (id: number) => request<UserListItem>(`/users/${id}`),
 
-  updateUser: (id: string, data: Partial<UserListItem>) =>
+  updateUser: (id: number, data: Partial<UserListItem>) =>
     request<UserListItem>(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 
-  deleteUser: (id: string) => request<void>(`/users/${id}`, { method: 'DELETE' }),
+  deleteUser: (id: number) => request<void>(`/users/${id}`, { method: 'DELETE' }),
 
-  activateUser: (id: string) => request<UserListItem>(`/users/${id}/activate`, { method: 'POST' }),
+  activateUser: (id: number) => request<UserListItem>(`/users/${id}/activate`, { method: 'POST' }),
 
-  deactivateUser: (id: string) => request<UserListItem>(`/users/${id}/deactivate`, { method: 'POST' }),
+  deactivateUser: (id: number) => request<UserListItem>(`/users/${id}/deactivate`, { method: 'POST' }),
 
-  getUserRoles: (id: string) => request<{ roles: string[] }>(`/users/${id}/roles`),
+  getUserRoles: (id: number) => request<{ roles: string[] }>(`/users/${id}/roles`),
 
-  assignRole: (id: string, role: string) =>
+  assignRole: (id: number, role: string) =>
     request<{ roles: string[] }>(`/users/${id}/roles`, { method: 'POST', body: JSON.stringify({ role }) }),
 
-  removeRole: (id: string, role: string) =>
+  removeRole: (id: number, role: string) =>
     request<{ roles: string[] }>(`/users/${id}/roles/${role}`, { method: 'DELETE' }),
 
-  getUserGroups: (id: string) => request<{ data: UserGroup[] }>(`/users/${id}/groups`),
+  getUserGroups: (id: number) => request<{ data: UserGroup[] }>(`/users/${id}/groups`),
 
-  addUserToGroup: (id: string, groupId: string) =>
+  addUserToGroup: (id: number, groupId: number) =>
     request<{ ok: boolean }>(`/users/${id}/groups/${groupId}`, { method: 'POST' }),
 
-  removeUserFromGroup: (id: string, groupId: string) =>
+  removeUserFromGroup: (id: number, groupId: number) =>
     request<{ ok: boolean }>(`/users/${id}/groups/${groupId}`, { method: 'DELETE' }),
 
   // Groups management
@@ -372,11 +372,70 @@ export const userApi = {
   createGroup: (data: { name: string; description?: string }) =>
     request<UserGroup>('/users/groups', { method: 'POST', body: JSON.stringify(data) }),
 
-  updateGroup: (id: string, data: { name?: string; description?: string }) =>
+  updateGroup: (id: number, data: { name?: string; description?: string }) =>
     request<UserGroup>(`/users/groups/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 
-  deleteGroup: (id: string) => request<void>(`/users/groups/${id}`, { method: 'DELETE' }),
+  deleteGroup: (id: number) => request<void>(`/users/groups/${id}`, { method: 'DELETE' }),
 
-  toggleGroupActive: (id: string, isActive: boolean) =>
+  toggleGroupActive: (id: number, isActive: boolean) =>
     request<UserGroup>(`/users/groups/${id}/toggle`, { method: 'POST', body: JSON.stringify({ isActive }) }),
+};
+
+// ─── Department Management ─────────────────────────────────
+
+export const departmentApi = {
+  list: (companyId: number) =>
+    request<Department[]>(`/companies/${companyId}/departments`),
+
+  getById: (companyId: number, id: number) =>
+    request<Department>(`/companies/${companyId}/departments/${id}`),
+
+  create: (companyId: number, data: Record<string, unknown>) =>
+    request<Department>(`/companies/${companyId}/departments`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  update: (companyId: number, id: number, data: Record<string, unknown>) =>
+    request<Department>(`/companies/${companyId}/departments/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  delete: (companyId: number, id: number) =>
+    request<void>(`/companies/${companyId}/departments/${id}`, { method: 'DELETE' }),
+
+  deactivate: (companyId: number, id: number) =>
+    request<Department>(`/companies/${companyId}/departments/${id}/deactivate`, { method: 'POST' }),
+
+  reactivate: (companyId: number, id: number) =>
+    request<Department>(`/companies/${companyId}/departments/${id}/reactivate`, { method: 'POST' }),
+
+  dissolve: (companyId: number, id: number, dissolutionDate?: string) =>
+    request<Department>(`/companies/${companyId}/departments/${id}/dissolve`, {
+      method: 'POST',
+      body: JSON.stringify({ dissolutionDate }),
+    }),
+
+  reparent: (companyId: number, id: number, newParentId: number) =>
+    request<Department>(`/companies/${companyId}/departments/${id}/reparent`, {
+      method: 'PATCH',
+      body: JSON.stringify({ newParentId }),
+    }),
+
+  // User-Department assignments
+  getDepartmentUsers: (companyId: number, deptId: number) =>
+    request<UserDepartment[]>(`/companies/${companyId}/departments/${deptId}/users`),
+
+  assignUser: (companyId: number, deptId: number, data: { userId: number; isPrimary?: boolean; jobTitle?: string }) =>
+    request<UserDepartment>(`/companies/${companyId}/departments/${deptId}/users`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  setPrimary: (companyId: number, deptId: number, userId: number) =>
+    request<{ ok: boolean }>(`/companies/${companyId}/departments/${deptId}/users/${userId}/primary`, { method: 'POST' }),
+
+  removeUser: (companyId: number, deptId: number, userId: number) =>
+    request<void>(`/companies/${companyId}/departments/${deptId}/users/${userId}`, { method: 'DELETE' }),
 };

@@ -7,7 +7,6 @@ import { AuthModule } from './auth.module.js';
 import { createTestDbProvider, DB_PROVIDER } from '../common/database.module.js';
 import { runMigrations } from '../../infrastructure/database/schema.js';
 import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
 import { HttpExceptionFilter } from '../common/filters/http-exception.filter.js';
 import { generateToken } from '../../infrastructure/auth/jwt.js';
 
@@ -71,8 +70,8 @@ describe('NestJS AuthController', () => {
   });
 
   describe('POST /auth/login', () => {
-    const userId = crypto.randomUUID();
-    const companyId = crypto.randomUUID();
+    const userId = 100;
+    const companyId = 101;
     beforeAll(async () => {
       const hash = bcrypt.hashSync('ValidPass1!', 10);
       db.prepare('INSERT INTO users (id, username, email, full_name, password_hash, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
@@ -112,9 +111,9 @@ describe('NestJS AuthController', () => {
   });
 
   describe('POST /auth/login (no company)', () => {
-    let noCompanyUserId: string;
+    let noCompanyUserId: number;
     beforeAll(async () => {
-      noCompanyUserId = crypto.randomUUID();
+      noCompanyUserId = 1000;
       const hash = bcrypt.hashSync('NoComp1!', 10);
       db.prepare('INSERT INTO users (id, username, email, full_name, password_hash, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
         .run(noCompanyUserId, 'nocompany', 'nocompany@example.com', 'No Company', hash, 1, new Date().toISOString());
@@ -130,16 +129,14 @@ describe('NestJS AuthController', () => {
   });
 
   describe('POST /auth/refresh', () => {
-    const userId = crypto.randomUUID();
-    const companyId = crypto.randomUUID();
+    const userId = 1001;
+    const companyId = 101;
     let refreshToken: string;
 
     beforeAll(async () => {
       const hash = bcrypt.hashSync('TestPass1!', 10);
       db.prepare('INSERT INTO users (id, username, email, full_name, password_hash, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
         .run(userId, 'refreshuser', 'refresh@example.com', 'Refresh User', hash, 1, new Date().toISOString());
-      db.prepare('INSERT INTO companies (id, name, status, created_at) VALUES (?, ?, ?, ?)')
-        .run(companyId, 'Refresh Company', 1, new Date().toISOString());
       db.prepare('INSERT INTO user_companies (user_id, company_id, is_active) VALUES (?, ?, ?)')
         .run(userId, companyId, 1);
 
@@ -170,7 +167,7 @@ describe('NestJS AuthController', () => {
   });
 
   describe('GET /auth/sessions (auth required)', () => {
-    const userId = crypto.randomUUID();
+    const userId = 4;
     let authToken: string;
 
     beforeAll(async () => {
@@ -199,7 +196,7 @@ describe('NestJS AuthController', () => {
   });
 
   describe('POST /auth/logout (auth required)', () => {
-    const userId = crypto.randomUUID();
+    const userId = 5;
     let authToken: string;
 
     beforeAll(async () => {
@@ -220,7 +217,7 @@ describe('NestJS AuthController', () => {
   });
 
   describe('POST /auth/forgot-password', () => {
-    const userId = crypto.randomUUID();
+    const userId = 6;
     beforeAll(async () => {
       const hash = bcrypt.hashSync('FPUser1!', 10);
       db.prepare('INSERT INTO users (id, username, email, full_name, password_hash, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
@@ -246,7 +243,7 @@ describe('NestJS AuthController', () => {
   });
 
   describe('POST /auth/change-password (auth required)', () => {
-    const userId = crypto.randomUUID();
+    const userId = 7;
     let authToken: string;
 
     beforeAll(async () => {

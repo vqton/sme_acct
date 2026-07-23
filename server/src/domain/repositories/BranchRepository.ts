@@ -1,8 +1,8 @@
 import type { Branch } from '../entities/Branch.js';
 
 export interface BranchRepository {
-  findById(id: string): Branch | null;
-  findByCompanyId(companyId: string): Branch[];
+  findById(id: number): Branch | null;
+  findByCompanyId(companyId: number): Branch[];
   save(entity: Branch): Branch;
-  delete(id: string): void;
+  delete(id: number): void;
 }

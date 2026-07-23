@@ -10,37 +10,37 @@ export class SQLiteBackupCodeRepository implements BackupCodeRepository {
     this.db = db ?? getDb();
   }
 
-  savemany(userId: string, codeHashes: string[]): void {
+  savemany(userId: number, codeHashes: string[]): void {
     const insert = this.db.prepare(
-      'INSERT INTO backup_codes (id, user_id, code_hash) VALUES (?, ?, ?)',
+      'INSERT INTO backup_codes (user_id, code_hash) VALUES (?, ?)',
     );
     const many = this.db.transaction((hashes: string[]) => {
       for (const hash of hashes) {
-        insert.run(crypto.randomUUID(), userId, hash);
+        insert.run(userId, hash);
       }
     });
     many(codeHashes);
   }
 
-  findValid(userId: string, codeHash: string): BackupCode | null {
+  findValid(userId: number, codeHash: string): BackupCode | null {
     const row = this.db.prepare(
       'SELECT * FROM backup_codes WHERE user_id = ? AND code_hash = ? AND used_at IS NULL',
     ).get(userId, codeHash) as Record<string, unknown> | undefined;
     if (!row) return null;
     return {
-      id: row.id as string,
-      userId: row.user_id as string,
+      id: row.id as number,
+      userId: row.user_id as number,
       codeHash: row.code_hash as string,
       usedAt: row.used_at ? new Date(row.used_at as string) : null,
       createdAt: new Date(row.created_at as string),
     };
   }
 
-  markUsed(id: string): void {
+  markUsed(id: number): void {
     this.db.prepare("UPDATE backup_codes SET used_at = datetime('now') WHERE id = ?").run(id);
   }
 
-  deleteAllForUser(userId: string): void {
+  deleteAllForUser(userId: number): void {
     this.db.prepare('DELETE FROM backup_codes WHERE user_id = ?').run(userId);
   }
 }

@@ -1,6 +1,6 @@
 export interface CompanyDocument {
-  id: string;
-  companyId: string;
+  id: number;
+  companyId: number;
   documentType: number;
   fileName: string;
   fileUrl: string;
@@ -12,7 +12,7 @@ export interface CompanyDocument {
 }
 
 export function createCompanyDocument(
-  data: Omit<CompanyDocument, 'id' | 'createdAt'> & { id?: string; createdAt?: Date },
+  data: Omit<CompanyDocument, 'id' | 'createdAt'> & { id?: number; createdAt?: Date },
 ): CompanyDocument {
-  return { id: crypto.randomUUID(), createdAt: new Date(), ...data };
+  return { id: 0, createdAt: new Date(), ...data };
 }

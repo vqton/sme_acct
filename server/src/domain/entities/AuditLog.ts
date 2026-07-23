@@ -1,9 +1,9 @@
 export interface AuditLog {
-  id: string;
-  userId: string | null;
+  id: number;
+  userId: number | null;
   action: string;
   resource: string | null;
-  resourceId: string | null;
+  resourceId: number | null;
   detail: string | null;
   ipAddress: string | null;
   userAgent: string | null;

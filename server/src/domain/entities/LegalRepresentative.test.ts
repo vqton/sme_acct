@@ -4,7 +4,7 @@ import { LegalRepresentative, createLegalRepresentative } from './LegalRepresent
 describe('LegalRepresentative', () => {
   it('creates with required fields', () => {
     const lr = createLegalRepresentative({
-      companyId: 'c1',
+      companyId: 1,
       fullName: 'Nguyễn Văn A',
       position: 'Giám đốc',
       isPrimary: true,
@@ -17,14 +17,14 @@ describe('LegalRepresentative', () => {
 
   it('has createdAt as Date', () => {
     const lr = createLegalRepresentative({
-      companyId: 'c1', fullName: 'A', position: 'Director', isPrimary: false,
+      companyId: 1, fullName: 'A', position: 'Director', isPrimary: false,
     });
     expect(lr.createdAt).toBeInstanceOf(Date);
   });
 
   it('accepts optional fields', () => {
     const lr = createLegalRepresentative({
-      companyId: 'c1',
+      companyId: 1,
       fullName: 'Trần Thị B',
       position: 'Kế toán trưởng',
       isPrimary: false,

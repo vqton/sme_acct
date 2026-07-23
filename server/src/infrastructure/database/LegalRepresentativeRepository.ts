@@ -43,39 +43,39 @@ export class SQLLegalRepresentativeRepository implements LegalRepresentativeRepo
     };
   }
 
-  findById(id: string): LegalRepresentative | null {
+  findById(id: number): LegalRepresentative | null {
     const row = this.stmts.findById.get(id) as Record<string, unknown> | undefined;
     return row ? this.toEntity(row) : null;
   }
 
-  findByCompanyId(companyId: string): LegalRepresentative[] {
+  findByCompanyId(companyId: number): LegalRepresentative[] {
     return (this.stmts.findByCompanyId.all(companyId) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findPrimaryByCompanyId(companyId: string): LegalRepresentative | null {
+  findPrimaryByCompanyId(companyId: number): LegalRepresentative | null {
     const row = this.stmts.findPrimaryByCompanyId.get(companyId) as Record<string, unknown> | undefined;
     return row ? this.toEntity(row) : null;
   }
 
   save(entity: LegalRepresentative): LegalRepresentative {
     const params = this.toParams(entity);
-    const existing = this.stmts.findById.get(entity.id);
-    if (existing) {
+    if (entity.id) {
       this.stmts.update.run(params);
     } else {
-      this.stmts.insert.run(params);
+      const result = this.stmts.insert.run(params);
+      entity.id = Number(result.lastInsertRowid);
     }
     return entity;
   }
 
-  delete(id: string): void {
+  delete(id: number): void {
     this.stmts.delete.run(id);
   }
 
   private toEntity(row: Record<string, unknown>): LegalRepresentative {
     return {
-      id: row.id as string,
-      companyId: row.company_id as string,
+      id: row.id as number,
+      companyId: row.company_id as number,
       fullName: row.full_name as string,
       vneidNumber: row.vneid_number as string | undefined,
       position: row.position as string,
@@ -93,7 +93,7 @@ export class SQLLegalRepresentativeRepository implements LegalRepresentativeRepo
 
   private toParams(entity: LegalRepresentative) {
     return {
-      id: entity.id,
+      id: entity.id || null,
       companyId: entity.companyId,
       fullName: entity.fullName,
       vneidNumber: entity.vneidNumber ?? null,

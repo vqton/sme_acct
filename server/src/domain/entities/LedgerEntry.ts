@@ -1,10 +1,10 @@
 export interface LedgerEntry {
-  id: string;
-  companyId: string;
-  accountId: string;
+  id: number;
+  companyId: number;
+  accountId: number;
   accountNumber: string;
-  periodId: string;
-  journalEntryId: string;
+  periodId: number;
+  journalEntryId: number;
   entryNumber: string;
   entryDate: string;
   description: string;
@@ -13,17 +13,17 @@ export interface LedgerEntry {
   runningDebit: number;
   runningCredit: number;
   runningBalance: number;
-  costCenterId?: string;
-  departmentId?: string;
-  projectId?: string;
+  costCenterId?: number;
+  departmentId?: number;
+  projectId?: number;
   createdAt: Date;
 }
 
 export interface AccountBalance {
-  accountId: string;
+  accountId: number;
   accountNumber: string;
-  companyId: string;
-  periodId: string;
+  companyId: number;
+  periodId: number;
   openingDebit: number;
   openingCredit: number;
   periodDebit: number;

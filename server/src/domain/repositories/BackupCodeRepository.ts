@@ -1,8 +1,8 @@
 import type { BackupCode } from '../entities/BackupCode.js';
 
 export interface BackupCodeRepository {
-  savemany(userId: string, codeHashes: string[]): void;
-  findValid(userId: string, codeHash: string): BackupCode | null;
-  markUsed(id: string): void;
-  deleteAllForUser(userId: string): void;
+  savemany(userId: number, codeHashes: string[]): void;
+  findValid(userId: number, codeHash: string): BackupCode | null;
+  markUsed(id: number): void;
+  deleteAllForUser(userId: number): void;
 }

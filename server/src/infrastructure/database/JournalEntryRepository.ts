@@ -46,12 +46,12 @@ export class SQLiteJournalEntryRepository implements JournalEntryRepository {
       insert: s(`INSERT INTO journal_entries (id, company_id, entry_number, entry_date, period_id, entry_type, description, description_english, reference_number, reference_date, total_debit, total_credit, is_posted, is_reversed, reversed_by_id, posted_at, posted_by_user_id, created_by_user_id, created_at) VALUES (@id, @companyId, @entryNumber, @entryDate, @periodId, @entryType, @description, @descriptionEnglish, @referenceNumber, @referenceDate, @totalDebit, @totalCredit, @isPosted, @isReversed, @reversedById, @postedAt, @postedByUserId, @createdByUserId, @createdAt)`),
       update: s(`UPDATE journal_entries SET entry_number=@entryNumber, entry_date=@entryDate, period_id=@periodId, entry_type=@entryType, description=@description, description_english=@descriptionEnglish, reference_number=@referenceNumber, reference_date=@referenceDate, total_debit=@totalDebit, total_credit=@totalCredit, is_posted=@isPosted, is_reversed=@isReversed, reversed_by_id=@reversedById, posted_at=@postedAt, posted_by_user_id=@postedByUserId WHERE id=@id`),
       delete: s('DELETE FROM journal_entries WHERE id = ?'),
-      insertLine: s(`INSERT INTO journal_entry_lines (id, journal_entry_id, account_id, account_number, description, debit_amount, credit_amount, cost_center_id, department_id, project_id, line_index) VALUES (@id, @journalEntryId, @accountId, @accountNumber, @description, @debitAmount, @creditAmount, @costCenterId, @departmentId, @projectId, @lineIndex)`),
+      insertLine: s(`INSERT INTO journal_entry_lines (journal_entry_id, account_id, account_number, description, debit_amount, credit_amount, cost_center_id, department_id, project_id, line_index) VALUES (@journalEntryId, @accountId, @accountNumber, @description, @debitAmount, @creditAmount, @costCenterId, @departmentId, @projectId, @lineIndex)`),
       deleteLines: s('DELETE FROM journal_entry_lines WHERE journal_entry_id = ?'),
     };
   }
 
-  findById(id: string): JournalEntry | null {
+  findById(id: number): JournalEntry | null {
     const row = this.stmts.findById.get(id) as Record<string, unknown> | undefined;
     if (!row) return null;
     return this.toEntity(row);
@@ -61,51 +61,51 @@ export class SQLiteJournalEntryRepository implements JournalEntryRepository {
     return (this.stmts.findAll.all() as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findByCompanyId(companyId: string): JournalEntry[] {
+  findByCompanyId(companyId: number): JournalEntry[] {
     return (this.stmts.findByCompanyId.all(companyId) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findByPeriodId(periodId: string): JournalEntry[] {
+  findByPeriodId(periodId: number): JournalEntry[] {
     return (this.stmts.findByPeriodId.all(periodId) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findByEntryNumber(companyId: string, entryNumber: string): JournalEntry | null {
+  findByEntryNumber(companyId: number, entryNumber: string): JournalEntry | null {
     const row = this.stmts.findByEntryNumber.get(companyId, entryNumber) as Record<string, unknown> | undefined;
     return row ? this.toEntity(row) : null;
   }
 
-  findByDateRange(companyId: string, fromDate: string, toDate: string): JournalEntry[] {
+  findByDateRange(companyId: number, fromDate: string, toDate: string): JournalEntry[] {
     return (this.stmts.findByDateRange.all(companyId, fromDate, toDate) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findByType(companyId: string, entryType: number): JournalEntry[] {
+  findByType(companyId: number, entryType: number): JournalEntry[] {
     return (this.stmts.findByType.all(companyId, entryType) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findPosted(companyId: string): JournalEntry[] {
+  findPosted(companyId: number): JournalEntry[] {
     return (this.stmts.findPosted.all(companyId) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findUnposted(companyId: string): JournalEntry[] {
+  findUnposted(companyId: number): JournalEntry[] {
     return (this.stmts.findUnposted.all(companyId) as Record<string, unknown>[]).map((r) => this.toEntity(r));
   }
 
-  findLinesByEntryId(entryId: string): JournalLine[] {
+  findLinesByEntryId(entryId: number): JournalLine[] {
     return (this.stmts.findLinesByEntryId.all(entryId) as Record<string, unknown>[]).map((r) => ({
-      id: r.id as string,
-      journalEntryId: r.journal_entry_id as string,
-      accountId: r.account_id as string,
+      id: r.id as number,
+      journalEntryId: r.journal_entry_id as number,
+      accountId: r.account_id as number,
       accountNumber: r.account_number as string,
       description: r.description as string ?? undefined,
       debitAmount: (r.debit_amount as number) ?? 0,
       creditAmount: (r.credit_amount as number) ?? 0,
-      costCenterId: r.cost_center_id as string ?? undefined,
-      departmentId: r.department_id as string ?? undefined,
-      projectId: r.project_id as string ?? undefined,
+      costCenterId: r.cost_center_id as number ?? undefined,
+      departmentId: r.department_id as number ?? undefined,
+      projectId: r.project_id as number ?? undefined,
     }));
   }
 
-  getNextEntryNumber(companyId: string, year: number, month: number): string {
+  getNextEntryNumber(companyId: number, year: number, month: number): string {
     const prefix = `PC${year}${String(month).padStart(2, '0')}`;
     const row = this.stmts.getMaxEntryNumber.get(companyId, String(year)) as { entry_number: string } | undefined;
     let seq = 1;
@@ -118,21 +118,20 @@ export class SQLiteJournalEntryRepository implements JournalEntryRepository {
 
   save(entity: JournalEntry): JournalEntry {
     const params = this.toParams(entity);
-    const existing = this.stmts.findById.get(entity.id);
-    if (existing) {
+    if (entity.id) {
       this.stmts.update.run(params);
     } else {
-      this.stmts.insert.run(params);
+      const result = this.stmts.insert.run(params);
+      entity.id = Number(result.lastInsertRowid);
     }
     this.saveLines(entity.id, entity.lines);
     return entity;
   }
 
-  saveLines(entryId: string, lines: JournalLine[]): void {
+  saveLines(entryId: number, lines: JournalLine[]): void {
     this.stmts.deleteLines.run(entryId);
     for (let i = 0; i < lines.length; i++) {
       this.stmts.insertLine.run({
-        id: lines[i].id,
         journalEntryId: entryId,
         accountId: lines[i].accountId,
         accountNumber: lines[i].accountNumber,
@@ -147,22 +146,22 @@ export class SQLiteJournalEntryRepository implements JournalEntryRepository {
     }
   }
 
-  deleteLines(entryId: string): void {
+  deleteLines(entryId: number): void {
     this.stmts.deleteLines.run(entryId);
   }
 
-  delete(id: string): void {
+  delete(id: number): void {
     this.deleteLines(id);
     this.stmts.delete.run(id);
   }
 
   private toEntity(row: Record<string, unknown>): JournalEntry {
     return {
-      id: row.id as string,
-      companyId: row.company_id as string,
+      id: row.id as number,
+      companyId: row.company_id as number,
       entryNumber: row.entry_number as string,
       entryDate: row.entry_date as string,
-      periodId: row.period_id as string,
+      periodId: row.period_id as number,
       entryType: row.entry_type as number,
       description: row.description as string,
       descriptionEnglish: row.description_english as string ?? undefined,
@@ -172,10 +171,10 @@ export class SQLiteJournalEntryRepository implements JournalEntryRepository {
       totalCredit: (row.total_credit as number) ?? 0,
       isPosted: !!(row.is_posted as number),
       isReversed: !!(row.is_reversed as number),
-      reversedById: row.reversed_by_id as string ?? undefined,
+      reversedById: row.reversed_by_id as number ?? undefined,
       postedAt: row.posted_at as string ?? undefined,
-      postedByUserId: row.posted_by_user_id as string ?? undefined,
-      createdByUserId: row.created_by_user_id as string ?? undefined,
+      postedByUserId: row.posted_by_user_id as number ?? undefined,
+      createdByUserId: row.created_by_user_id as number ?? undefined,
       createdAt: row.created_at as unknown as Date,
       lines: [],
     };
@@ -183,7 +182,7 @@ export class SQLiteJournalEntryRepository implements JournalEntryRepository {
 
   private toParams(entity: JournalEntry) {
     return {
-      id: entity.id,
+      id: entity.id || null,
       companyId: entity.companyId,
       entryNumber: entity.entryNumber,
       entryDate: entity.entryDate,

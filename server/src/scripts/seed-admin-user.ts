@@ -1,5 +1,4 @@
 import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
 import { getDb } from '../infrastructure/database/connection.js';
 import { SQLiteUserRepository } from '../infrastructure/database/UserRepository.js';
 import { SQLiteRoleRepository } from '../infrastructure/database/RoleRepository.js';
@@ -25,7 +24,7 @@ function main() {
   } else {
     const hash = bcrypt.hashSync(password, 10);
     const user = userRepo.save({
-      id: crypto.randomUUID(),
+      id: 0,
       username,
       email: 'admin@smeacct.vn',
       fullName: 'System Administrator',

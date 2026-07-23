@@ -1,8 +1,8 @@
 import type { CompanyLicense } from '../entities/CompanyLicense.js';
 
 export interface CompanyLicenseRepository {
-  findById(id: string): CompanyLicense | null;
-  findByCompanyId(companyId: string): CompanyLicense[];
+  findById(id: number): CompanyLicense | null;
+  findByCompanyId(companyId: number): CompanyLicense[];
   save(entity: CompanyLicense): CompanyLicense;
-  delete(id: string): void;
+  delete(id: number): void;
 }

@@ -1,9 +1,9 @@
 import type { LegalRepresentative } from '../entities/LegalRepresentative.js';
 
 export interface LegalRepresentativeRepository {
-  findById(id: string): LegalRepresentative | null;
-  findByCompanyId(companyId: string): LegalRepresentative[];
-  findPrimaryByCompanyId(companyId: string): LegalRepresentative | null;
+  findById(id: number): LegalRepresentative | null;
+  findByCompanyId(companyId: number): LegalRepresentative[];
+  findPrimaryByCompanyId(companyId: number): LegalRepresentative | null;
   save(entity: LegalRepresentative): LegalRepresentative;
-  delete(id: string): void;
+  delete(id: number): void;
 }

@@ -59,7 +59,7 @@ describe('UserGroupService', () => {
     });
 
     it('returns null for non-existent group', () => {
-      expect(service.getGroup('nonexistent')).toBeNull();
+      expect(service.getGroup(9999)).toBeNull();
     });
   });
 
@@ -74,7 +74,7 @@ describe('UserGroupService', () => {
     });
 
     it('throws for non-existent group', () => {
-      expect(() => service.updateGroup('nonexistent', { name: 'New Name' }))
+      expect(() => service.updateGroup(9999, { name: 'New Name' }))
         .toThrow('User group not found');
     });
 
@@ -97,7 +97,7 @@ describe('UserGroupService', () => {
     });
 
     it('throws for non-existent group', () => {
-      expect(() => service.deleteGroup('nonexistent')).toThrow('User group not found');
+      expect(() => service.deleteGroup(9999)).toThrow('User group not found');
     });
   });
 
