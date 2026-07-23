@@ -36,36 +36,12 @@ describe('NestJS AuthController', () => {
     db.close();
   });
 
-  describe('POST /auth/register', () => {
-    it('registers user with valid input', async () => {
+  describe('POST /auth/register — removed', () => {
+    it('returns 404 — registration is admin-only via POST /users', async () => {
       const res = await request(app.getHttpServer())
         .post('/auth/register')
-        .send({ username: 'newuser', email: 'new@example.com', password: 'StrongPass1!', fullName: 'New User' });
-
-      expect(res.status).toBe(201);
-      expect(res.body.id).toBeDefined();
-      expect(res.body.username).toBe('newuser');
-    });
-
-    it('rejects duplicate username', async () => {
-      await request(app.getHttpServer())
-        .post('/auth/register')
-        .send({ username: 'dupuser', email: 'dup1@example.com', password: 'StrongPass1!', fullName: 'User' });
-
-      const res = await request(app.getHttpServer())
-        .post('/auth/register')
-        .send({ username: 'dupuser', email: 'dup2@example.com', password: 'StrongPass1!', fullName: 'User' });
-
-      expect(res.status).toBe(409);
-      expect(res.body.error).toContain('already');
-    });
-
-    it('rejects weak password', async () => {
-      const res = await request(app.getHttpServer())
-        .post('/auth/register')
-        .send({ username: 'weakuser', email: 'weak@example.com', password: 'short', fullName: 'User' });
-
-      expect(res.status).toBe(400);
+        .send({ username: 'anyone', email: 'a@b.com', password: 'StrongPass1!', fullName: 'Any' });
+      expect(res.status).toBe(404);
     });
   });
 

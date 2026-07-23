@@ -5,6 +5,8 @@ import { SQLLegalRepresentativeRepository } from '../../infrastructure/database/
 import { SQLiteCapitalContributorRepository } from '../../infrastructure/database/CapitalContributorRepository.js';
 import { SQLiteBusinessLineRepository } from '../../infrastructure/database/BusinessLineRepository.js';
 import { SQLiteCompanyBankAccountRepository } from '../../infrastructure/database/CompanyBankAccountRepository.js';
+import { SQLiteAccountRepository } from '../../infrastructure/database/AccountRepository.js';
+import { SQLiteAuditLogRepository } from '../../infrastructure/database/AuditLogRepository.js';
 import { authMiddleware, requirePermission, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
@@ -16,6 +18,8 @@ function createUseCases() {
     capitalContributors: new SQLiteCapitalContributorRepository(),
     businessLines: new SQLiteBusinessLineRepository(),
     bankAccounts: new SQLiteCompanyBankAccountRepository(),
+    accounts: new SQLiteAccountRepository(),
+    auditLogs: new SQLiteAuditLogRepository(),
   });
 }
 

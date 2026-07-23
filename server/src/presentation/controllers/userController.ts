@@ -4,6 +4,7 @@ import { UserGroupService } from '../../application/UserGroupService.js';
 import { SQLiteUserRepository } from '../../infrastructure/database/UserRepository.js';
 import { SQLiteUserProfileRepository } from '../../infrastructure/database/UserProfileRepository.js';
 import { SQLiteUserGroupRepository } from '../../infrastructure/database/UserGroupRepository.js';
+import { SQLiteUserCompanyRepository } from '../../infrastructure/database/UserCompanyRepository.js';
 import { SQLiteRoleRepository } from '../../infrastructure/database/RoleRepository.js';
 import { authMiddleware, requirePermission, AuthRequest } from '../middleware/auth.js';
 
@@ -12,10 +13,11 @@ const router = Router();
 function createServices() {
   const userRepo = new SQLiteUserRepository();
   const profileRepo = new SQLiteUserProfileRepository();
+  const userCompanyRepo = new SQLiteUserCompanyRepository();
   const groupRepo = new SQLiteUserGroupRepository();
   const roleRepo = new SQLiteRoleRepository();
   return {
-    userService: new UserManagementService(userRepo, profileRepo, groupRepo, roleRepo),
+    userService: new UserManagementService(userRepo, profileRepo, userCompanyRepo, groupRepo, roleRepo),
     groupService: new UserGroupService(groupRepo),
   };
 }

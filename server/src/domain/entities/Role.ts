@@ -12,7 +12,14 @@ export const PERMISSIONS = [
   'user:update',
   'user:delete',
   'report:read',
+  'report:export',
   'transaction:approve',
+  'journal:create',
+  'journal:view',
+  'journal:post',
+  'tax:declare',
+  'tax:view',
+  'coa:manage',
   'settings:manage',
   'audit:view',
 ] as const;
@@ -43,7 +50,7 @@ const SYSTEM_ROLES: RoleDefinition[] = [
     name: 'Director',
     nameVi: 'Giám đốc',
     description: 'Day-to-day management. Can view and approve all operations',
-    permissions: ['company:read', 'company:create', 'company:update', 'company:delete', 'user:read', 'report:read', 'transaction:approve', 'settings:manage', 'audit:view'] as const,
+    permissions: ['company:read', 'company:create', 'company:update', 'company:delete', 'user:read', 'user:create', 'user:update', 'user:delete', 'report:read', 'report:export', 'transaction:approve', 'journal:view', 'tax:view', 'settings:manage', 'audit:view'] as const,
     isSystemRole: false,
   },
   {
@@ -51,7 +58,7 @@ const SYSTEM_ROLES: RoleDefinition[] = [
     name: 'Chief Accountant',
     nameVi: 'Kế toán trưởng',
     description: 'Head of accounting. Legally responsible per Luật Kế toán 88/2015 Điều 54-55. Cannot self-approve own entries',
-    permissions: ['company:read', 'company:create', 'company:update', 'department:read', 'department:create', 'department:update', 'user:read', 'report:read', 'transaction:approve', 'settings:manage', 'audit:view'] as const,
+    permissions: ['company:read', 'department:read', 'department:create', 'department:update', 'user:read', 'user:create', 'user:update', 'report:read', 'report:export', 'transaction:approve', 'journal:create', 'journal:view', 'journal:post', 'tax:declare', 'tax:view', 'coa:manage', 'settings:manage', 'audit:view'] as const,
     isSystemRole: false,
   },
   {
@@ -59,7 +66,7 @@ const SYSTEM_ROLES: RoleDefinition[] = [
     name: 'General Accountant',
     nameVi: 'Kế toán tổng hợp',
     description: 'General ledger, financial reports, month/year-end closing',
-    permissions: ['company:read', 'company:create', 'company:update', 'department:read', 'user:read', 'report:read'] as const,
+    permissions: ['company:read', 'department:read', 'user:read', 'report:read', 'report:export', 'journal:create', 'journal:view', 'coa:manage'] as const,
     isSystemRole: false,
   },
   {
@@ -67,7 +74,7 @@ const SYSTEM_ROLES: RoleDefinition[] = [
     name: 'Tax Accountant',
     nameVi: 'Kế toán thuế',
     description: 'Tax declarations, VAT, CIT, PIT. Tax feature only',
-    permissions: ['company:read', 'report:read'] as const,
+    permissions: ['company:read', 'report:read', 'report:export', 'tax:declare', 'tax:view'] as const,
     isSystemRole: false,
   },
   {
@@ -75,7 +82,7 @@ const SYSTEM_ROLES: RoleDefinition[] = [
     name: 'AP/AR Accountant',
     nameVi: 'Kế toán công nợ',
     description: 'Accounts payable and receivable management',
-    permissions: ['company:read'] as const,
+    permissions: ['company:read', 'journal:create', 'journal:view'] as const,
     isSystemRole: false,
   },
   {
@@ -107,7 +114,7 @@ const SYSTEM_ROLES: RoleDefinition[] = [
     name: 'Staff Accountant',
     nameVi: 'Kế toán viên',
     description: 'Basic data entry. No approve, no delete, no export',
-    permissions: ['company:read', 'company:create'] as const,
+    permissions: ['company:read', 'journal:create', 'journal:view'] as const,
     isSystemRole: false,
   },
   {

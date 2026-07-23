@@ -58,23 +58,6 @@ router.post('/login', (req: Request, res: Response) => {
   }
 });
 
-router.post('/register', (req: Request, res: Response) => {
-  try {
-    const ctx = { ipAddress: req.ip ?? req.socket.remoteAddress ?? 'unknown', userAgent: req.headers['user-agent'] ?? null };
-    const result = service.register({
-      username: req.body.username,
-      email: req.body.email,
-      password: req.body.password,
-      fullName: req.body.fullName,
-    }, ctx);
-    res.status(201).json(result);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Registration failed';
-    const status = msg.includes('already') ? 409 : 400;
-    res.status(status).json({ error: msg });
-  }
-});
-
 router.post('/refresh', (req: Request, res: Response) => {
   try {
     const ctx = { ipAddress: req.ip ?? req.socket.remoteAddress ?? 'unknown', userAgent: req.headers['user-agent'] ?? null };

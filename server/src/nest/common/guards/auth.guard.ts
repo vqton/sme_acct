@@ -5,6 +5,7 @@ import { verifyToken } from '../../../infrastructure/auth/jwt.js';
 export interface AuthenticatedUser {
   userId: number;
   username: string;
+  companyId?: number;
   roles: string[];
 }
 
@@ -27,6 +28,7 @@ export class AuthGuard implements CanActivate {
       (req as AuthenticatedRequest).user = {
         userId: payload.userId,
         username: payload.username,
+        companyId: payload.companyId,
         roles: payload.roles ?? [],
       };
       return true;

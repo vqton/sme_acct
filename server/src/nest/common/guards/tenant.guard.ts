@@ -4,7 +4,7 @@ import { DB_PROVIDER } from '../database.module.js';
 import type Database from 'better-sqlite3';
 
 export interface TenantRequest extends Request {
-  user?: { userId: number; username: string; roles: string[] };
+  user?: { userId: number; username: string; companyId?: number; roles: string[] };
   companyId?: string;
   userCompanyIds?: number[];
 }
@@ -31,6 +31,9 @@ export class TenantGuard implements CanActivate {
     if (companyId) {
       if (!req.userCompanyIds.includes(+companyId)) {
         throw new ForbiddenException('Access to this company is not allowed');
+      }
+      if (user.companyId !== undefined && user.companyId !== +companyId) {
+        throw new ForbiddenException('Token company mismatch: cannot access this company');
       }
       req.companyId = companyId;
     }

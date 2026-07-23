@@ -72,24 +72,29 @@ describe('AuthorizationService', () => {
       expect(authz.hasPermission(user.id, 'company:delete')).toBe(false);
     });
 
-    it('ke-toan-tong-hop (General Accountant) has CRU + reports', () => {
+    it('ke-toan-tong-hop (General Accountant) has read + journal + reports + coa', () => {
       const user = seedUser(db);
       authz.assignRole(user.id, 'ke-toan-tong-hop');
 
       expect(authz.hasPermission(user.id, 'company:read')).toBe(true);
-      expect(authz.hasPermission(user.id, 'company:create')).toBe(true);
-      expect(authz.hasPermission(user.id, 'company:update')).toBe(true);
+      expect(authz.hasPermission(user.id, 'journal:create')).toBe(true);
+      expect(authz.hasPermission(user.id, 'journal:view')).toBe(true);
       expect(authz.hasPermission(user.id, 'report:read')).toBe(true);
+      expect(authz.hasPermission(user.id, 'report:export')).toBe(true);
+      expect(authz.hasPermission(user.id, 'coa:manage')).toBe(true);
+      expect(authz.hasPermission(user.id, 'company:create')).toBe(false);
       expect(authz.hasPermission(user.id, 'company:delete')).toBe(false);
       expect(authz.hasPermission(user.id, 'transaction:approve')).toBe(false);
     });
 
-    it('ke-toan-vien (Staff Accountant) has read + create only', () => {
+    it('ke-toan-vien (Staff Accountant) has read + journal entry', () => {
       const user = seedUser(db);
       authz.assignRole(user.id, 'ke-toan-vien');
 
       expect(authz.hasPermission(user.id, 'company:read')).toBe(true);
-      expect(authz.hasPermission(user.id, 'company:create')).toBe(true);
+      expect(authz.hasPermission(user.id, 'journal:create')).toBe(true);
+      expect(authz.hasPermission(user.id, 'journal:view')).toBe(true);
+      expect(authz.hasPermission(user.id, 'company:create')).toBe(false);
       expect(authz.hasPermission(user.id, 'company:delete')).toBe(false);
       expect(authz.hasPermission(user.id, 'transaction:approve')).toBe(false);
       expect(authz.hasPermission(user.id, 'report:read')).toBe(false);
@@ -126,7 +131,8 @@ describe('AuthorizationService', () => {
       authz.assignRole(user.id, 'ke-toan-tong-hop');
 
       expect(authz.hasPermission(user.id, 'company:read')).toBe(true);
-      expect(authz.hasPermission(user.id, 'company:update')).toBe(true);
+      expect(authz.hasPermission(user.id, 'journal:create')).toBe(true);
+      expect(authz.hasPermission(user.id, 'report:export')).toBe(true);
       expect(authz.hasPermission(user.id, 'transaction:approve')).toBe(false);
     });
 
@@ -134,8 +140,8 @@ describe('AuthorizationService', () => {
       const user = seedUser(db);
       authz.assignRole(user.id, 'ke-toan-tong-hop');
 
-      expect(authz.checkPermissions(user.id, ['company:read', 'company:create'])).toBe(true);
-      expect(authz.checkPermissions(user.id, ['company:read', 'company:delete'])).toBe(false);
+      expect(authz.checkPermissions(user.id, ['company:read', 'journal:view'])).toBe(true);
+      expect(authz.checkPermissions(user.id, ['company:read', 'company:create'])).toBe(false);
     });
   });
 

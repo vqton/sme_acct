@@ -106,8 +106,8 @@ export class AuthService {
     private backupCodeRepo?: BackupCodeRepository,
   ) {}
 
-  private createAccessToken(userId: number, username: string, companyId?: number): string {
-    const roles = this.roleRepo?.getUserRoles(userId) ?? [];
+  private createAccessToken(userId: number, username: string, companyId?: number, companyRole?: string): string {
+    const roles = companyRole ? [companyRole] : (this.roleRepo?.getUserRoles(userId) ?? []);
     return generateToken({ userId, username, companyId, roles, jti: crypto.randomUUID() });
   }
 
@@ -278,7 +278,8 @@ export class AuthService {
 
     if (userCompanies.length === 1) {
       const companyId = userCompanies[0].companyId;
-      const token = this.createAccessToken(user.id, user.username, companyId);
+      const companyRole = userCompanies[0].role;
+      const token = this.createAccessToken(user.id, user.username, companyId, companyRole);
       const refreshToken = this.createRefreshToken(user.id, companyId, ctx);
       return {
         token,
@@ -314,14 +315,16 @@ export class AuthService {
       throw new InvalidCredentialsError();
     }
 
+    let companyRole: string | undefined;
     if (this.userCompanyRepo) {
       const membership = this.userCompanyRepo.findByUserIdAndCompanyId(user.id, companyId);
       if (!membership || !membership.isActive) {
         throw new CompanyAccessError(companyId);
       }
+      companyRole = membership.role;
     }
 
-    const token = this.createAccessToken(user.id, user.username, companyId);
+    const token = this.createAccessToken(user.id, user.username, companyId, companyRole);
     const newRefreshToken = this.createRefreshToken(user.id, companyId);
 
     this.refreshTokenRepo.revoke(stored.id);
@@ -362,7 +365,12 @@ export class AuthService {
     }
 
     const companyId = stored.companyId;
-    const token = this.createAccessToken(user.id, user.username, companyId);
+    let companyRole: string | undefined;
+    if (companyId && this.userCompanyRepo) {
+      const membership = this.userCompanyRepo.findByUserIdAndCompanyId(user.id, companyId);
+      companyRole = membership?.role;
+    }
+    const token = this.createAccessToken(user.id, user.username, companyId, companyRole);
     const newRefreshToken = this.createRefreshToken(user.id, companyId);
 
     this.audit(ctx, {

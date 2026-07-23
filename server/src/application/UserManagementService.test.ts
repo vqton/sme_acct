@@ -5,6 +5,7 @@ import { UserManagementService } from './UserManagementService.js';
 import { SQLiteUserRepository } from '../infrastructure/database/UserRepository.js';
 import { SQLiteUserProfileRepository } from '../infrastructure/database/UserProfileRepository.js';
 import { SQLiteUserGroupRepository } from '../infrastructure/database/UserGroupRepository.js';
+import { SQLiteUserCompanyRepository } from '../infrastructure/database/UserCompanyRepository.js';
 import { SQLiteRoleRepository } from '../infrastructure/database/RoleRepository.js';
 import type { Database } from 'better-sqlite3';
 
@@ -17,9 +18,10 @@ describe('UserManagementService', () => {
     resetNextUserId();
     const userRepo = new SQLiteUserRepository(db);
     const profileRepo = new SQLiteUserProfileRepository(db);
+    const userCompanyRepo = new SQLiteUserCompanyRepository(db);
     const groupRepo = new SQLiteUserGroupRepository(db);
     const roleRepo = new SQLiteRoleRepository(db);
-    service = new UserManagementService(userRepo, profileRepo, groupRepo, roleRepo);
+    service = new UserManagementService(userRepo, profileRepo, userCompanyRepo, groupRepo, roleRepo);
   });
 
   describe('listUsers', () => {

@@ -6,6 +6,7 @@ import { UserGroupService } from '../../application/UserGroupService.js';
 import { SQLiteUserRepository } from '../../infrastructure/database/UserRepository.js';
 import { SQLiteUserProfileRepository } from '../../infrastructure/database/UserProfileRepository.js';
 import { SQLiteUserGroupRepository } from '../../infrastructure/database/UserGroupRepository.js';
+import { SQLiteUserCompanyRepository } from '../../infrastructure/database/UserCompanyRepository.js';
 import { SQLiteRoleRepository } from '../../infrastructure/database/RoleRepository.js';
 import Database from 'better-sqlite3';
 
@@ -34,16 +35,23 @@ import Database from 'better-sqlite3';
       inject: [DB_PROVIDER],
     },
     {
+      provide: SQLiteUserCompanyRepository,
+      useFactory: (db: Database.Database) => new SQLiteUserCompanyRepository(db),
+      inject: [DB_PROVIDER],
+    },
+    {
       provide: UserManagementService,
       useFactory: (
         userRepo: SQLiteUserRepository,
         profileRepo: SQLiteUserProfileRepository,
+        userCompanyRepo: SQLiteUserCompanyRepository,
         groupRepo: SQLiteUserGroupRepository,
         roleRepo: SQLiteRoleRepository,
-      ) => new UserManagementService(userRepo, profileRepo, groupRepo, roleRepo),
+      ) => new UserManagementService(userRepo, profileRepo, userCompanyRepo, groupRepo, roleRepo),
       inject: [
         SQLiteUserRepository,
         SQLiteUserProfileRepository,
+        SQLiteUserCompanyRepository,
         SQLiteUserGroupRepository,
         SQLiteRoleRepository,
       ],

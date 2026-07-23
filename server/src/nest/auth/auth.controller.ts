@@ -16,16 +16,6 @@ export class AuthController {
     return { ipAddress: ip, userAgent: (headers['user-agent'] as string) ?? null };
   }
 
-  @Post('register')
-  @HttpCode(HttpStatus.CREATED)
-  register(
-    @Body() body: { username: string; email: string; password: string; fullName: string },
-    @Ip() ip: string,
-    @Req() req: Request,
-  ) {
-    return this.authService.register(body, this.context(ip, req.headers));
-  }
-
   @Post('login')
   @UseGuards(ThrottleGuard)
   @Throttle({ windowMs: 15 * 60 * 1000, maxAttempts: 5 })

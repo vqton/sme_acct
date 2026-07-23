@@ -1,12 +1,16 @@
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 import type { User } from '../domain/entities/User.js';
 import type { UserProfile } from '../domain/entities/UserProfile.js';
+import type { UserCompany } from '../domain/entities/UserCompany.js';
 import type { UserGroup } from '../domain/entities/UserGroup.js';
 import type { UserRepository, UserSearchParams } from '../domain/repositories/UserRepository.js';
 import type { UserProfileRepository } from '../domain/repositories/UserProfileRepository.js';
+import type { UserCompanyRepository } from '../domain/repositories/UserCompanyRepository.js';
 import type { UserGroupRepository } from '../domain/repositories/UserGroupRepository.js';
 import type { RoleRepository } from '../domain/repositories/RoleRepository.js';
 import { UserNotFoundError } from '../domain/errors/UserManagementErrors.js';
+import { UsernameTakenError, EmailTakenError, ValidationError } from '../domain/errors/AuthErrors.js';
 
 export interface UserListItem extends Omit<User, 'passwordHash' | 'totpSecret' | 'failedLoginAttempts' | 'lockoutUntil'> {
   phone?: string;
@@ -14,6 +18,15 @@ export interface UserListItem extends Omit<User, 'passwordHash' | 'totpSecret' |
   department?: string;
   avatarUrl?: string;
   roles: string[];
+}
+
+export interface CreateUserInput {
+  username: string;
+  email: string;
+  password: string;
+  fullName: string;
+  companyId: number;
+  role: string;
 }
 
 export interface UpdateUserInput {
@@ -30,6 +43,7 @@ export class UserManagementService {
   constructor(
     private userRepo: UserRepository,
     private profileRepo: UserProfileRepository,
+    private userCompanyRepo: UserCompanyRepository,
     private groupRepo: UserGroupRepository,
     private roleRepo: RoleRepository,
   ) {}
@@ -52,6 +66,52 @@ export class UserManagementService {
       avatarUrl: profile?.avatarUrl,
       roles,
     };
+  }
+
+  createUser(input: CreateUserInput): UserListItem {
+    const username = input.username.trim();
+    const email = input.email.trim().toLowerCase();
+
+    if (username.length < 3) {
+      throw new ValidationError('Username must be at least 3 characters');
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new ValidationError('Invalid email format');
+    }
+
+    if (this.userRepo.findByUsername(username)) {
+      throw new UsernameTakenError();
+    }
+    if (this.userRepo.findByEmail(email)) {
+      throw new EmailTakenError();
+    }
+
+    const passwordHash = bcrypt.hashSync(input.password, 10);
+    const user = this.userRepo.save({
+      id: 0,
+      username,
+      email,
+      fullName: input.fullName.trim(),
+      passwordHash,
+      isActive: true,
+      twoFactorEnabled: false,
+      failedLoginAttempts: 0,
+      lockoutUntil: null,
+      createdAt: new Date(),
+    });
+
+    const uc: UserCompany = {
+      userId: user.id,
+      companyId: input.companyId,
+      role: input.role,
+      isActive: true,
+      joinedAt: new Date(),
+    };
+    this.userCompanyRepo.create(uc);
+
+    this.roleRepo.assignRole(user.id, input.role as any);
+
+    return this.toListItem(user);
   }
 
   listUsers(params?: UserSearchParams): UserListItem[] {

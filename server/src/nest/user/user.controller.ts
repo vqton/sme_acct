@@ -2,7 +2,7 @@ import {
   Controller, Get, Post, Put, Delete, Body, Param, Query,
   UseGuards, HttpCode, HttpStatus, Inject,
 } from '@nestjs/common';
-import { UserManagementService } from '../../application/UserManagementService.js';
+import { UserManagementService, type CreateUserInput } from '../../application/UserManagementService.js';
 import { UserGroupService } from '../../application/UserGroupService.js';
 import { AuthGuard } from '../common/guards/auth.guard.js';
 import { PermissionGuard } from '../common/guards/permission.guard.js';
@@ -15,6 +15,13 @@ export class UserController {
     @Inject(UserManagementService) private readonly userService: UserManagementService,
     @Inject(UserGroupService) private readonly groupService: UserGroupService,
   ) {}
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  @Permissions('user:create')
+  create(@Body() body: CreateUserInput) {
+    return this.userService.createUser(body);
+  }
 
   @Get()
   @Permissions('user:read')
