@@ -1,6 +1,6 @@
 # COA Module — Business Rules
 
-**Version:** 1.0
+**Version:** 1.1
 **Date:** 2026-07-23
 
 ---
@@ -15,13 +15,14 @@
 
 ## BR-02: Account Number Format by Regime
 
-**TT 99/2025:**
-- Level 1: 1-3 digits (e.g., 1, 11, 112, 133)
-- Level 2: append 1-3 digits to parent (e.g., 1121, 1122)
-- Level 3: append 1-2 digits (e.g., 11211)
-- Level 4: append 1 digit (e.g., 112111)
+**TT 99/2025 (verified from official Phụ lục II):**
+- Level 1: exactly 3 digits (111, 112, 113, 121, 128... all 71 level-1 accounts are 3-digit)
+- Level 2: exactly 4 digits (parent 3-digit + 1 digit: 1281, 1282, 1331, 1332... 101 level-2 accounts)
+- Level 3: exactly 5 digits (parent 4-digit + 1 digit: 21511, 21512, 33311... 10 level-3 accounts)
+- Level 4: exactly 6 digits (parent 5-digit + 1 digit: 215121, 215122... 2 level-4 accounts)
 - Max depth: 4
-- Max length: 7 digits
+- Max length: 6 digits
+- Format: `XXX` → `XXXX` → `XXXXX` → `XXXXXX`  (append 1 digit per level)
 
 **TT 133/2016:**
 - Level 1: 1-2 digits
@@ -29,12 +30,13 @@
 - Level 3: append 2 digits
 - Max depth: 3
 - Max length: 6 digits
+- ⚠️ **Verification note:** This format is inferred from the TT 133 standard accounts list structure and common practice, but was not explicitly confirmed in official text from web search. Verify against actual Phụ lục TT 133 during implementation.
 
 **TT 58/2026:**
-- Level 1: 1-2 digits
-- Level 2: append 2 digits
-- Max depth: 2
-- Max length: 4 digits
+- No traditional numbered COA — uses simplified tax-based book system (S1-DNSN through S4d-DNSN per Điều 5-8)
+- Account number validation not applicable; validation based on tax payment method instead
+- The system may still need to create accounts for internal tracking, but no regulatory format constraint
+- Note: TT 58 replaced TT 132/2018 and uses a fundamentally different approach (book-based, not account-number-based)
 
 **Enforcement:** Regex validation on create/update
 **Severity:** HIGH
@@ -120,7 +122,7 @@
 
 **TT 99/2025:** 71 level-1 accounts required (Phụ lục II)
 **TT 133/2016:** ~50 level-1 accounts required (Phụ lục)
-**TT 58/2026:** ~20 level-1 accounts required
+**TT 58/2026:** No traditional numbered COA — uses simplified tax-based book system (S1-DNSN through S4d-DNSN). System must validate accounts created match tax method, not account number format.
 
 System must validate all required accounts exist for selected regime.
 

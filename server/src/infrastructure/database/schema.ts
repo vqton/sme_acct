@@ -572,6 +572,12 @@ export function runMigrations(db: Database): void {
     }
   }
 
+  // Migration: add company_id to audit_logs
+  if (!auditColNames.includes('company_id')) {
+    db.exec("ALTER TABLE audit_logs ADD COLUMN company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE");
+    db.exec("CREATE INDEX IF NOT EXISTS idx_audit_logs_company_id ON audit_logs(company_id)");
+  }
+
   // ─── User Management Module Tables ─────────────────────
 
   db.exec(`

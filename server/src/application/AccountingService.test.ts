@@ -5,9 +5,13 @@ import { SQLiteAccountRepository } from '../infrastructure/database/AccountRepos
 import { SQLiteJournalEntryRepository } from '../infrastructure/database/JournalEntryRepository.js';
 import { SQLiteLedgerRepository } from '../infrastructure/database/LedgerRepository.js';
 import { SQLiteFiscalPeriodRepository } from '../infrastructure/database/FiscalPeriodRepository.js';
+import { SQLiteAuditLogRepository } from '../infrastructure/database/AuditLogRepository.js';
 import { SQLiteCompanyRepository } from '../infrastructure/database/CompanyRepository.js';
 import { AccountingService } from './AccountingService.js';
-import { AccountCategory, AccountNature, AccountType, JournalEntryType } from '../domain/enums/AccountEnums.js';
+import {
+  AccountCategory, AccountNature, AccountType, AccountingRegime, JournalEntryType,
+  STANDARD_ACCOUNTS_TT99, STANDARD_ACCOUNTS_TT133,
+} from '../domain/enums/AccountEnums.js';
 
 describe('AccountingService', () => {
   let db: Database.Database;
@@ -25,6 +29,7 @@ describe('AccountingService', () => {
       journalEntries: new SQLiteJournalEntryRepository(db),
       ledger: new SQLiteLedgerRepository(db),
       fiscalPeriods: new SQLiteFiscalPeriodRepository(db),
+      auditLogs: new SQLiteAuditLogRepository(db),
     };
     service = new AccountingService(repos);
 
@@ -61,15 +66,91 @@ describe('AccountingService', () => {
 
   afterAll(() => db.close());
 
-  it('seeds standard accounts', () => {
+  // ─── Account Seeding ──────────────────────────────────────
+
+  it('seeds TT 99 standard accounts', () => {
     const cRepo = new SQLiteCompanyRepository(db);
-    const seedCoId = cRepo.save({ id: 0, name: 'Seed Co', status: 1, createdAt: new Date() }).id;
+    const seedCoId = cRepo.save({ id: 0, name: 'Seed TT99 Co', status: 1, createdAt: new Date() }).id;
     const accounts = service.seedStandardAccounts(seedCoId);
-    expect(accounts.length).toBeGreaterThan(50);
-    const cash = accounts.find((a) => a.accountNumber === '111');
-    expect(cash).toBeDefined();
-    expect(cash!.isSystem).toBe(true);
+    expect(accounts.length).toBe(184);
+    expect(accounts[0].accountNumber).toBe('111');
+    expect(accounts.every((a) => a.isSystem)).toBe(true);
   });
+
+  it('seeds TT 133 standard accounts', () => {
+    const cRepo = new SQLiteCompanyRepository(db);
+    const seedCoId = cRepo.save({ id: 0, name: 'Seed TT133 Co', status: 1, createdAt: new Date() }).id;
+    const accounts = service.seedStandardAccounts(seedCoId, AccountingRegime.TT133);
+    expect(accounts.length).toBe(50);
+  });
+
+  it('idempotent — does not re-seed if accounts exist', () => {
+    const accounts = service.seedStandardAccounts(companyId);
+    expect(accounts.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('throws on unknown regime', () => {
+    expect(() => service.seedStandardAccounts(0, 99 as AccountingRegime))
+      .toThrow('Unsupported accounting regime');
+  });
+
+  // ─── Hierarchy Validation ──────────────────────────────────
+
+  it('validates account hierarchy format', () => {
+    const parent = service.createStandardAccount(companyId, { accountNumber: '113', name: 'Test', category: AccountCategory.TaiSan });
+    const err = () => service.createStandardAccount(companyId, { accountNumber: '1131', name: 'Child', category: AccountCategory.TaiSan, parentId: 99999 });
+    expect(err).toThrow('Parent account not found');
+  });
+
+  it('allows valid child accounts', () => {
+    const acc = service.createStandardAccount(companyId, { accountNumber: '999', name: 'Test Parent', category: AccountCategory.TaiSan });
+    const child = service.createStandardAccount(companyId, { accountNumber: '9991', name: 'Test Child', category: AccountCategory.TaiSan, parentId: acc.id });
+    expect(child.parentId).toBe(acc.id);
+  });
+
+  it('rejects circular parent reference', () => {
+    const acc = service.createStandardAccount(companyId, { accountNumber: '881', name: 'Circular Parent', category: AccountCategory.TaiSan });
+    const child = service.createStandardAccount(companyId, { accountNumber: '8811', name: 'Circular Child', category: AccountCategory.TaiSan, parentId: acc.id });
+    expect(() => service.updateAccount(child.id, { parentId: child.id }))
+      .toThrow('account cannot be its own parent');
+  });
+
+  // ─── Posting Restriction ───────────────────────────────────
+
+  it('allows posting to leaf accounts only', () => {
+    const parent = service.createStandardAccount(companyId, { accountNumber: '771', name: 'Parent No Post', category: AccountCategory.TaiSan });
+    service.createStandardAccount(companyId, { accountNumber: '7711', name: 'Leaf Can Post', category: AccountCategory.TaiSan, parentId: parent.id });
+    expect(parent.allowTransactions).toBe(false);
+    const leaf = service.listAccounts(companyId).find((a) => a.accountNumber === '7711');
+    expect(leaf!.allowTransactions).toBe(true);
+  });
+
+  // ─── Audit Log ─────────────────────────────────────────────
+
+  it('logs account creation', () => {
+    const logs = service.getAuditLogs(companyId);
+    expect(logs.length).toBeGreaterThanOrEqual(1);
+    const creationLogs = logs.filter((l) => l.action === 'ACCOUNT_CREATE');
+    expect(creationLogs.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('logs account updates', () => {
+    const acc = service.createStandardAccount(companyId, { accountNumber: '661', name: 'Audit Test', category: AccountCategory.TaiSan });
+    service.updateAccount(acc.id, { name: 'Audit Test Updated' });
+    const logs = service.getAuditLogs(companyId);
+    const updateLogs = logs.filter((l) => l.action === 'ACCOUNT_UPDATE' && l.entityId === acc.id);
+    expect(updateLogs.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('logs account deletion', () => {
+    const acc = service.createStandardAccount(companyId, { accountNumber: '662', name: 'Delete Audit', category: AccountCategory.TaiSan });
+    service.deleteAccount(acc.id);
+    const logs = service.getAuditLogs(companyId);
+    const deleteLogs = logs.filter((l) => l.action === 'ACCOUNT_DELETE' && l.entityId === acc.id);
+    expect(deleteLogs.length).toBeGreaterThanOrEqual(1);
+  });
+
+  // ─── Existing Behaviors ────────────────────────────────────
 
   it('creates journal entry', () => {
     const entry = service.createJournalEntry({

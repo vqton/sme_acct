@@ -16,7 +16,12 @@ import type { CompanyBankAccountRepository } from '../domain/repositories/Compan
 import type { BranchRepository } from '../domain/repositories/BranchRepository.js';
 import type { FormerNameRepository } from '../domain/repositories/FormerNameRepository.js';
 import type { CompanyLicenseRepository } from '../domain/repositories/CompanyLicenseRepository.js';
+import type { AccountRepository } from '../domain/repositories/AccountRepository.js';
+import type { AuditLogRepository } from '../domain/repositories/AuditLogRepository.js';
+import type { Account } from '../domain/entities/Account.js';
 import { CompanyService } from '../domain/services/CompanyService.js';
+import { AccountingRegime, AccountCategory, STANDARD_ACCOUNTS_TT99, STANDARD_ACCOUNTS_TT133, ACCOUNT_CATEGORY_NATURE, AccountType } from '../domain/enums/AccountEnums.js';
+import { createAccount } from '../domain/entities/Account.js';
 
 export interface CompanyAggregateRepos {
   company: CompanyRepository;
@@ -27,6 +32,56 @@ export interface CompanyAggregateRepos {
   branches?: BranchRepository;
   formerNames?: FormerNameRepository;
   licenses?: CompanyLicenseRepository;
+  accounts?: AccountRepository;
+  auditLogs?: AuditLogRepository;
+}
+
+function seedAccountsForCompany(
+  accountsRepo: AccountRepository,
+  auditLogsRepo: AuditLogRepository,
+  companyId: number,
+  regime: AccountingRegime,
+): Account[] {
+  let standardAccounts: Array<{ number: string; name: string; category: number; parent?: string }>;
+  if (regime === AccountingRegime.TT133) {
+    standardAccounts = STANDARD_ACCOUNTS_TT133;
+  } else {
+    standardAccounts = STANDARD_ACCOUNTS_TT99;
+  }
+  const created: Account[] = [];
+  for (const def of standardAccounts) {
+    const parent = def.parent ? created.find((a) => a.accountNumber === def.parent) : undefined;
+    const nature = ACCOUNT_CATEGORY_NATURE[def.category as AccountCategory];
+    const acc = createAccount({
+      companyId,
+      accountNumber: def.number,
+      name: def.name,
+      category: def.category,
+      nature,
+      parentId: parent?.id,
+      isSystem: true,
+      type: def.parent ? (def.number.length >= 4 ? AccountType.TaiKhoanChiTiet : AccountType.TaiKhoanCon) : AccountType.TaiKhoanMe,
+      allowTransactions: def.number.length >= 4,
+      isActive: true,
+      openingDebit: 0,
+      openingCredit: 0,
+      debitAmount: 0,
+      creditAmount: 0,
+      closingDebit: 0,
+      closingCredit: 0,
+      createdAt: new Date(),
+    });
+    created.push(accountsRepo.save(acc));
+  }
+  auditLogsRepo.save({
+    id: 0,
+    companyId,
+    action: 'ACCOUNT_SEED',
+    entityType: 'account',
+    detail: `Seeded ${created.length} accounts for regime ${regime}`,
+    createdAt: new Date(),
+  });
+  return created;
 }
 
 export class CompanyUseCases {
@@ -51,13 +106,18 @@ export class CompanyUseCases {
       const existing = this.repos.company.findByTaxCode(data.taxCode);
       if (existing) throw new Error('Tax code already registered');
     }
-    return this.repos.company.save({
+    const company = this.repos.company.save({
       id: 0,
       name: data.name || '',
       status: data.status ?? 1,
       createdAt: new Date(),
       ...data,
     });
+    if (this.repos.accounts) {
+      const regime = (data as any).accountingRegime ?? AccountingRegime.TT99;
+      seedAccountsForCompany(this.repos.accounts, this.repos.auditLogs!, company.id, regime);
+    }
+    return company;
   }
 
   update(id: number, data: Partial<Company>): Company {

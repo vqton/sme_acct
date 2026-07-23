@@ -1,6 +1,6 @@
 # BRD: Chart of Accounts (Hệ thống Tài khoản Kế toán) Module — SmeAccounting
 
-**Version:** 1.0
+**Version:** 1.1
 **Date:** 2026-07-23
 **Author:** BA Lead + Chief Accountant (40+ yrs combined)
 **Status:** V0 — NOT PROD Ready
@@ -84,8 +84,8 @@ The current implementation provides a solid foundational data model (Account ent
 |---|---|---|---|
 | **TT 99/2025/TT-BTC** (Chế độ kế toán DN) | 01/01/2026 | All enterprises (replaces TT 200/2014) | **Primary COA**: 71 level-1 accounts, new TK 215/332/82112, renamed accounts |
 | **TT 133/2016/TT-BTC** (Chế độ kế toán SME) | 01/01/2017 | SMEs (still active, parallel to TT 99) | **SME COA**: Simplified, ~50 level-1 accounts, TK 642 replaces 641+642 |
-| **TT 58/2026/TT-BTC** (Chế độ kế toán DN siêu nhỏ) | 01/07/2026 | Micro-enterprises | **Micro COA**: Minimal ~20 accounts, cash-based |
-| **TT 53/2006/TT-BTC** (Kế toán quản trị) | 2006—nay | All enterprises | Allows analytic dimensions (department, project) on accounts |
+| **TT 58/2026/TT-BTC** (Chế độ kế toán DN siêu nhỏ) | 01/07/2026 | Micro-enterprises | **Micro COA**: Simplified tax-based book system — no traditional numbered COA. Uses Sổ kế toán templates (S1-DNSN through S4d-DNSN) based on tax payment method. Cash-based, minimal reporting. Replaces TT 132/2018 |
+| **TT 53/2006/TT-BTC** (Kế toán quản trị) | 2006—nay | All enterprises | Allows analytic dimensions (department, project) on accounts — **Note:** Status vs TT 99 needs confirmation; TT 99's Điều 31 does not list TT 53 as replaced |
 | **Luật Kế toán 88/2015/QH13** (sửa đổi 2024, 2025) | 01/01/2017 | All accounting units | Defines accounting records integrity, prohibits data tampering |
 
 ### 4.2 TT 99/2025 Key COA Changes vs TT 200/2014
@@ -95,9 +95,9 @@ The current implementation provides a solid foundational data model (Account ent
 | **New accounts** | TK 215 (Tài sản sinh học), TK 332 (Phải trả cổ tức, lợi nhuận), TK 82112 (Thuế bổ sung GMT), TK 229 (Dự phòng tổn thất tài sản — thay 159) |
 | **Renamed accounts** | TK 112: "Tiền gửi NH" → "Tiền gửi không kỳ hạn"; TK 155: "Thành phẩm" → "Sản phẩm"; TK 242: "Chi phí trả trước" → "Chi phí chờ phân bổ"; TK 158: "Hàng hóa kho bảo thuế" → "Nguyên liệu, vật tư tại kho bảo thuế" |
 | **Removed accounts** | TK 161 (Chi phí trả trước), TK 441 (Nguồn vốn đầu tư XDCB), TK 611 (Mua hàng), TK 631 (Giá thành SX); TK 461/466 (nguồn kinh phí SN) |
-| **New level-3 accounts** | 1281 (Tiền gửi có kỳ hạn), 1282 (Trái phiếu), 1283 (Cho vay), 1288 (Các khoản đầu tư khác) |
+| **New level-2 accounts** | Under TK 128: 1281 (Tiền gửi có kỳ hạn), 1282 (Trái phiếu), 1283 (Cho vay), 1288 (Các khoản đầu tư khác). Under TK 821: 8211 (Chi phí thuế TNDN hiện hành), 8212 (Chi phí thuế TNDN hoãn lại) with 82111/82112 at level-3 |
 | **Level-1 count** | Reduced from 76 (TT 200) to **71** |
-| **Enterprise autonomy** | DN tự sửa/bổ sung tài khoản từ cấp 2 trở xuống, không cần xin phép BTC (Điều 11) |
+| **Enterprise autonomy** | DN được sửa đổi/bổ sung tên, số hiệu, kết cấu, nội dung của **tất cả tài khoản** (không giới hạn cấp), phải ban hành Quy chế hạch toán nội bộ (Điều 11) |
 
 ### 4.3 TT 133/2016 COA Differences
 
@@ -110,12 +110,12 @@ The current implementation provides a solid foundational data model (Account ent
 ### 4.4 COA Structure by Regime
 
 | Attribute | TT 99/2025 | TT 133/2016 | TT 58/2026 |
-|---|---|---|---|
-| Level-1 accounts | 71 | ~50 | ~20 |
-| Max account depth | 4 levels | 3 levels | 2 levels |
-| Account number format | 1-4 digits per level | 1-3 digits per level | 1-2 digits per level |
-| Enterprise autonomy | Full (level 2+) | Limited | None |
-| IFRS alignment | High | Low | None |
+|---|---|---|---|---|
+| COA type | Traditional numbered (71 level-1) | Traditional numbered (~50 level-1) | **Simplified tax-based book system** — no traditional numbered COA. Uses Sổ kế toán templates (S1-DNSN to S4d-DNSN) based on tax payment method |
+| Max account depth | 4 levels (3→4→5→6 digits) | 3 levels | N/A — no account hierarchy |
+| Account number format | Level-1: 3 digits; Level-2: 4 digits (+1); Level-3: 5 digits (+1); Level-4: 6 digits (+1) | Level-1: variable; Level-2/3: appended digits (see BR-02) | N/A — uses simplified book system, not numbered accounts |
+| Enterprise autonomy | Full (all levels) — can modify names, numbers, structure with internal regulation per Điều 11 | Limited — need BTC approval for level-1/2 changes | N/A |
+| IFRS alignment | High | Low | N/A |
 
 ---
 

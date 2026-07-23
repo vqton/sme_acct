@@ -1,6 +1,6 @@
 # COA Module — User Journeys
 
-**Version:** 1.0
+**Version:** 1.1
 **Date:** 2026-07-23
 
 ---

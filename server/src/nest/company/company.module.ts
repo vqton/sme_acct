@@ -7,6 +7,8 @@ import { SQLLegalRepresentativeRepository } from '../../infrastructure/database/
 import { SQLiteCapitalContributorRepository } from '../../infrastructure/database/CapitalContributorRepository.js';
 import { SQLiteBusinessLineRepository } from '../../infrastructure/database/BusinessLineRepository.js';
 import { SQLiteCompanyBankAccountRepository } from '../../infrastructure/database/CompanyBankAccountRepository.js';
+import { SQLiteAccountRepository } from '../../infrastructure/database/AccountRepository.js';
+import { SQLiteAuditLogRepository } from '../../infrastructure/database/AuditLogRepository.js';
 import Database from 'better-sqlite3';
 
 @Module({
@@ -39,6 +41,16 @@ import Database from 'better-sqlite3';
       inject: [DB_PROVIDER],
     },
     {
+      provide: SQLiteAccountRepository,
+      useFactory: (db: Database.Database) => new SQLiteAccountRepository(db),
+      inject: [DB_PROVIDER],
+    },
+    {
+      provide: SQLiteAuditLogRepository,
+      useFactory: (db: Database.Database) => new SQLiteAuditLogRepository(db),
+      inject: [DB_PROVIDER],
+    },
+    {
       provide: CompanyUseCases,
       useFactory: (
         companyRepo: SQLiteCompanyRepository,
@@ -46,12 +58,16 @@ import Database from 'better-sqlite3';
         contributorsRepo: SQLiteCapitalContributorRepository,
         businessLinesRepo: SQLiteBusinessLineRepository,
         bankAccountsRepo: SQLiteCompanyBankAccountRepository,
+        accountsRepo: SQLiteAccountRepository,
+        auditLogsRepo: SQLiteAuditLogRepository,
       ) => new CompanyUseCases({
         company: companyRepo,
         legalReps: legalRepsRepo,
         capitalContributors: contributorsRepo,
         businessLines: businessLinesRepo,
         bankAccounts: bankAccountsRepo,
+        accounts: accountsRepo,
+        auditLogs: auditLogsRepo,
       }),
       inject: [
         SQLiteCompanyRepository,
@@ -59,6 +75,8 @@ import Database from 'better-sqlite3';
         SQLiteCapitalContributorRepository,
         SQLiteBusinessLineRepository,
         SQLiteCompanyBankAccountRepository,
+        SQLiteAccountRepository,
+        SQLiteAuditLogRepository,
       ],
     },
   ],

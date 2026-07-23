@@ -38,7 +38,7 @@ aliases:
 - **Removed accounts to delete**: TK 611, TK 631, TK 161, TK 441
 - **Renamed**: 112→"Tiền gửi không kỳ hạn", 155→"Sản phẩm", 242→"Chi phí chờ phân bổ", 158→"Nguyên liệu, vật tư tại kho bảo thuế"
 - **Level-1 count**: 76 (TT 200) → 71 (TT 99)
-- **New level-3**: 1281, 1282, 1283, 1288
+- **New level-2** (under TK 128): 1281, 1282, 1283, 1288; **New level-3** (under TK 8211): 82111, 82112
 
 ## Recommended Phasing
 

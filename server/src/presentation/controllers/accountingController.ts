@@ -4,6 +4,7 @@ import { SQLiteAccountRepository } from '../../infrastructure/database/AccountRe
 import { SQLiteJournalEntryRepository } from '../../infrastructure/database/JournalEntryRepository.js';
 import { SQLiteLedgerRepository } from '../../infrastructure/database/LedgerRepository.js';
 import { SQLiteFiscalPeriodRepository } from '../../infrastructure/database/FiscalPeriodRepository.js';
+import { SQLiteAuditLogRepository } from '../../infrastructure/database/AuditLogRepository.js';
 import { authMiddleware, requirePermission, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
@@ -14,6 +15,7 @@ function createService() {
     journalEntries: new SQLiteJournalEntryRepository(),
     ledger: new SQLiteLedgerRepository(),
     fiscalPeriods: new SQLiteFiscalPeriodRepository(),
+    auditLogs: new SQLiteAuditLogRepository(),
   });
 }
 

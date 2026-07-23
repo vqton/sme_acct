@@ -1,6 +1,6 @@
 # COA Module — Use Cases
 
-**Version:** 1.0
+**Version:** 1.1
 **Date:** 2026-07-23
 
 ---
@@ -40,7 +40,7 @@
 ### Happy Path
 1. User enters: account number, name, category, nature, parent (optional), description
 2. System validates:
-   - Account number format per regime (TT 99: 1-4 digits/level, max 4 levels)
+   - Account number format per regime (TT 99: level-1=3 digits, +1/level, max 4 levels, max 6 digits)
    - Account number unique per company
    - Parent account exists and is not a leaf
    - Parent account is in same category

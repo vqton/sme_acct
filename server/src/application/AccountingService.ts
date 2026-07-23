@@ -1,21 +1,27 @@
 import type { Account } from '../domain/entities/Account.js';
-import type { JournalEntry, JournalLine } from '../domain/entities/JournalEntry.js';
+import type { JournalEntry } from '../domain/entities/JournalEntry.js';
 import type { FiscalPeriod } from '../domain/entities/FiscalPeriod.js';
+import type { AuditLog } from '../domain/entities/AuditLog.js';
 import type { AccountRepository } from '../domain/repositories/AccountRepository.js';
 import type { JournalEntryRepository } from '../domain/repositories/JournalEntryRepository.js';
 import type { LedgerRepository } from '../domain/repositories/LedgerRepository.js';
 import type { FiscalPeriodRepository } from '../domain/repositories/FiscalPeriodRepository.js';
+import type { AuditLogRepository } from '../domain/repositories/AuditLogRepository.js';
 import type { AccountBalance, LedgerEntry } from '../domain/entities/LedgerEntry.js';
-import { AccountNature, FiscalPeriodStatus, STANDARD_ACCOUNTS, ACCOUNT_CATEGORY_NATURE } from '../domain/enums/AccountEnums.js';
+import {
+  AccountCategory, AccountNature, AccountType, FiscalPeriodStatus, AccountingRegime,
+  STANDARD_ACCOUNTS_TT99, STANDARD_ACCOUNTS_TT133, ACCOUNT_CATEGORY_NATURE,
+} from '../domain/enums/AccountEnums.js';
 import { createAccount } from '../domain/entities/Account.js';
 import { createJournalEntry, postJournalEntry, reverseJournalEntry } from '../domain/entities/JournalEntry.js';
-import { createFiscalPeriod, closePeriod, lockPeriod } from '../domain/entities/FiscalPeriod.js';
+import { createFiscalPeriod, closePeriod } from '../domain/entities/FiscalPeriod.js';
 
 export interface AccountingRepos {
   accounts: AccountRepository;
   journalEntries: JournalEntryRepository;
   ledger: LedgerRepository;
   fiscalPeriods: FiscalPeriodRepository;
+  auditLogs: AuditLogRepository;
 }
 
 export class AccountingService {
@@ -40,32 +46,117 @@ export class AccountingService {
   createAccount(data: Partial<Account> & { companyId: number; accountNumber: string; name: string; category: number; nature: number }): Account {
     const existing = this.repos.accounts.findByAccountNumber(data.companyId, data.accountNumber);
     if (existing) throw new Error(`Account ${data.accountNumber} already exists`);
+    if (data.parentId) {
+      this.validateAccountHierarchy(data.companyId, data.accountNumber, data.parentId);
+    }
     const entity = createAccount(data as any);
-    return this.repos.accounts.save(entity);
+    const saved = this.repos.accounts.save(entity);
+    this.logAudit({
+      companyId: data.companyId,
+      action: 'ACCOUNT_CREATE',
+      entityType: 'account',
+      entityId: saved.id,
+      detail: `Created account ${data.accountNumber} - ${data.name}`,
+    });
+    return saved;
+  }
+
+  createStandardAccount(companyId: number, data: {
+    accountNumber: string; name: string; category: number;
+    nature?: number; parentId?: number; type?: number;
+    isSystem?: boolean; allowTransactions?: boolean;
+  }): Account {
+    if (data.parentId) {
+      this.validateAccountHierarchy(companyId, data.accountNumber, data.parentId);
+    }
+    const existing = this.repos.accounts.findByAccountNumber(companyId, data.accountNumber);
+    if (existing) throw new Error(`Account ${data.accountNumber} already exists`);
+    const nature = data.nature ?? ACCOUNT_CATEGORY_NATURE[data.category as AccountCategory];
+    const entity = createAccount({
+      companyId,
+      accountNumber: data.accountNumber,
+      name: data.name,
+      category: data.category,
+      nature,
+      type: data.type ?? (data.parentId ? AccountType.TaiKhoanCon : AccountType.TaiKhoanMe),
+      parentId: data.parentId,
+      isSystem: data.isSystem ?? false,
+      allowTransactions: data.allowTransactions ?? !!data.parentId,
+      isActive: true,
+      openingDebit: 0,
+      openingCredit: 0,
+      debitAmount: 0,
+      creditAmount: 0,
+      closingDebit: 0,
+      closingCredit: 0,
+      createdAt: new Date(),
+    } as any);
+    const saved = this.repos.accounts.save(entity);
+    this.logAudit({
+      companyId,
+      action: 'ACCOUNT_CREATE',
+      entityType: 'account',
+      entityId: saved.id,
+      detail: `Created account ${data.accountNumber} - ${data.name}`,
+    });
+    return saved;
   }
 
   updateAccount(id: number, data: Partial<Account>): Account {
     const existing = this.getAccount(id);
+    if (data.parentId !== undefined && data.parentId !== existing.parentId) {
+      if (data.parentId === id) throw new Error('Circular parent reference: account cannot be its own parent');
+      this.validateAccountHierarchy(existing.companyId, existing.accountNumber, data.parentId);
+    }
     const updated = { ...existing, ...data, updatedAt: new Date() };
-    return this.repos.accounts.save(updated);
+    const saved = this.repos.accounts.save(updated);
+    this.logAudit({
+      companyId: existing.companyId,
+      action: 'ACCOUNT_UPDATE',
+      entityType: 'account',
+      entityId: saved.id,
+      detail: `Updated account ${saved.accountNumber}`,
+    });
+    return saved;
   }
 
   deleteAccount(id: number): void {
+    const acc = this.repos.accounts.findById(id);
+    if (!acc) return;
     const children = this.repos.accounts.findByParentId(id);
     if (children.length > 0) throw new Error('Cannot delete account with child accounts');
     this.repos.accounts.delete(id);
+    this.logAudit({
+      companyId: acc.companyId,
+      action: 'ACCOUNT_DELETE',
+      entityType: 'account',
+      entityId: id,
+      detail: `Deleted account ${acc.accountNumber} - ${acc.name}`,
+    });
   }
 
-  seedStandardAccounts(companyId: number): Account[] {
+  seedStandardAccounts(companyId: number, regime: AccountingRegime = AccountingRegime.TT99): Account[] {
     const existing = this.repos.accounts.findByCompanyId(companyId);
     if (existing.length > 0) return existing;
 
+    let standardAccounts: Array<{ number: string; name: string; category: number; parent?: string }>;
+    switch (regime) {
+      case AccountingRegime.TT99:
+        standardAccounts = STANDARD_ACCOUNTS_TT99;
+        break;
+      case AccountingRegime.TT133:
+        standardAccounts = STANDARD_ACCOUNTS_TT133;
+        break;
+      case AccountingRegime.TT58:
+        throw new Error('TT 58 does not use a standard chart of accounts');
+      default:
+        throw new Error('Unsupported accounting regime');
+    }
 
     const created: Account[] = [];
-
-    for (const def of STANDARD_ACCOUNTS) {
+    for (const def of standardAccounts) {
       const parent = def.parent ? created.find((a) => a.accountNumber === def.parent) : undefined;
-      const nature = ACCOUNT_CATEGORY_NATURE[def.category];
+      const nature = ACCOUNT_CATEGORY_NATURE[def.category as AccountCategory];
       const acc = createAccount({
         companyId,
         accountNumber: def.number,
@@ -74,12 +165,73 @@ export class AccountingService {
         nature,
         parentId: parent?.id,
         isSystem: true,
-        type: def.parent ? (def.number.length >= 4 ? 3 : 2) : 1,
+        type: def.parent ? (def.number.length >= 4 ? AccountType.TaiKhoanChiTiet : AccountType.TaiKhoanCon) : AccountType.TaiKhoanMe,
         allowTransactions: def.number.length >= 4,
+        isActive: true,
+        openingDebit: 0,
+        openingCredit: 0,
+        debitAmount: 0,
+        creditAmount: 0,
+        closingDebit: 0,
+        closingCredit: 0,
+        createdAt: new Date(),
       });
       created.push(this.repos.accounts.save(acc));
     }
+    this.logAudit({
+      companyId,
+      action: 'ACCOUNT_SEED',
+      entityType: 'account',
+      detail: `Seeded ${created.length} accounts for regime ${regime}`,
+    });
     return created;
+  }
+
+  // ─── Hierarchy Validation ───────────────────────────────
+
+  validateAccountHierarchy(companyId: number, accountNumber: string, parentId: number): void {
+    if (!/^\d+$/.test(accountNumber)) {
+      throw new Error(`Invalid account number format: ${accountNumber}`);
+    }
+    const parent = this.repos.accounts.findById(parentId);
+    if (!parent) throw new Error('Parent account not found');
+    if (parent.companyId !== companyId) throw new Error('Parent account belongs to a different company');
+    if (accountNumber.length <= parent.accountNumber.length) {
+      throw new Error(`Child account number length (${accountNumber.length}) must exceed parent length (${parent.accountNumber.length})`);
+    }
+    if (!accountNumber.startsWith(parent.accountNumber)) {
+      throw new Error(`Child account ${accountNumber} must start with parent number ${parent.accountNumber}`);
+    }
+    let current: Account | null = parent;
+    while (current) {
+      if (current.parentId) {
+        const ancestor = this.repos.accounts.findById(current.parentId);
+        if (ancestor && ancestor.accountNumber === accountNumber) {
+          throw new Error('Circular parent reference detected');
+        }
+        current = ancestor;
+      } else {
+        current = null;
+      }
+    }
+  }
+
+  // ─── Audit Log ──────────────────────────────────────────
+
+  getAuditLogs(companyId: number): AuditLog[] {
+    return this.repos.auditLogs.findByCompanyId(companyId);
+  }
+
+  private logAudit(data: { companyId: number; action: string; entityType: string; entityId?: number; detail?: string }): void {
+    this.repos.auditLogs.save({
+      id: 0,
+      companyId: data.companyId,
+      action: data.action,
+      entityType: data.entityType,
+      entityId: data.entityId,
+      detail: data.detail,
+      createdAt: new Date(),
+    });
   }
 
   // ─── Journal Entries ────────────────────────────────────

@@ -3,6 +3,7 @@ import { DatabaseModule } from './common/database.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { CompanyModule } from './company/company.module.js';
 import { DepartmentModule } from './department/department.module.js';
+import { AccountingModule } from './accounting/accounting.module.js';
 import { AppLifecycleHook } from './common/lifecycle/app-lifecycle.js';
 import { AppLoggerModule } from './integrations/logger.module.js';
 import { AppHealthModule } from './integrations/health.module.js';
@@ -23,6 +24,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
     I18nModule,
     AuthModule,
     CompanyModule,
+    AccountingModule,
     DepartmentModule,
     UserModule,
     DashboardModule,

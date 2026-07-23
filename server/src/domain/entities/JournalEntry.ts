@@ -112,7 +112,7 @@ export function reverseJournalEntry(entry: JournalEntry, postedByUserId: number)
     companyId: entry.companyId,
     entryDate: new Date().toISOString().split('T')[0],
     periodId: entry.periodId,
-    entryType: JournalEntryType.DieuChinh,
+    entryType: JournalEntryType.Khac,
     description: `Đảo ngược chứng từ ${entry.entryNumber}: ${entry.description}`,
     lines: reversalLines,
     postedByUserId,

@@ -77,6 +77,33 @@ User asks to do something
 | Improve codebase architecture | `improve-codebase-architecture` | What: architecture; Who: architect; When: tech debt review; Where: codebase; Why: find opportunities; How: scan + report + grill |
 | Migrate tests to shoehorn | `migrate-to-shoehorn` | What: test migration; Who: developer; When: test cleanup; Where: test files; Why: remove `as` assertions; How: shoehorn patterns |
 | Move issues through triage | `triage` | What: issue triage; Who: triage lead; When: issues filed; Where: issue tracker; Why: categorize + brief; How: state machine |
+| Design stable APIs & interfaces | `api-and-interface-design` | What: API design; Who: designer; When: before implementation; Where: module boundary; Why: hard-to-misuse interfaces; How: contract-first |
+| Test in real browsers | `browser-testing-with-devtools` | What: browser testing; Who: tester; When: building UI; Where: browser; Why: verify runtime; How: Chrome DevTools |
+| Set up CI/CD pipeline | `ci-cd-and-automation` | What: CI/CD; Who: devops; When: project setup; Where: GitHub Actions; Why: automate quality gates; How: pipeline config |
+| Full multi-axis code review | `code-review-and-quality` | What: code review; Who: reviewer; When: before merge; Where: codebase; Why: 5-axis quality; How: correctness + readability + architecture + security + performance |
+| Simplify existing code | `code-simplification` | What: simplification; Who: developer; When: after feature works; Where: source files; Why: easier maintenance; How: incremental refactor, preserve behavior |
+| Optimize agent context | `context-engineering` | What: context setup; Who: any; When: starting session; Where: rules files; Why: better agent output; How: structured context hierarchy |
+| Debug systematically | `debugging-and-error-recovery` | What: debugging; Who: debugger; When: bug reported; Where: codebase; Why: find root cause; How: triage checklist (reproduce → localize → reduce → fix → guard) |
+| Extract web page content | `defuddle` | What: content extraction; Who: any; When: reading URLs; Where: web pages; Why: save tokens; How: defuddle CLI |
+| Deprecate & migrate | `deprecation-and-migration` | What: deprecation; Who: engineer; When: removing old system; Where: codebase; Why: safe removal; How: strangler pattern / expand-contract |
+| Write docs & ADRs | `documentation-and-adrs` | What: documentation; Who: engineer; When: making decisions; Where: docs/; Why: capture why; How: ADRs + inline docs |
+| Adversarial pre-commit review | `doubt-driven-development` | What: doubt; Who: any; When: before non-trivial decision; Where: artifact; Why: catch blind spots; How: fresh-context adversarial review |
+| Build production UI | `frontend-ui-engineering` | What: UI; Who: frontend engineer; When: building interfaces; Where: components; Why: production quality; How: design system + WCAG a11y |
+| Manage git workflow & versioning | `git-workflow-and-versioning` | What: git workflow; Who: developer; When: always; Where: git; Why: safe version control; How: atomic commits + trunk-based dev |
+| Refine raw idea | `idea-refine` | What: idea refinement; Who: any; When: idea vague; Where: conversation; Why: stress-test assumptions; How: divergent → convergent thinking |
+| Implement incrementally | `incremental-implementation` | What: implementation; Who: developer; When: large feature; Where: codebase; Why: safe delivery; How: thin vertical slices |
+| Interview user's actual needs | `interview-me` | What: requirements; Who: interviewer; When: underspecified ask; Where: conversation; Why: extract true intent; How: one-question-at-a-time |
+| Add observability | `observability-and-instrumentation` | What: observability; Who: engineer; When: shipping features; Where: codebase; Why: operate in production; How: logging + metrics + tracing |
+| Optimize performance | `performance-optimization` | What: performance; Who: engineer; When: bottlenecks found; Where: codebase; Why: faster app; How: measure → fix → measure |
+| Break work into tasks | `planning-and-task-breakdown` | What: task breakdown; Who: planner; When: spec ready; Where: task list; Why: manageable units; How: small verifiable tasks with acceptance criteria |
+| Harden security | `security-and-hardening` | What: security; Who: engineer; When: handling sensitive data; Where: codebase; Why: prevent vulnerabilities; How: input validation + auth + injection prevention |
+| Ship to production | `shipping-and-launch` | What: launch; Who: engineer; When: ready to deploy; Where: production; Why: safe releases; How: checklist + monitoring + rollback plan |
+| Ground code in official docs | `source-driven-development` | What: source-verified code; Who: engineer; When: using frameworks; Where: implementation; Why: authoritative patterns; How: verify + cite |
+| Create spec before coding | `spec-driven-development` | What: spec; Who: planner; When: no spec exists; Where: document; Why: clear requirements; How: structured specification |
+| TDD (full skill) | `test-driven-development` | What: TDD; Who: developer; When: implementing logic; Where: test + code; Why: prove correctness; How: red-green-refactor |
+| Discover & invoke skills | `using-agent-skills` | What: skill discovery; Who: agent; When: session start; Where: conversation; Why: find right skill; How: meta-skill routing |
+| Daily standup summary | `dev-standup` | What: standup; Who: developer; When: daily; Where: conversation; Why: progress summary; How: git changes + build + blockers |
+| Avoid LLM coding mistakes | `karpathy-guidelines` | What: guidelines; Who: any; When: writing code; Where: codebase; Why: reduce errors; How: overcomplication avoidance + surgical changes |
 
 ---
 
@@ -84,65 +111,89 @@ User asks to do something
 
 ### Category 1: Development & Implementation
 
-| Dimension | `implement` | `tdd` | `prototype` |
-|---|---|---|---|
-| **What** | Build feature from spec | Write tests first, then code | Build throwaway validation |
-| **Who** | Developer with spec | Developer wanting design quality | Developer validating design |
-| **When** | After planning + spec ready | Before writing production code | Before committing to architecture |
-| **Where** | Production codebase | Test files + production code | Throwaway directory |
-| **Why** | Spec exists, need execution | Force clear design, prevent bugs | Validate approach before investment |
-| **How** | Follow spec step by step | Red → Green → Refactor cycle | Quick & dirty, delete after |
+| Dimension | `implement` | `tdd` | `prototype` | `spec-driven-development` | `test-driven-development` | `incremental-implementation` |
+|---|---|---|---|---|---|---|
+| **What** | Build feature from spec | Write tests first, then code | Build throwaway validation | Create spec before coding | Full TDD discipline | Build in thin vertical slices |
+| **Who** | Developer with spec | Developer wanting design quality | Developer validating design | Planner, spec writer | Developer proving correctness | Developer managing complexity |
+| **When** | After planning + spec ready | Before writing production code | Before committing to architecture | Before any code | When implementing logic | When feature is large |
+| **Where** | Production codebase | Test files + production code | Throwaway directory | Document / issue tracker | Test + production code | Codebase |
+| **Why** | Spec exists, need execution | Force clear design, prevent bugs | Validate approach before investment | Clear requirements | Prove correctness | Safe delivery, reviewable diffs |
+| **How** | Follow spec step by step | Red → Green → Refactor cycle | Quick & dirty, delete after | Structured specification | Red-green-refactor + TDD patterns | One slice at a time, test each |
 
 **Decision flow:**
 ```
 Have a spec?
-  ├─Yes→ implement
-  └─No→ Want to design through tests?
-           ├─Yes→ tdd
-           └─No→ Need to validate approach first?
-                    ├─Yes→ prototype
-                    └─No→ Use grill-me to sharpen idea first
+  ├─Yes→ implement or incremental-implementation
+  └─No→ Want to write a spec first?
+           ├─Yes→ spec-driven-development
+           └─No→ Want to design through tests?
+                    ├─Yes→ tdd or test-driven-development
+                    └─No→ Need to validate approach first?
+                             ├─Yes→ prototype
+                             └─No→ Use grill-me or idea-refine to sharpen first
 ```
 
 ---
 
 ### Category 2: Code Quality & Review
 
-| Dimension | `code-review` | `caveman-review` | `diagnosing-bugs` | `qa` |
-|---|---|---|---|---|
-| **What** | Full review (standards + spec) | Compressed review (findings only) | Root cause analysis | Interactive bug reporting |
-| **Who** | Reviewer with context | Reviewer wanting speed | Debugger with access | Tester reporting issues |
-| **When** | Before merge, PR ready | Quick review needed | Bug reported, root cause unknown | Testing session, bugs found |
-| **Where** | Git diff / PR | Git diff / file | Codebase exploration | Conversation |
-| **Why** | Catch issues + verify spec match | Fast feedback, save tokens | Find root cause, not symptoms | File issues conversationally |
-| **How** | Standards + spec review | One-line severity-tagged | Diagnosis loop | Explore + file GitHub issues |
+| Dimension | `code-review` | `caveman-review` | `code-review-and-quality` | `code-simplification` | `doubt-driven-development` |
+|---|---|---|---|---|---|
+| **What** | Full review (standards + spec) | Compressed review (findings only) | Multi-axis review (5 axes) | Simplify code for clarity | Adversarial pre-commit review |
+| **Who** | Reviewer with context | Reviewer wanting speed | Reviewer with quality focus | Developer after feature works | Any making non-trivial decision |
+| **When** | Before merge, PR ready | Quick review needed | Before any merge | After feature is working | Before non-trivial decision stands |
+| **Where** | Git diff / PR | Git diff / file | Full codebase | Source files | Artifact (code or decision) |
+| **Why** | Catch issues + verify spec match | Fast feedback, save tokens | Catch architectural + security + perf issues | Reduce maintenance burden | Catch blind spots while cheap to fix |
+| **How** | Standards + spec review | One-line severity-tagged | Correctness → readability → architecture → security → performance | Incremental refactor, preserve behavior | Fresh-context adversarial review |
 
 **Decision flow:**
 ```
-What's the task?
-  ├─Review code→ code-review (full) or caveman-review (quick)
-  ├─Bug report→ qa (interactive filing)
-  └─Hard bug→ diagnosing-bugs (root cause analysis)
+What's the review need?
+  ├─Full review before merge→ code-review or code-review-and-quality
+  ├─Quick review→ caveman-review
+  ├─Pre-commit adversarial check→ doubt-driven-development
+  ├─Simplify existing code→ code-simplification
+  └─Bug investigation→ See Category 13: Debugging & Recovery
+```
+
+### Category 13: Debugging & Recovery
+
+| Dimension | `diagnosing-bugs` | `debugging-and-error-recovery` | `qa` |
+|---|---|---|---|
+| **What** | Root cause analysis | Systematic debugging triage | Interactive bug reporting |
+| **Who** | Debugger with access | Debugger following process | Tester reporting issues |
+| **When** | Bug reported, root cause unknown | Test fail / build break / runtime error | Testing session, bugs found |
+| **Where** | Codebase exploration | Codebase + CI + runtime | Conversation |
+| **Why** | Find root cause, not symptoms | Stop-the-line, structured process | File issues conversationally |
+| **How** | Diagnosis loop | Reproduce → Localize → Reduce → Fix → Guard | Explore + file GitHub issues |
+
+**Decision flow:**
+```
+What broke?
+  ├─Known bug with no clear cause→ diagnosing-bugs
+  ├─Test failure / build break→ debugging-and-error-recovery
+  └─Found during testing→ qa (interactive filing)
 ```
 
 ---
 
 ### Category 3: Architecture & Design
 
-| Dimension | `design-an-interface` | `codebase-design` | `domain-modeling` | `ubiquitous-language` | `improve-codebase-architecture` |
-|---|---|---|---|---|---|
-| **What** | Multiple interface options | Deep module vocabulary | Domain model | DDD glossary | Architecture scan |
-| **Who** | Architect exploring options | Architect deepening | Team building model | Team defining terms | Architect reviewing debt |
-| **When** | Before implementing module | Before refactoring | Early project / new domain | New terms appear | Periodic review |
-| **Where** | Module boundary | Module design | UBIQUITOUS_LANGUAGE.md | UBIQUITOUS_LANGUAGE.md | Full codebase |
-| **Why** | Compare designs | Shared understanding | Precision in domain | Eliminate ambiguity | Find improvement opportunities |
-| **How** | Parallel sub-agents | Deep module analysis | Extract from conversation | Extract + flag ambiguities | Scan + HTML report + grill |
+| Dimension | `design-an-interface` | `codebase-design` | `domain-modeling` | `ubiquitous-language` | `improve-codebase-architecture` | `api-and-interface-design` | `documentation-and-adrs` |
+|---|---|---|---|---|---|---|---|
+| **What** | Multiple interface options | Deep module vocabulary | Domain model | DDD glossary | Architecture scan | Design stable APIs & interfaces | Write documentation & ADRs |
+| **Who** | Architect exploring options | Architect deepening | Team building model | Team defining terms | Architect reviewing debt | Designer of public API | Engineer documenting decisions |
+| **When** | Before implementing module | Before refactoring | Early project / new domain | New terms appear | Periodic review | Before building module boundaries | When making significant decisions |
+| **Where** | Module boundary | Module design | UBIQUITOUS_LANGUAGE.md | UBIQUITOUS_LANGUAGE.md | Full codebase | REST/GraphQL/component boundaries | docs/decisions/ + inline |
+| **Why** | Compare designs | Shared understanding | Precision in domain | Eliminate ambiguity | Find improvement opportunities | Hard-to-misuse interfaces | Capture why, not just what |
+| **How** | Parallel sub-agents | Deep module analysis | Extract from conversation | Extract + flag ambiguities | Scan + HTML report + grill | Contract-first, Hyrum's Law | ADRs + inline documentation |
 
 **Decision flow:**
 ```
 What's the architecture need?
-  ├─Design new module→ design-an-interface (explore options)
+  ├─Design new module→ design-an-interface (explore options) or api-and-interface-design (contracts)
   ├─Improve existing module→ codebase-design (deepen)
+  ├─Document decisions→ documentation-and-adrs
   ├─New domain terms→ domain-modeling or ubiquitous-language
   └─Review whole codebase→ improve-codebase-architecture
 ```
@@ -151,14 +202,14 @@ What's the architecture need?
 
 ### Category 4: Planning & Project Management
 
-| Dimension | `wayfinder` | `to-spec` | `to-tickets` | `request-refactor-plan` | `to-questionnaire` |
-|---|---|---|---|---|---|
-| **What** | Huge work map | Spec from conversation | Tickets from plan | Refactor steps | Questionnaire from decision |
-| **Who** | Planner (multi-session) | Planner (single discussion) | Planner (execution) | Planner (refactor) | Anyone (decision blocked) |
-| **When** | >1 session needed | Discussion complete | Plan/spec ready | Tech debt identified | Can't decide alone |
-| **Where** | Issue tracker | Issue tracker | Issue tracker | Issue tracker | Document |
-| **Why** | Shared map for big work | Document decisions | Break into units | Incremental safe steps | Gather input |
-| **How** | Decision tickets | Synthesize discussion | Tracer bullets | Tiny commits | Structured questions |
+| Dimension | `wayfinder` | `to-spec` | `to-tickets` | `request-refactor-plan` | `to-questionnaire` | `planning-and-task-breakdown` | `idea-refine` | `interview-me` |
+|---|---|---|---|---|---|---|---|---|
+| **What** | Huge work map | Spec from conversation | Tickets from plan | Refactor steps | Questionnaire from decision | Break work into tasks | Refine raw idea | Extract user's actual needs |
+| **Who** | Planner (multi-session) | Planner (single discussion) | Planner (execution) | Planner (refactor) | Anyone (decision blocked) | Planner with spec | Anyone with vague idea | Interviewer with unclear ask |
+| **When** | >1 session needed | Discussion complete | Plan/spec ready | Tech debt identified | Can't decide alone | Spec ready, need tasks | Idea still abstract | Ask underspecified |
+| **Where** | Issue tracker | Issue tracker | Issue tracker | Issue tracker | Document | Task list | Conversation | Conversation |
+| **Why** | Shared map for big work | Document decisions | Break into units | Incremental safe steps | Gather input | Manageable execution | Stress-test assumptions | Find true intent |
+| **How** | Decision tickets | Synthesize discussion | Tracer bullets | Tiny commits | Structured questions | Small verifiable tasks with acceptance criteria | Divergent → convergent thinking | One-question-at-a-time interview |
 
 **Decision flow:**
 ```
@@ -167,7 +218,10 @@ What's the planning need?
   ├─Document decisions→ to-spec
   ├─Break into execution units→ to-tickets
   ├─Plan refactor→ request-refactor-plan
-  └─Need input from others→ to-questionnaire
+  ├─Break spec into tasks→ planning-and-task-breakdown
+  ├─Need input from others→ to-questionnaire
+  ├─Refine a vague idea→ idea-refine
+  └─Understand what user actually wants→ interview-me
 ```
 
 ---
@@ -196,14 +250,14 @@ Need to stress-test?
 
 ### Category 6: Research & Knowledge
 
-| Dimension | `research` | `qmd` | `teach` |
-|---|---|---|---|
-| **What** | Investigate topic | Search vault semantically | Teach concept |
-| **Who** | Researcher | Anyone | Teacher + learner |
-| **When** | Questions arise | Need past decisions/context | Learning request |
-| **Where** | Markdown file in repo | Obsidian vault | Workspace |
-| **Why** | High-trust primary sources | Find existing knowledge | Knowledge transfer |
-| **How** | Web search + sources | QMD semantic search | Teach in context |
+| Dimension | `research` | `qmd` | `teach` | `defuddle` | `source-driven-development` |
+|---|---|---|---|---|---|
+| **What** | Investigate topic | Search vault semantically | Teach concept | Extract clean web content | Ground code in official docs |
+| **Who** | Researcher | Anyone | Teacher + learner | Anyone needing web content | Engineer using frameworks |
+| **When** | Questions arise | Need past decisions/context | Learning request | Reading URLs | Building with any library/framework |
+| **Where** | Markdown file in repo | Obsidian vault | Workspace | Web pages | Implementation code |
+| **Why** | High-trust primary sources | Find existing knowledge | Knowledge transfer | Save tokens, reduce clutter | Authoritative patterns |
+| **How** | Web search + sources | QMD semantic search | Teach in context | Defuddle CLI extraction | Verify + cite official docs |
 
 ---
 
@@ -231,14 +285,14 @@ Where are you in the writing process?
 
 ### Category 8: Workflow & Communication
 
-| Dimension | `cavecrew` | `claude-handoff` / `handoff` | `caveman` | `caveman-commit` |
-|---|---|---|---|---|
-| **What** | Delegate to subagent | Hand off to fresh agent | Compressed output mode | Compressed commit message |
-| **Who** | Main agent | Agent (context full) | Any (token pressure) | Developer (committing) |
-| **When** | Context pressure | Context full | All output | Git commit |
-| **Where** | Any | Handoff document | All output | Git |
-| **Why** | Save tokens, parallel work | Continue without context loss | Save 65% tokens | Concise conventional msg |
-| **How** | Spawn investigator/builder/reviewer | Compact + hand off | Caveman speak | Conventional + terse |
+| Dimension | `cavecrew` | `claude-handoff` / `handoff` | `caveman` | `caveman-commit` | `context-engineering` | `using-agent-skills` | `dev-standup` | `karpathy-guidelines` |
+|---|---|---|---|---|---|---|---|---|
+| **What** | Delegate to subagent | Hand off to fresh agent | Compressed output mode | Compressed commit message | Optimize agent context | Discover & invoke skills | Daily standup summary | Avoid LLM coding mistakes |
+| **Who** | Main agent | Agent (context full) | Any (token pressure) | Developer (committing) | Any starting session | Agent finding right skill | Developer | Anyone writing code |
+| **When** | Context pressure | Context full | All output | Git commit | Session start / quality decline | Session start | Daily | Writing code |
+| **Where** | Any | Handoff document | All output | Git | Rules files + specs | Conversation | Conversation | Codebase |
+| **Why** | Save tokens, parallel work | Continue without context loss | Save 65% tokens | Concise conventional msg | Improve agent output quality | Route to right workflow | Quick progress snapshot | Reduce common errors |
+| **How** | Spawn investigator/builder/reviewer | Compact + hand off | Caveman speak | Conventional + terse | Rules hierarchy + selective context | Meta-skill routing | Git + build + blockers | Overcomplication avoidance + surgical changes |
 
 **Decision flow:**
 ```
@@ -246,6 +300,11 @@ Context pressure?
   ├─Need to delegate work→ cavecrew (spawn subagent)
   ├─Context nearly full→ claude-handoff (hand off to fresh)
   └─Want to save tokens→ caveman (compressed mode)
+
+Agent quality issues?
+  ├─Output doesn't follow conventions→ context-engineering
+  ├─Don't know which skill to use→ using-agent-skills
+  └─Codegetting too complex→ karpathy-guidelines
 ```
 
 ---
@@ -265,14 +324,68 @@ Context pressure?
 
 ### Category 10: Project Setup & DevOps
 
-| Dimension | `setup-pre-commit` | `setup-ts-deep-modules` | `git-guardrails-claude-code` | `customize-opencode` | `setup-matt-pocock-skills` |
-|---|---|---|---|---|---|
-| **What** | Husky + lint-staged | dependency-cruiser | Git safety hooks | opencode config | Engineering skills setup |
-| **Who** | DevOps | DevOps | DevOps | Admin | Admin |
-| **When** | Project setup | Project setup | Project setup | Project setup | First skill use |
-| **Where** | .husky/ | src/ | .claude/ | .opencode/ | Project root |
-| **Why** | Commit quality | Module boundaries | Prevent destructive ops | Customize behavior | Enable skill ecosystem |
-| **How** | husky + lint-staged | dependency-cruiser config | Hook config | Edit config files | Issue tracker + labels |
+| Dimension | `setup-pre-commit` | `setup-ts-deep-modules` | `git-guardrails-claude-code` | `customize-opencode` | `setup-matt-pocock-skills` | `ci-cd-and-automation` | `git-workflow-and-versioning` | `shipping-and-launch` |
+|---|---|---|---|---|---|---|---|
+| **What** | Husky + lint-staged | dependency-cruiser | Git safety hooks | opencode config | Engineering skills setup | CI/CD pipeline setup | Git workflow & versioning | Production launch prep |
+| **Who** | DevOps | DevOps | DevOps | Admin | Admin | DevOps | Developer | Engineer |
+| **When** | Project setup | Project setup | Project setup | Project setup | First skill use | Project setup / CI changes | Always | Ready to deploy |
+| **Where** | .husky/ | src/ | .claude/ | .opencode/ | Project root | .github/workflows | Git | Production |
+| **Why** | Commit quality | Module boundaries | Prevent destructive ops | Customize behavior | Enable skill ecosystem | Automate quality gates | Safe version control | Safe, reversible releases |
+| **How** | husky + lint-staged | dependency-cruiser config | Hook config | Edit config files | Issue tracker + labels | GitHub Actions + quality gates | Atomic commits + trunk-based dev | Pre-launch checklist + monitoring + rollback |
+
+---
+
+### Category 11: Security & Performance
+
+| Dimension | `security-and-hardening` | `performance-optimization` | `observability-and-instrumentation` |
+|---|---|---|---|
+| **What** | Harden code against vulnerabilities | Optimize application performance | Add observability telemetry |
+| **Who** | Engineer handling sensitive data | Engineer with performance targets | Engineer shipping features |
+| **When** | Building auth, input handling, data storage | Bottlenecks found, Core Web Vitals need improvement | Before shipping to production |
+| **Where** | Auth, input boundaries, data layer | Frontend, backend, queries, DB | Codebase (logs, metrics, traces) |
+| **Why** | Prevent injection, XSS, auth bypass | Fix real bottlenecks, not guessed ones | Answer "what is the system doing?" |
+| **How** | Input validation + parameterized queries + auth + secrets mgmt | Measure → identify → fix → re-measure | Logging + metrics + tracing + alerting |
+
+**Decision flow:**
+```
+What's the concern?
+  ├─Security (auth, input, secrets)→ security-and-hardening
+  ├─Speed (load time, queries, N+1)→ performance-optimization
+  └─Observability (monitoring, debugging in prod)→ observability-and-instrumentation
+```
+
+---
+
+### Category 12: Frontend & Browser
+
+| Dimension | `frontend-ui-engineering` | `browser-testing-with-devtools` |
+|---|---|---|
+| **What** | Build production-quality UI | Test in real browsers via DevTools |
+| **Who** | Frontend engineer | Developer debugging UI |
+| **When** | Building or modifying interfaces | Any browser-facing change |
+| **Where** | Components, pages, layouts | Browser (DOM, console, network) |
+| **Why** | Production look & feel + WCAG a11y | Verify runtime behavior, not just code |
+| **How** | Design system + composable components + responsive | Chrome DevTools MCP (DOM, console, network, perf) |
+
+**Decision flow:**
+```
+What's the frontend need?
+  ├─Build production UI→ frontend-ui-engineering
+  └─Debug / test in browser→ browser-testing-with-devtools
+```
+
+---
+
+### Category 14: Deprecation & Maintenance
+
+| Dimension | `deprecation-and-migration` | `code-simplification` |
+|---|---|---|
+| **What** | Remove old systems safely | Simplify existing code |
+| **Who** | Engineer maintaining codebase | Developer cleaning up |
+| **When** | Replacing legacy systems | After feature works, code feels heavy |
+| **Where** | Codebase + consumers | Source files |
+| **Why** | Code is a liability, not an asset | Reduce maintenance burden |
+| **How** | Strangler pattern / expand-contract / adapters | Incremental refactor, preserve behavior |
 
 ---
 
@@ -282,15 +395,20 @@ Many tasks need **multiple skills**. Use this table to compose:
 
 | Task Pattern | Skill Chain | Why |
 |---|---|---|
-| New feature from idea to code | `grill-me` → `to-spec` → `implement` → `tdd` → `code-review` | Sharpen → Document → Build → Test → Review |
-| Refactor existing code | `improve-codebase-architecture` → `request-refactor-plan` → `implement` → `tdd` | Find → Plan → Execute → Verify |
+| New feature from idea to code | `interview-me` → `idea-refine` → `spec-driven-development` → `incremental-implementation` → `test-driven-development` → `code-review-and-quality` | Extract intent → Sharpen → Spec → Build incrementally → TDD → Multi-axis review |
+| Large feature (safe delivery) | `planning-and-task-breakdown` → `incremental-implementation` → `test-driven-development` | Break down → Build slice-by-slice → Prove each slice |
+| Refactor existing code | `improve-codebase-architecture` → `request-refactor-plan` → `code-simplification` → `test-driven-development` | Find → Plan → Simplify → Verify |
 | Big project kickoff | `wayfinder` → `domain-modeling` → `ubiquitous-language` | Map work → Model domain → Define terms |
-| Bug found in production | `diagnosing-bugs` → `implement` → `tdd` → `code-review` | Find cause → Fix → Test → Review |
+| Bug found in production | `debugging-and-error-recovery` or `diagnosing-bugs` → `test-driven-development` → `code-review` | Systematically debug → Reproduce with test → Fix → Review |
 | New team member onboarding | `ubiquitous-language` → `teach` → `scaffold-exercises` | Define terms → Teach → Practice |
-| Architecture decision | `grill-with-docs` → `design-an-interface` → `to-spec` | Stress-test → Design → Document |
+| Architecture decision | `grill-with-docs` → `api-and-interface-design` or `design-an-interface` → `documentation-and-adrs` → `to-spec` | Stress-test → Design → Document → Publish |
 | Writing technical article | `writing-fragments` → `writing-beats` → `writing-shape` → `edit-article` | Mine → Ground → Shape → Polish |
-| QA sprint | `qa` → `diagnosing-bugs` → `to-tickets` → `implement` | Find → Analyze → Plan → Fix |
+| QA sprint | `qa` → `debugging-and-error-recovery` → `to-tickets` → `implement` | Find → Diagnose → Plan → Fix |
 | Token-efficient session | `caveman` → `cavecrew` → `caveman-commit` | Compress mode → Delegate → Committed msg |
+| CI/CD setup | `setup-pre-commit` → `ci-cd-and-automation` → `shipping-and-launch` | Local hooks → Pipeline → Deploy safely |
+| Security audit | `security-and-hardening` → `code-review-and-quality` → `observability-and-instrumentation` | Harden → Verify → Monitor |
+| Performance fix | `browser-testing-with-devtools` → `performance-optimization` → `incremental-implementation` | Profile → Fix → Ship incrementally |
+| Deprecation | `deprecation-and-migration` → `documentation-and-adrs` → `shipping-and-launch` | Plan removal → Document → Execute |
 
 ---
 
@@ -307,6 +425,10 @@ When context window is a concern:
 | All output should be terse | `caveman` mode |
 | Memory files too long | `caveman-compress` |
 | Need to check token usage | `caveman-stats` |
+| Agent output quality degrading | `context-engineering` (refresh context) |
+| Too many skills, don't know which | `using-agent-skills` (meta-router) |
+| Code getting too complex | `karpathy-guidelines` (simplify approach) |
+| Web page using too many tokens | `defuddle` (extract clean content) |
 
 ---
 
@@ -314,9 +436,15 @@ When context window is a concern:
 
 When multiple skills could apply, use this priority:
 
-1. **Safety first** — `git-guardrails-claude-code` before any destructive git ops
-2. **Plan before code** — `grill-me` / `to-spec` / `wayfinder` before `implement`
-3. **Test alongside code** — `tdd` alongside `implement`
-4. **Review after code** — `code-review` after `implement`
-5. **Document decisions** — `grill-with-docs` / `to-spec` when architectural choices made
-6. **Compress when pressured** — `caveman` / `cavecrew` when context limited
+1. **Safety first** — `git-guardrails-claude-code` before any destructive git ops; `security-and-hardening` before handling sensitive data
+2. **Understand before building** — `interview-me` → `idea-refine` → `spec-driven-development` before writing code
+3. **Plan before code** — `grill-me` / `to-spec` / `wayfinder` / `planning-and-task-breakdown` before `implement`
+4. **Spec before implementation** — `spec-driven-development` or `source-driven-development` when correctness matters
+5. **Test alongside code** — `tdd` / `test-driven-development` alongside `implement` or `incremental-implementation`
+6. **Build incrementally** — `incremental-implementation` for large features; thin vertical slices
+7. **Doubt before committing** — `doubt-driven-development` for non-trivial decisions
+8. **Review after code** — `code-review` / `code-review-and-quality` after `implement`
+9. **Document decisions** — `documentation-and-adrs` / `grill-with-docs` / `to-spec` when architectural choices made
+10. **Observe in production** — `observability-and-instrumentation` before shipping; `shipping-and-launch` for safe rollout
+11. **Compress when pressured** — `caveman` / `cavecrew` when context limited
+12. **Context refresh when quality drops** — `context-engineering` when agent output degrades

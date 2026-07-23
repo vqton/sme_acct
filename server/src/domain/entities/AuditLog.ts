@@ -1,16 +1,19 @@
 export interface AuditLog {
-  id: number;
-  userId: number | null;
+  id?: number;
+  companyId?: number;
+  userId?: number | null;
   action: string;
-  resource: string | null;
-  resourceId: number | null;
-  detail: string | null;
-  ipAddress: string | null;
-  userAgent: string | null;
-  createdAt: Date;
+  entityType?: string | null;
+  entityId?: number | null;
+  resource?: string | null;
+  resourceId?: string | number | null;
+  detail?: string | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  createdAt?: Date | string;
 }
 
 export interface RequestContext {
-  ipAddress: string | null;
-  userAgent: string | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
 }

@@ -160,7 +160,7 @@ TT 99 thay thế **hoàn toàn** các văn bản sau (Điều 31):
 
 ### Tính tự chủ về tài khoản
 
-DN có thể **tự sửa đổi, bổ sung tài khoản từ cấp 2 trở xuống** mà không cần xin phép Bộ Tài chính, miễn là ban hành Quy chế kế toán nội bộ.
+DN được **sửa đổi, bổ sung tên, số hiệu, kết cấu, nội dung của tất cả tài khoản** (không giới hạn cấp) theo Phụ lục II, phải ban hành Quy chế hạch toán kế toán nội bộ (Điều 11 TT 99).
 
 > Nguồn: KPMG, ketoanleanh.edu.vn, ketoanthienung.net, lamketoan.vn, luatvietnam.vn, cads.com.vn
 
@@ -340,7 +340,7 @@ Mẫu số: B01-DNKLT, B02-DNKLT, B03-DNKLT, B09-DNKLT
 5. **Tích hợp chữ ký số**: USB Token và từ xa (Remote Sign)
 6. **Đơn vị tiền tệ**: VND (mặc định), hỗ trợ ngoại tệ
 7. **Quy chế kế toán nội bộ**: DN phải tự ban hành (theo TT 99)
-8. **Tự chủ tài khoản**: Cho phép thêm/sửa tài khoản cấp 2+
+8. **Tự chủ tài khoản**: DN được sửa/bổ sung tên, số hiệu, kết cấu, nội dung mọi tài khoản (không giới hạn cấp), phải ban hành Quy chế hạch toán nội bộ (Điều 11)
 
 ---
 
@@ -365,3 +365,64 @@ Mẫu số: B01-DNKLT, B02-DNKLT, B03-DNKLT, B09-DNKLT
 17. Luật số 56/2024/QH15 — Sửa đổi Luật Kế toán
 18. Thông tư 89/2026/TT-BTC — Mẫu tờ khai thuế mới
 19. Nghị định 252/2026/NĐ-CP — Xử phạt vi phạm thuế
+
+---
+
+## PHỤ LỤC: COA Verification Report (23/07/2026)
+
+Research findings verifying BRD docs against web sources. 20+ sources consulted (thuvienphapluat.vn, ketoanthienung.net, ketoanleanh.edu.vn, daotaoketoanhn.edu.vn, amis.misa.vn, lamketoan.vn, hocketoanthuchanh.com, etc.).
+
+### ✅ Confirmed
+
+| Claim | Source | Confidence |
+|-------|--------|-----------|
+| TT 99: 71 level-1, 101 level-2, 10 level-3, 2 level-4 | ketoanthienung.net, MISA AMIS | HIGH |
+| TT 99: Level-1 = 3 digits (111, 112...) | All table sources | HIGH |
+| TT 99: Level-2 = 4 digits (1281, 1282...) | All table sources | HIGH |
+| TT 99: Level-3 = 5 digits (21511, 21512...) | lamketoan.vn 4-column table | HIGH |
+| TT 99: Level-4 = 6 digits (215121, 215122...) | lamketoan.vn 4-column table | HIGH |
+| TT 99: Renamed accounts (112, 155, 242, 158) | MISA AMIS comparison table | HIGH |
+| TT 99: New accounts (215, 332, 82112, 229) | MISA AMIS comparison table | HIGH |
+| TT 99: Removed level-1 (461, 466, 631) | MISA AMIS comparison table | HIGH |
+| TT 99: Điều 11 full autonomy (all levels) | ketoanthienung.net quotes Điều 11 | HIGH |
+| TT 99: Effective 01/01/2026, issued 27/10/2025 | thuvienphapluat.vn, all sources | HIGH |
+| TT 99: Replaces TT 200/2014 (NOT TT 133) | Official TVPL replacement list | HIGH |
+| TT 133: Still active for SMEs (not replaced) | ketoanthienung.net, TVPL | HIGH |
+| TT 133: BTC approval needed for level-1/2 changes | TVPL full text | HIGH |
+| TT 58: Effective 01/07/2026, replaces TT 132/2018 | thuvienphapluat.vn, luatvietnam.vn | HIGH |
+| TT 58: Tax-based book system (S1-DNSN to S4d-DNSN) | thuvienphapluat.vn Điều 5-8 | HIGH |
+
+### ⚠️ Corrected (found wrong in BRD v1.0)
+
+| Doc (v1.0) | Was | Corrected to | Source |
+|-------------|-----|-------------|--------|
+| BRD-25 §4.2 | "New level-3 accounts: 1281-1288" | Level-2 (under TK 128) | Table shows them under Cấp 2 column |
+| BRD-25 §4.2 | "tự bổ sung từ cấp 2 trở xuống" | All levels, must issue internal regulation | Điều 11 text from ketoanthienung |
+| BRD-25 §4.4 | TT 58: "~20 level-1, max depth 2, 1-2 digits/level" | No traditional COA — simplified book system | TT 58 text Điều 4-8 |
+| BRD-27 BR-02 | TT 58: "1-2 digits, +2, max 4" | Account format N/A — use tax-based validation | TT 58 text |
+
+### ❌ Unconfirmed (needs direct source verification)
+
+| Claim | Reason |
+|-------|--------|
+| TT 133 level-1 = 1-2 digits, +2, +2, max 6 | Inferred from structure, not explicit in search results |
+| TK 161 removed from TT 99 | MISA article doesn't mention; need official list |
+| TK 441 removed from TT 99 | Assumed from count (76→71 = 5 removed); partial confirmation |
+| TK 611 removed from TT 99 | Same as above |
+| TT 53/2006 still in effect | Not listed in TT 99 Điều 31 replacement list — may remain |
+| NĐ 80/2021 SME criteria | Well-known, not re-verified in this round |
+
+### Sources Used (this round)
+
+- ketoanthienung.net — Full TT 99 account table, Điều 11 text, Điều 19 conversion rules
+- ketoanleanh.edu.vn — Detailed TT 99 analysis, comparison with TT 200
+- amis.misa.vn — Side-by-side comparison of all accounts (TT 200 vs TT 99)
+- daotaoketoanhn.edu.vn — Full account table with level-3/4 structure
+- lamketoan.vn — 5-column table (cấp 1/2/3/4 + name)
+- hocketoanthuchanh.com — TT 99 overview
+- thuvienphapluat.vn — TT 99 official text, TT 133 full text, TT 58 full text
+- luatvietnam.vn — TT 58 details
+- ketoanthienung.net — TT 58 text
+- hethongphapluat.com — TT 58 implementation guide
+- einvoice.vn — TT 58 overview
+- fast.com.vn — TT 58 full text
