@@ -558,6 +558,43 @@ export function runMigrations(db: Database): void {
     )
   `);
 
+  // ─── Recurring Templates ───────────────────────────────
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS recurring_templates (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      description TEXT,
+      entry_type INTEGER NOT NULL DEFAULT 9,
+      frequency INTEGER NOT NULL DEFAULT 1,
+      day_of_month INTEGER NOT NULL DEFAULT 1,
+      total_debit_formula TEXT DEFAULT '',
+      total_credit_formula TEXT DEFAULT '',
+      start_date TEXT NOT NULL,
+      end_date TEXT,
+      max_occurrences INTEGER,
+      occurrences_generated INTEGER NOT NULL DEFAULT 0,
+      next_generation_date TEXT NOT NULL,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      auto_post INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS recurring_template_lines (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      template_id INTEGER NOT NULL REFERENCES recurring_templates(id) ON DELETE CASCADE,
+      account_id INTEGER NOT NULL REFERENCES accounts(id),
+      account_number TEXT NOT NULL,
+      description TEXT,
+      debit_formula TEXT NOT NULL DEFAULT '',
+      credit_formula TEXT NOT NULL DEFAULT '',
+      line_index INTEGER NOT NULL DEFAULT 0
+    )
+  `);
+
   // Migration: add new columns to company_settings
   const settingsCols = db.prepare("PRAGMA table_info(company_settings)").all() as { name: string }[];
   const settingsColNames = settingsCols.map((c) => c.name);
@@ -676,6 +713,112 @@ export function runMigrations(db: Database): void {
   `);
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_user_departments_dept_id ON user_departments(department_id)
+  `);
+
+  // ─── Tax Module ────────────────────────────────────────────
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tax_periods (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      type TEXT NOT NULL,
+      year INTEGER NOT NULL,
+      month INTEGER,
+      quarter INTEGER,
+      period_name TEXT NOT NULL,
+      start_date TEXT NOT NULL,
+      end_date TEXT NOT NULL,
+      status TEXT NOT NULL,
+      vat_method TEXT NOT NULL DEFAULT 'khau_tru',
+      cit_rate REAL NOT NULL DEFAULT 20,
+      is_lockable INTEGER NOT NULL DEFAULT 0,
+      locked_at TEXT,
+      locked_by_user_id INTEGER,
+      finalized_at TEXT,
+      finalized_by_user_id INTEGER,
+      unlock_reason TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT
+    )
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_tax_periods_company ON tax_periods(company_id, year, month)
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_tax_periods_status ON tax_periods(company_id, status)
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tax_declarations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      tax_type INTEGER NOT NULL,
+      period_id INTEGER NOT NULL REFERENCES tax_periods(id),
+      year INTEGER NOT NULL,
+      month INTEGER,
+      quarter INTEGER,
+      declaration_type TEXT NOT NULL,
+      period_name TEXT NOT NULL,
+      vat_method TEXT NOT NULL DEFAULT 'khau_tru',
+      status INTEGER NOT NULL DEFAULT 0,
+      lines TEXT NOT NULL DEFAULT '[]',
+      input_lines TEXT NOT NULL DEFAULT '[]',
+      invoices TEXT NOT NULL DEFAULT '[]',
+      total_output_vat REAL NOT NULL DEFAULT 0,
+      total_input_vat REAL NOT NULL DEFAULT 0,
+      total_taxable_amount REAL NOT NULL DEFAULT 0,
+      net_vat_payable REAL NOT NULL DEFAULT 0,
+      revenue REAL,
+      expenses REAL,
+      net_income REAL,
+      cit_payable REAL,
+      total_income REAL,
+      total_deductions REAL,
+      taxable_income REAL,
+      total_pit_withheld REAL,
+      net_pit_payable REAL,
+      cit_rate REAL NOT NULL DEFAULT 20,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      submitted_at TEXT,
+      adjusted_declaration_id INTEGER,
+      FOREIGN KEY (adjusted_declaration_id) REFERENCES tax_declarations(id)
+    )
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_tax_declarations_company ON tax_declarations(company_id, tax_type)
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_tax_declarations_period ON tax_declarations(period_id)
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_tax_declarations_status ON tax_declarations(company_id, status)
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tax_calendar_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      tax_type INTEGER NOT NULL,
+      period_type TEXT NOT NULL,
+      year INTEGER NOT NULL,
+      month INTEGER,
+      quarter INTEGER,
+      event_type TEXT NOT NULL,
+      label TEXT NOT NULL,
+      due_date TEXT NOT NULL,
+      is_overdue INTEGER NOT NULL DEFAULT 0,
+      resolved_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_tax_calendar_company ON tax_calendar_events(company_id, year)
   `);
 }
 

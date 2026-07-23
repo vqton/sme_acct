@@ -20,6 +20,8 @@ import JournalEntryListPage from './pages/JournalEntryListPage';
 import JournalEntryFormPage from './pages/JournalEntryFormPage';
 import LedgerPage from './pages/LedgerPage';
 import TrialBalancePage from './pages/TrialBalancePage';
+import FinancialStatementPage from './pages/FinancialStatementPage';
+import PeriodClosePage from './pages/PeriodClosePage';
 import UsersPage from './pages/UsersPage';
 import UserDetailPage from './pages/UserDetailPage';
 import UserFormPage from './pages/UserFormPage';
@@ -27,6 +29,11 @@ import UserGroupsPage from './pages/UserGroupsPage';
 import DepartmentsPage from './pages/DepartmentsPage';
 import DepartmentDetailPage from './pages/DepartmentDetailPage';
 import ModuleStub from './pages/ModuleStub';
+import TaxListPage from './pages/TaxListPage';
+import TaxDeclarationFormPage from './pages/TaxDeclarationFormPage';
+import TaxDeclarationDetailPage from './pages/TaxDeclarationDetailPage';
+import TaxCalendarPage from './pages/TaxCalendarPage';
+import TaxPeriodManagementPage from './pages/TaxPeriodManagementPage';
 
 function AppRoutes() {
   const { pendingCompanies } = useAuth();
@@ -69,11 +76,17 @@ function AppRoutes() {
           <Route path="/accounting/inventory" element={<ModuleStub name="Hàng tồn kho" description="Quản lý nhập xuất tồn, định giá hàng tồn kho" />} />
           <Route path="/accounting/fa" element={<ModuleStub name="Tài sản cố định" description="Quản lý TSCĐ, tính khấu hao" />} />
           <Route path="/accounting/ccdc" element={<ModuleStub name="Công cụ dụng cụ" description="Quản lý CCDC, phân bổ" />} />
-          <Route path="/accounting/tax" element={<ModuleStub name="Thuế" description="Kê khai thuế GTGT, TNDN, TNCN" />} />
+          <Route path="/accounting/tax" element={<TaxListPage />} />
+          <Route path="/accounting/tax/new" element={<TaxDeclarationFormPage />} />
+          <Route path="/accounting/tax/:id" element={<TaxDeclarationDetailPage />} />
+          <Route path="/accounting/tax/calendar" element={<TaxCalendarPage />} />
+          <Route path="/accounting/tax/periods" element={<TaxPeriodManagementPage />} />
           <Route path="/accounting/einvoice" element={<ModuleStub name="Hóa đơn điện tử" description="Quản lý hóa đơn điện tử, ký số, phát hành" />} />
           <Route path="/accounting/costing" element={<ModuleStub name="Giá thành" description="Tính giá thành sản phẩm, dịch vụ" />} />
           <Route path="/accounting/payroll" element={<ModuleStub name="Tiền lương" description="Quản lý bảng lương, BHXH, BHYT, BHTN" />} />
-          <Route path="/accounting/reports" element={<ModuleStub name="Báo cáo tài chính" description="B01-DN, B02-DN, B03-DN, B09-DN và báo cáo quản trị" />} />
+          <Route path="/accounting/reports" element={<FinancialStatementPage />} />
+          <Route path="/accounting/period-close" element={<PeriodClosePage />} />
+          <Route path="/accounting/recurring" element={<ModuleStub name="Định kỳ" description="Quản lý bút toán định kỳ, khấu hao, phân bổ" />} />
           <Route path="/accounting/system" element={<ModuleStub name="Tham số hệ thống" description="Cấu hình hệ thống, tham số kế toán" />} />
 
           {/* Departments (company-scoped) */}

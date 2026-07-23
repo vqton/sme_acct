@@ -3,6 +3,7 @@ import type {
   LegalRepresentative, CapitalContributor, BusinessLine, CompanyBankAccount,
   Account, JournalEntry, FiscalPeriod, LedgerEntry, AccountBalance,
   UserListItem, UserGroup, Department, UserDepartment,
+  TaxType, TaxPeriod, TaxDeclaration, TaxCalendarEvent, AutoFillPreview, AuditTrailEntry, VatInputLine,
 } from '../types';
 
 const BASE = '/api';
@@ -323,6 +324,127 @@ export const api = {
     }),
   closeFiscalPeriod: (id: number) =>
     request<FiscalPeriod>(`/accounting/fiscal-periods/${id}/close`, { method: 'POST' }),
+
+  // ─── Tax ─────────────────────────────────────────────
+
+  getTaxPeriods: (companyId: number, year?: number) => {
+    let path = `/tax/periods?companyId=${companyId}`;
+    if (year) path += `&year=${year}`;
+    return request<TaxPeriod[]>(path);
+  },
+  getCurrentTaxPeriod: (companyId: number) =>
+    request<TaxPeriod>(`/tax/periods/current?companyId=${companyId}`),
+  createTaxPeriods: (companyId: number, year: number, type: string) =>
+    request<TaxPeriod[]>(`/tax/periods`, {
+      method: 'POST',
+      body: JSON.stringify({ companyId, year, type }),
+    }),
+  lockTaxPeriod: (id: number, userId: number) =>
+    request<TaxPeriod>(`/tax/periods/${id}/lock`, {
+      method: 'POST', body: JSON.stringify({ userId }),
+    }),
+  finalizeTaxPeriod: (id: number, userId: number) =>
+    request<TaxPeriod>(`/tax/periods/${id}/finalize`, {
+      method: 'POST', body: JSON.stringify({ userId }),
+    }),
+  unlockTaxPeriod: (id: number, userId: number, reason: string) =>
+    request<TaxPeriod>(`/tax/periods/${id}/unlock`, {
+      method: 'POST', body: JSON.stringify({ userId, reason }),
+    }),
+
+  listTaxDeclarations: (companyId: number, periodId?: number) => {
+    let path = `/tax/declarations?companyId=${companyId}`;
+    if (periodId) path += `&periodId=${periodId}`;
+    return request<TaxDeclaration[]>(path);
+  },
+  getTaxDeclaration: (id: number) =>
+    request<TaxDeclaration>(`/tax/declarations/${id}`),
+  createTaxDeclaration: (companyId: number, periodId: number, taxType: TaxType) =>
+    request<TaxDeclaration>(`/tax/declarations`, {
+      method: 'POST',
+      body: JSON.stringify({ companyId, periodId, taxType }),
+    }),
+  createVatDeclaration: (companyId: number, periodId: number, outputLines: VatInputLine[], inputLines: VatInputLine[]) =>
+    request<TaxDeclaration>(`/tax/declarations/vat?companyId=${companyId}`, {
+      method: 'POST',
+      body: JSON.stringify({ periodId, outputLines, inputLines }),
+    }),
+  submitTaxDeclaration: (id: number, userId?: number, comment?: string) =>
+    request<TaxDeclaration>(`/tax/declarations/${id}/submit`, {
+      method: 'POST', body: JSON.stringify({ userId, comment }),
+    }),
+  createAdjDeclaration: (originalId: number, outputLines: VatInputLine[], inputLines: VatInputLine[]) =>
+    request<TaxDeclaration>(`/tax/declarations/adjustment`, {
+      method: 'POST',
+      body: JSON.stringify({ originalId, outputLines, inputLines }),
+    }),
+
+  getTaxCalendar: (companyId: number, year: number) =>
+    request<TaxCalendarEvent[]>(`/tax/calendar/${companyId}/${year}`),
+  getUpcomingDeadlines: (companyId: number, year: number, withinDays = 15) =>
+    request<TaxCalendarEvent[]>(`/tax/calendar/${companyId}/${year}/upcoming?withinDays=${withinDays}`),
+
+  autoFillVat: (companyId: number, periodId: number) =>
+    request<AutoFillPreview>(`/tax/auto-fill/vat?companyId=${companyId}&periodId=${periodId}`),
+  autoFillCit: (companyId: number, periodId: number) =>
+    request<AutoFillPreview>(`/tax/auto-fill/cit?companyId=${companyId}&periodId=${periodId}`),
+  autoFillTax: (companyId: number, periodId: number, taxType: TaxType) =>
+    request<AutoFillPreview>(`/tax/auto-fill/${taxType}?companyId=${companyId}&periodId=${periodId}`),
+
+  getDeclarationAudit: (declarationId: number) =>
+    request<AuditTrailEntry[]>(`/tax/audit/${declarationId}`),
+  getCompanyAudit: (companyId: number) =>
+    request<AuditTrailEntry[]>(`/tax/audit/company/${companyId}`),
+
+  // ─── Financial Statements ──────────────────────────
+  getBalanceSheet: (companyId: number, periodId: number) =>
+    request<any>(`/accounting/financial-statements/balance-sheet?companyId=${companyId}&periodId=${periodId}`),
+  getIncomeStatement: (companyId: number, periodId: number) =>
+    request<any>(`/accounting/financial-statements/income-statement?companyId=${companyId}&periodId=${periodId}`),
+
+  // ─── Period Close ──────────────────────────────────
+  validateClose: (companyId: number, periodId: number) =>
+    request<any>(`/accounting/period-close/${periodId}/validate?companyId=${companyId}`),
+  closePeriodWithValidation: (companyId: number, periodId: number, userId: number, opts?: { skipValidation?: boolean; carryForwardToPeriodId?: number; transferNetIncome?: boolean }) =>
+    request<any>(`/accounting/period-close/${periodId}/close`, {
+      method: 'POST',
+      body: JSON.stringify({ companyId, userId, ...opts }),
+    }),
+  carryForwardBalances: (companyId: number, fromPeriodId: number, toPeriodId: number) =>
+    request<any>('/accounting/period-close/carry-forward', {
+      method: 'POST',
+      body: JSON.stringify({ companyId, fromPeriodId, toPeriodId }),
+    }),
+
+  // ─── FX Revaluation ────────────────────────────────
+  getFxAccounts: (companyId: number) =>
+    request<any[]>(`/accounting/fx-revaluation/accounts?companyId=${companyId}`),
+  previewFxRevaluation: (companyId: number, periodId: number, currentRates: Record<string, number>, bookingRates?: Record<string, number>) =>
+    request<any>('/accounting/fx-revaluation/preview', {
+      method: 'POST',
+      body: JSON.stringify({ companyId, periodId, currentRates, bookingRates }),
+    }),
+
+  // ─── Recurring Templates ───────────────────────────
+  getRecurringTemplates: (companyId: number) =>
+    request<any[]>(`/accounting/recurring-templates?companyId=${companyId}`),
+  getRecurringTemplate: (id: number) =>
+    request<any>(`/accounting/recurring-templates/${id}`),
+  createRecurringTemplate: (data: any) =>
+    request<any>('/accounting/recurring-templates', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  generateRecurringEntry: (templateId: number, periodId: number, params?: Record<string, number>) =>
+    request<any>(`/accounting/recurring-templates/${templateId}/generate`, {
+      method: 'POST',
+      body: JSON.stringify({ periodId, params }),
+    }),
+  processDueRecurringEntries: (asOfDate: string, periodId: number) =>
+    request<any[]>('/accounting/recurring-templates/process-due', {
+      method: 'POST',
+      body: JSON.stringify({ asOfDate, periodId }),
+    }),
 };
 
 // Standalone exports for direct imports
@@ -341,6 +463,20 @@ export function deleteJournalEntry(id: number) { return api.deleteJournalEntry(i
 export function getLedger(companyId: number, accountId?: number, periodId?: number) { return api.getLedger(companyId, accountId, periodId); }
 export function getTrialBalance(companyId: number, periodId: number) { return api.getTrialBalance(companyId, periodId); }
 export function getFiscalPeriods(companyId: number) { return api.getFiscalPeriods(companyId); }
+
+// ─── Tax standalone exports ───────────────────────────────
+export function getTaxPeriods(companyId: number, year?: number) { return api.getTaxPeriods(companyId, year); }
+export function getCurrentTaxPeriod(companyId: number) { return api.getCurrentTaxPeriod(companyId); }
+export function listTaxDeclarations(companyId: number, periodId?: number) { return api.listTaxDeclarations(companyId, periodId); }
+export function getTaxDeclaration(id: number) { return api.getTaxDeclaration(id); }
+export function createTaxDeclaration(companyId: number, periodId: number, taxType: TaxType) { return api.createTaxDeclaration(companyId, periodId, taxType); }
+export function createVatDeclaration(companyId: number, periodId: number, outputLines: VatInputLine[], inputLines: VatInputLine[]) { return api.createVatDeclaration(companyId, periodId, outputLines, inputLines); }
+export function submitTaxDeclaration(id: number, userId?: number, comment?: string) { return api.submitTaxDeclaration(id, userId, comment); }
+export function getTaxCalendar(companyId: number, year: number) { return api.getTaxCalendar(companyId, year); }
+export function getUpcomingDeadlines(companyId: number, year: number, withinDays?: number) { return api.getUpcomingDeadlines(companyId, year, withinDays); }
+export function autoFillVat(companyId: number, periodId: number) { return api.autoFillVat(companyId, periodId); }
+export function autoFillCit(companyId: number, periodId: number) { return api.autoFillCit(companyId, periodId); }
+export function getDeclarationAudit(declarationId: number) { return api.getDeclarationAudit(declarationId); }
 
 // ─── User Management ──────────────────────────────────────
 
