@@ -9,6 +9,7 @@
 - [[notes/Auth System|Auth System]]
 - [[notes/Domain Model|Domain Model]]
 - [[notes/Session Management|Session Management]]
+- [[notes/COA Module BRD Analysis|COA Module BRD Analysis]]
 
 ## Structure
 | Folder | Purpose |

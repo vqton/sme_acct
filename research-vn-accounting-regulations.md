@@ -318,6 +318,9 @@ Mẫu số: B01-DNKLT, B02-DNKLT, B03-DNKLT, B09-DNKLT
 
 ---
 
+> **COA Module BRD completed**: `docs/brd/25-coa-module-brd.md` → `32-coa-implementation-roadmap.md`
+> **Verdict**: NOT PROD-ready — 5 blocking gaps, 12 major gaps. Current STANDARD_ACCOUNTS uses TT 200.
+
 ## 10. KẾT LUẬN CHO PHÁT TRIỂN PHẦN MỀM SME
 
 ### Chế độ kế toán cần hỗ trợ
