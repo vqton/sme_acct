@@ -10,6 +10,7 @@ export interface JournalEntryRepository extends Repository<JournalEntry, number>
   findPosted(companyId: number): JournalEntry[];
   findUnposted(companyId: number): JournalEntry[];
   findLinesByEntryId(entryId: number): JournalLine[];
+  findLinesByAccountId(accountId: number): JournalLine[];
   getNextEntryNumber(companyId: number, year: number, month: number): string;
   saveLines(entryId: number, lines: JournalLine[]): void;
   deleteLines(entryId: number): void;

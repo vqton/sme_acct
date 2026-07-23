@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Table, Button, Space, Tag, Modal, Form, Input, Select, App } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, ApartmentOutlined } from '@ant-design/icons';
-import { getAccounts, createAccount, updateAccount, deleteAccount, seedAccounts } from '../services/api';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Table, Button, Space, Tag, Modal, Form, Input, Select, App, Tooltip } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ApartmentOutlined, SearchOutlined, CheckCircleOutlined, StopOutlined } from '@ant-design/icons';
+import { getAccounts, createAccount, updateAccount, deleteAccount, deactivateAccount, reactivateAccount, seedAccounts } from '../services/api';
 
 const categoryLabels: Record<number, string> = {
   1: 'Tài sản', 2: 'Nợ phải trả', 3: 'Vốn chủ sở hữu',
@@ -19,22 +19,49 @@ export default function ChartOfAccountsPage() {
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  const [searchText, setSearchText] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<number | undefined>();
+  const [activeFilter, setActiveFilter] = useState<string>('all');
   const [form] = Form.useForm();
   const { message } = App.useApp();
   const companyId = Number(localStorage.getItem('currentCompanyId'));
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const fetchAccounts = async () => {
+  const fetchAccounts = useCallback(async (query?: string, category?: number, activeOnly?: string) => {
     if (!companyId) return;
     setLoading(true);
     try {
-      const data = await getAccounts(companyId);
-      setAccounts(data);
+      const params: any = {};
+      if (query) params.query = query;
+      if (category !== undefined) params.category = category;
+      if (activeOnly === 'active') params.activeOnly = true;
+      if (activeOnly === 'inactive') params.activeOnly = false;
+      const data = await getAccounts(companyId, query || category !== undefined || activeOnly !== 'all' ? params : undefined);
+      setAccounts(Array.isArray(data) ? data : data.data ?? []);
     } finally {
       setLoading(false);
     }
+  }, [companyId]);
+
+  useEffect(() => { fetchAccounts(); }, [fetchAccounts, companyId]);
+
+  const onSearchChange = (value: string) => {
+    setSearchText(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      fetchAccounts(value || undefined, categoryFilter, activeFilter);
+    }, 300);
   };
 
-  useEffect(() => { fetchAccounts(); }, [companyId]);
+  const onCategoryChange = (value: number | undefined) => {
+    setCategoryFilter(value);
+    fetchAccounts(searchText || undefined, value, activeFilter);
+  };
+
+  const onActiveChange = (value: string) => {
+    setActiveFilter(value);
+    fetchAccounts(searchText || undefined, categoryFilter, value);
+  };
 
   const handleSeed = async () => {
     try {
@@ -51,46 +78,78 @@ export default function ChartOfAccountsPage() {
       title: 'Xóa tài khoản?',
       content: 'Hành động này không thể hoàn tác.',
       onOk: async () => {
-        await deleteAccount(id);
-        message.success('Đã xóa');
-        fetchAccounts();
+        try {
+          await deleteAccount(id);
+          message.success('Đã xóa');
+          fetchAccounts();
+        } catch (e: any) {
+          message.error(e.message || 'Lỗi');
+        }
       },
     });
   };
 
+  const handleToggleActive = async (record: any) => {
+    try {
+      if (record.isActive) {
+        await deactivateAccount(record.id);
+        message.success('Đã vô hiệu hóa tài khoản');
+      } else {
+        await reactivateAccount(record.id);
+        message.success('Đã kích hoạt lại tài khoản');
+      }
+      fetchAccounts();
+    } catch (e: any) {
+      message.error(e.message || 'Lỗi');
+    }
+  };
+
   const columns = [
-    { title: 'Số TK', dataIndex: 'accountNumber', key: 'accountNumber', width: 100, fixed: 'left' as const,
+    { title: 'Số TK', dataIndex: 'accountNumber', key: 'accountNumber', width: 90, fixed: 'left' as const,
       render: (v: string) => <strong>{v}</strong>,
     },
-    { title: 'Tên tài khoản', dataIndex: 'name', key: 'name', width: 300 },
-    { title: 'Loại', dataIndex: 'category', key: 'category', width: 150,
+    { title: 'Tên tài khoản', dataIndex: 'name', key: 'name', width: 260 },
+    { title: 'Trạng thái', dataIndex: 'isActive', key: 'isActive', width: 100,
+      render: (v: boolean) => v
+        ? <Tag icon={<CheckCircleOutlined />} color="success">Đang dùng</Tag>
+        : <Tag icon={<StopOutlined />} color="error">Ngừng dùng</Tag>,
+    },
+    { title: 'Loại', dataIndex: 'category', key: 'category', width: 130,
       render: (v: number) => <Tag color={categoryColors[v]}>{categoryLabels[v] || v}</Tag>,
     },
-    { title: 'Tính chất', dataIndex: 'nature', key: 'nature', width: 100,
+    { title: 'Tính chất', dataIndex: 'nature', key: 'nature', width: 90,
       render: (v: number) => natureLabels[v] || v,
     },
-    { title: 'Dư Nợ ĐK', dataIndex: 'openingDebit', key: 'openingDebit', width: 120, align: 'right' as const,
+    { title: 'Dư Nợ ĐK', dataIndex: 'openingDebit', key: 'openingDebit', width: 100, align: 'right' as const,
       render: (v: number) => v?.toLocaleString(),
     },
-    { title: 'Dư Có ĐK', dataIndex: 'openingCredit', key: 'openingCredit', width: 120, align: 'right' as const,
+    { title: 'Dư Có ĐK', dataIndex: 'openingCredit', key: 'openingCredit', width: 100, align: 'right' as const,
       render: (v: number) => v?.toLocaleString(),
     },
-    { title: 'PS Nợ', dataIndex: 'debitAmount', key: 'debitAmount', width: 120, align: 'right' as const,
+    { title: 'PS Nợ', dataIndex: 'debitAmount', key: 'debitAmount', width: 100, align: 'right' as const,
       render: (v: number) => v?.toLocaleString(),
     },
-    { title: 'PS Có', dataIndex: 'creditAmount', key: 'creditAmount', width: 120, align: 'right' as const,
+    { title: 'PS Có', dataIndex: 'creditAmount', key: 'creditAmount', width: 100, align: 'right' as const,
       render: (v: number) => v?.toLocaleString(),
     },
-    { title: '', key: 'actions', width: 100, fixed: 'right' as const,
+    { title: '', key: 'actions', width: 120, fixed: 'right' as const,
       render: (_: any, record: any) => (
-        <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => {
+        <Space size="small">
+          <Tooltip title={record.isActive ? 'Vô hiệu hóa' : 'Kích hoạt'}>
+            <Button
+              type="link"
+              size="small"
+              icon={record.isActive ? <StopOutlined /> : <CheckCircleOutlined />}
+              onClick={() => handleToggleActive(record)}
+            />
+          </Tooltip>
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => {
             setEditing(record);
             form.setFieldsValue(record);
             setModalOpen(true);
           }} />
           {!record.isSystem && (
-            <Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)} />
+            <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)} />
           )}
         </Space>
       ),
@@ -115,6 +174,35 @@ export default function ChartOfAccountsPage() {
         </Space>
       </div>
 
+      <div style={{ marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center' }}>
+        <Input.Search
+          placeholder="Tìm kiếm tài khoản..."
+          prefix={<SearchOutlined />}
+          allowClear
+          onChange={(e) => onSearchChange(e.target.value)}
+          onSearch={(v) => fetchAccounts(v || undefined, categoryFilter, activeFilter)}
+          style={{ width: 320 }}
+        />
+        <Select
+          placeholder="Loại tài khoản"
+          allowClear
+          style={{ width: 180 }}
+          value={categoryFilter}
+          onChange={onCategoryChange}
+          options={Object.entries(categoryLabels).map(([v, l]) => ({ value: Number(v), label: l }))}
+        />
+        <Select
+          style={{ width: 140 }}
+          value={activeFilter}
+          onChange={onActiveChange}
+          options={[
+            { value: 'all', label: 'Tất cả' },
+            { value: 'active', label: 'Đang dùng' },
+            { value: 'inactive', label: 'Ngừng dùng' },
+          ]}
+        />
+      </div>
+
       <Table
         dataSource={accounts}
         columns={columns}
@@ -122,7 +210,7 @@ export default function ChartOfAccountsPage() {
         loading={loading}
         size="small"
         pagination={false}
-        scroll={{ x: 1200 }}
+        scroll={{ x: 1300 }}
         expandable={{
           defaultExpandAllRows: false,
           rowExpandable: (r) => !!r.parentId,

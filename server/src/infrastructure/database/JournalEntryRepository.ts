@@ -42,6 +42,7 @@ export class SQLiteJournalEntryRepository implements JournalEntryRepository {
       findPosted: s('SELECT * FROM journal_entries WHERE company_id = ? AND is_posted = 1 ORDER BY entry_date DESC'),
       findUnposted: s('SELECT * FROM journal_entries WHERE company_id = ? AND is_posted = 0 ORDER BY entry_date DESC'),
       findLinesByEntryId: s('SELECT * FROM journal_entry_lines WHERE journal_entry_id = ? ORDER BY line_index'),
+      findLinesByAccountId: s('SELECT * FROM journal_entry_lines WHERE account_id = ? LIMIT 1'),
       getMaxEntryNumber: s('SELECT entry_number FROM journal_entries WHERE company_id = ? AND strftime(\'%Y\', entry_date) = ? ORDER BY entry_number DESC LIMIT 1'),
       insert: s(`INSERT INTO journal_entries (id, company_id, entry_number, entry_date, period_id, entry_type, description, description_english, reference_number, reference_date, total_debit, total_credit, is_posted, is_reversed, reversed_by_id, posted_at, posted_by_user_id, created_by_user_id, created_at) VALUES (@id, @companyId, @entryNumber, @entryDate, @periodId, @entryType, @description, @descriptionEnglish, @referenceNumber, @referenceDate, @totalDebit, @totalCredit, @isPosted, @isReversed, @reversedById, @postedAt, @postedByUserId, @createdByUserId, @createdAt)`),
       update: s(`UPDATE journal_entries SET entry_number=@entryNumber, entry_date=@entryDate, period_id=@periodId, entry_type=@entryType, description=@description, description_english=@descriptionEnglish, reference_number=@referenceNumber, reference_date=@referenceDate, total_debit=@totalDebit, total_credit=@totalCredit, is_posted=@isPosted, is_reversed=@isReversed, reversed_by_id=@reversedById, posted_at=@postedAt, posted_by_user_id=@postedByUserId WHERE id=@id`),
@@ -92,6 +93,21 @@ export class SQLiteJournalEntryRepository implements JournalEntryRepository {
 
   findLinesByEntryId(entryId: number): JournalLine[] {
     return (this.stmts.findLinesByEntryId.all(entryId) as Record<string, unknown>[]).map((r) => ({
+      id: r.id as number,
+      journalEntryId: r.journal_entry_id as number,
+      accountId: r.account_id as number,
+      accountNumber: r.account_number as string,
+      description: r.description as string ?? undefined,
+      debitAmount: (r.debit_amount as number) ?? 0,
+      creditAmount: (r.credit_amount as number) ?? 0,
+      costCenterId: r.cost_center_id as number ?? undefined,
+      departmentId: r.department_id as number ?? undefined,
+      projectId: r.project_id as number ?? undefined,
+    }));
+  }
+
+  findLinesByAccountId(accountId: number): JournalLine[] {
+    return (this.stmts.findLinesByAccountId.all(accountId) as Record<string, unknown>[]).map((r) => ({
       id: r.id as number,
       journalEntryId: r.journal_entry_id as number,
       accountId: r.account_id as number,

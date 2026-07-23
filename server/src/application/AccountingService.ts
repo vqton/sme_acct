@@ -24,6 +24,21 @@ export interface AccountingRepos {
   auditLogs: AuditLogRepository;
 }
 
+export interface SearchOptions {
+  page?: number;
+  pageSize?: number;
+  category?: number;
+  activeOnly?: boolean;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export class AccountingService {
   constructor(private repos: AccountingRepos) {}
 
@@ -125,6 +140,10 @@ export class AccountingService {
     if (!acc) return;
     const children = this.repos.accounts.findByParentId(id);
     if (children.length > 0) throw new Error('Cannot delete account with child accounts');
+    const ledgerEntries = this.repos.ledger.findByAccountId(acc.companyId, id);
+    if (ledgerEntries.length > 0) throw new Error('Cannot delete account with ledger transactions');
+    const journalLines = this.repos.journalEntries.findLinesByAccountId(id);
+    if (journalLines.length > 0) throw new Error('Cannot delete account with journal entry references');
     this.repos.accounts.delete(id);
     this.logAudit({
       companyId: acc.companyId,
@@ -133,6 +152,71 @@ export class AccountingService {
       entityId: id,
       detail: `Deleted account ${acc.accountNumber} - ${acc.name}`,
     });
+  }
+
+  // ─── Deactivation Workflow ─────────────────────────────
+
+  deactivateAccount(id: number, reason?: string): Account {
+    const acc = this.repos.accounts.findById(id);
+    if (!acc) throw new Error('Account not found');
+    if (!acc.isActive) return acc;
+    const children = this.repos.accounts.findByParentId(id);
+    const activeChildren = children.filter((c) => c.isActive);
+    if (activeChildren.length > 0) throw new Error('Cannot deactivate account with active child accounts');
+    const ledgerEntries = this.repos.ledger.findByAccountId(acc.companyId, id);
+    if (ledgerEntries.length > 0) throw new Error('Cannot deactivate account with ledger transactions');
+    const journalLines = this.repos.journalEntries.findLinesByAccountId(id);
+    if (journalLines.length > 0) throw new Error('Cannot deactivate account with journal entry references');
+    const updated = {
+      ...acc,
+      isActive: false,
+      description: reason ? `[DEACTIVATED] ${reason}` : '[DEACTIVATED]',
+      updatedAt: new Date(),
+    };
+    const saved = this.repos.accounts.save(updated);
+    this.logAudit({
+      companyId: acc.companyId,
+      action: 'ACCOUNT_DEACTIVATE',
+      entityType: 'account',
+      entityId: id,
+      detail: `Deactivated account ${acc.accountNumber} - ${acc.name}${reason ? `: ${reason}` : ''}`,
+    });
+    return saved;
+  }
+
+  reactivateAccount(id: number): Account {
+    const acc = this.repos.accounts.findById(id);
+    if (!acc) throw new Error('Account not found');
+    if (acc.isActive) return acc;
+    const updated = {
+      ...acc,
+      isActive: true,
+      description: acc.description?.replace(/^\[DEACTIVATED\].*$/, '').trim() || undefined,
+      updatedAt: new Date(),
+    };
+    const saved = this.repos.accounts.save(updated);
+    this.logAudit({
+      companyId: acc.companyId,
+      action: 'ACCOUNT_REACTIVATE',
+      entityType: 'account',
+      entityId: id,
+      detail: `Reactivated account ${acc.accountNumber} - ${acc.name}`,
+    });
+    return saved;
+  }
+
+  searchAccounts(companyId: number, query: string, opts: SearchOptions = {}): PaginatedResult<Account> {
+    const { page = 1, pageSize = 20, category, activeOnly } = opts;
+    let accounts = query
+      ? this.repos.accounts.search(companyId, query)
+      : this.repos.accounts.findByCompanyId(companyId);
+    if (category) accounts = accounts.filter((a) => a.category === category);
+    if (activeOnly) accounts = accounts.filter((a) => a.isActive);
+    const total = accounts.length;
+    const totalPages = Math.ceil(total / pageSize);
+    const start = (page - 1) * pageSize;
+    const data = accounts.slice(start, start + pageSize);
+    return { data, total, page, pageSize, totalPages };
   }
 
   seedStandardAccounts(companyId: number, regime: AccountingRegime = AccountingRegime.TT99): Account[] {

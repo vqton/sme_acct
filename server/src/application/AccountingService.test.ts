@@ -199,4 +199,97 @@ describe('AccountingService', () => {
     const current = service.getCurrentPeriod(companyId);
     expect(current).not.toBeNull();
   });
+
+  // ─── Deactivation Workflow ────────────────────────────────
+
+  it('deactivates an account', () => {
+    const acc = service.createStandardAccount(companyId, { accountNumber: '781', name: 'To Deactivate', category: AccountCategory.TaiSan });
+    const deactivated = service.deactivateAccount(acc.id, 'No longer needed');
+    expect(deactivated.isActive).toBe(false);
+    expect(deactivated.description).toContain('[DEACTIVATED]');
+  });
+
+  it('throws on deactivate account with ledger transactions', () => {
+    const acc = service.createStandardAccount(companyId, { accountNumber: '772', name: 'Has Txns', category: AccountCategory.TaiSan });
+    service.createStandardAccount(companyId, { accountNumber: '7721', name: 'Has Txns Leaf', category: AccountCategory.TaiSan, parentId: acc.id });
+    const deptParent = service.createStandardAccount(companyId, { accountNumber: '773', name: 'Dept Parent', category: AccountCategory.NoPhaiTra });
+    service.createStandardAccount(companyId, { accountNumber: '7731', name: 'Dept Leaf', category: AccountCategory.NoPhaiTra, parentId: deptParent.id });
+    const leaf = service.listAccounts(companyId).find((a) => a.accountNumber === '7721')!;
+    const dept = service.listAccounts(companyId).find((a) => a.accountNumber === '7731')!;
+    service.createJournalEntry({
+      companyId, entryDate: '2026-01-15', entryType: JournalEntryType.ThuTien,
+      description: 'Txn for deactivation test',
+      lines: [
+        { accountId: leaf.id, accountNumber: '7721', debitAmount: 100000, creditAmount: 0 },
+        { accountId: dept.id, accountNumber: '7731', debitAmount: 0, creditAmount: 100000 },
+      ],
+    });
+    expect(() => service.deactivateAccount(leaf.id)).toThrow('journal entry');
+  });
+
+  it('reactivates an account', () => {
+    const acc = service.createStandardAccount(companyId, { accountNumber: '776', name: 'To Reactivate', category: AccountCategory.TaiSan });
+    service.deactivateAccount(acc.id, 'Temp deactivate');
+    const reactivated = service.reactivateAccount(acc.id);
+    expect(reactivated.isActive).toBe(true);
+  });
+
+  it('throws on deactivate parent with active children', () => {
+    const parent = service.createStandardAccount(companyId, { accountNumber: '774', name: 'Parent With Kids', category: AccountCategory.TaiSan });
+    service.createStandardAccount(companyId, { accountNumber: '7741', name: 'Kid', category: AccountCategory.TaiSan, parentId: parent.id });
+    expect(() => service.deactivateAccount(parent.id)).toThrow('active child accounts');
+  });
+
+  // ─── Deletion with Transaction Check ──────────────────────
+
+  it('throws on delete account with ledger transactions', () => {
+    const acc = service.createStandardAccount(companyId, { accountNumber: '775', name: 'Del Has Txns', category: AccountCategory.TaiSan });
+    service.createStandardAccount(companyId, { accountNumber: '7751', name: 'Del Has Txns Leaf', category: AccountCategory.TaiSan, parentId: acc.id });
+    const deptParent = service.createStandardAccount(companyId, { accountNumber: '778', name: 'Del Dept Parent', category: AccountCategory.NoPhaiTra });
+    service.createStandardAccount(companyId, { accountNumber: '7781', name: 'Del Dept Leaf', category: AccountCategory.NoPhaiTra, parentId: deptParent.id });
+    const leaf = service.listAccounts(companyId).find((a) => a.accountNumber === '7751')!;
+    const dept = service.listAccounts(companyId).find((a) => a.accountNumber === '7781')!;
+    service.createJournalEntry({
+      companyId, entryDate: '2026-01-15', entryType: JournalEntryType.ThuTien,
+      description: 'Txn for delete test',
+      lines: [
+        { accountId: leaf.id, accountNumber: '7751', debitAmount: 200000, creditAmount: 0 },
+        { accountId: dept.id, accountNumber: '7781', debitAmount: 0, creditAmount: 200000 },
+      ],
+    });
+    expect(() => service.deleteAccount(leaf.id)).toThrow('journal entry');
+  });
+
+  it('deletes account with no transactions', () => {
+    const acc = service.createStandardAccount(companyId, { accountNumber: '779', name: 'Safe Delete', category: AccountCategory.TaiSan });
+    expect(() => service.deleteAccount(acc.id)).not.toThrow();
+  });
+
+  // ─── Paginated Search ─────────────────────────────────────
+
+  it('searches accounts with pagination', () => {
+    const result = service.searchAccounts(companyId, 'tiền', { page: 1, pageSize: 10 });
+    expect(result.data.length).toBeGreaterThanOrEqual(1);
+    expect(result.total).toBeGreaterThanOrEqual(1);
+    expect(result.page).toBe(1);
+    expect(result.pageSize).toBe(10);
+  });
+
+  it('filters accounts by category', () => {
+    const result = service.searchAccounts(companyId, '', { category: AccountCategory.TaiSan });
+    expect(result.data.every((a) => a.category === AccountCategory.TaiSan)).toBe(true);
+  });
+
+  it('filters active accounts only', () => {
+    const acc = service.createStandardAccount(companyId, { accountNumber: '780', name: 'Inactive Filter', category: AccountCategory.TaiSan });
+    service.deactivateAccount(acc.id);
+    const result = service.searchAccounts(companyId, '', { activeOnly: true });
+    expect(result.data.find((a) => a.id === acc.id)).toBeUndefined();
+  });
+
+  it('paginates correctly', () => {
+    const all = service.searchAccounts(companyId, '', { page: 1, pageSize: 5 });
+    expect(all.data.length).toBeLessThanOrEqual(5);
+    expect(all.totalPages).toBeGreaterThanOrEqual(1);
+  });
 });

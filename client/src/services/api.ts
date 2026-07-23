@@ -249,8 +249,15 @@ export const api = {
 
   // ─── Accounting ─────────────────────────────────────────
 
-  getAccounts: (companyId: number) =>
-    request<Account[]>(`/accounting/accounts?companyId=${companyId}`),
+  getAccounts: (companyId: number, params?: { query?: string; category?: number; activeOnly?: boolean; page?: number; pageSize?: number }) => {
+    let path = `/accounting/accounts?companyId=${companyId}`;
+    if (params?.query) path += `&query=${encodeURIComponent(params.query)}`;
+    if (params?.category !== undefined) path += `&category=${params.category}`;
+    if (params?.activeOnly !== undefined) path += `&activeOnly=${params.activeOnly}`;
+    if (params?.page !== undefined) path += `&page=${params.page}`;
+    if (params?.pageSize !== undefined) path += `&pageSize=${params.pageSize}`;
+    return request<any>(path);
+  },
   getAccount: (id: number) =>
     request<Account>(`/accounting/accounts/${id}`),
   createAccount: (data: Partial<Account>) =>
@@ -265,6 +272,15 @@ export const api = {
     }),
   deleteAccount: (id: number) =>
     request<void>(`/accounting/accounts/${id}`, { method: 'DELETE' }),
+  deactivateAccount: (id: number, reason?: string) =>
+    request<Account>(`/accounting/accounts/${id}/deactivate`, {
+      method: 'PATCH',
+      body: JSON.stringify({ reason }),
+    }),
+  reactivateAccount: (id: number) =>
+    request<Account>(`/accounting/accounts/${id}/reactivate`, {
+      method: 'PATCH',
+    }),
   seedAccounts: (companyId: number) =>
     request<Account[]>('/accounting/accounts/seed', {
       method: 'POST',
@@ -310,10 +326,12 @@ export const api = {
 };
 
 // Standalone exports for direct imports
-export function getAccounts(companyId: number) { return api.getAccounts(companyId); }
+export function getAccounts(companyId: number, params?: { query?: string; category?: number; activeOnly?: boolean; page?: number; pageSize?: number }) { return api.getAccounts(companyId, params); }
 export function createAccount(data: any) { return api.createAccount(data); }
 export function updateAccount(id: number, data: any) { return api.updateAccount(id, data); }
 export function deleteAccount(id: number) { return api.deleteAccount(id); }
+export function deactivateAccount(id: number, reason?: string) { return api.deactivateAccount(id, reason); }
+export function reactivateAccount(id: number) { return api.reactivateAccount(id); }
 export function seedAccounts(companyId: number) { return api.seedAccounts(companyId); }
 export function getJournalEntries(companyId: number) { return api.getJournalEntries(companyId); }
 export function createJournalEntry(data: any) { return api.createJournalEntry(data); }
