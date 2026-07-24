@@ -9,6 +9,6 @@ export async function createNestApp() {
   app.setGlobalPrefix('api', { exclude: ['/', 'metrics'] });
   app.enableCors();
   app.useGlobalFilters(app.get(HttpExceptionFilter));
-
+  app.enableShutdownHooks();
   return app;
 }

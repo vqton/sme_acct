@@ -1,91 +1,67 @@
-import { useState, useEffect } from 'react';
-import { Table, Select, App } from 'antd';
-import { getTrialBalance, getFiscalPeriods } from '../services/api';
+import { useState, useEffect } from "react";
+import { api } from "@/services/api";
+import { useAuth } from "@/hooks/useAuth";
+import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function TrialBalancePage() {
+  const { companyId } = useAuth();
   const [periods, setPeriods] = useState<any[]>([]);
-  const [selectedPeriod, setSelectedPeriod] = useState<number | undefined>(undefined);
-  const [balances, setBalances] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const { message } = App.useApp();
-  const companyId = Number(localStorage.getItem('currentCompanyId'));
+  const [periodId, setPeriodId] = useState<string>("");
+  const [data, setData] = useState<any[]>([]);
 
   useEffect(() => {
-    if (!companyId) return;
-    getFiscalPeriods(companyId).then((data) => {
-      setPeriods(data);
-    }).catch(() => {});
+    if (companyId) api.getFiscalPeriods(companyId).then(setPeriods);
   }, [companyId]);
 
   useEffect(() => {
-    if (!companyId || !selectedPeriod) return;
-    setLoading(true);
-    getTrialBalance(companyId, selectedPeriod)
-      .then(setBalances)
-      .catch((e) => message.error(e.message))
-      .finally(() => setLoading(false));
-  }, [companyId, selectedPeriod]);
+    if (periodId && companyId) {
+      api.getTrialBalance(companyId, Number(periodId)).then(setData);
+    }
+  }, [periodId, companyId]);
 
-  const totalOpeningDebit = balances.reduce((s, b) => s + b.openingDebit, 0);
-  const totalOpeningCredit = balances.reduce((s, b) => s + b.openingCredit, 0);
-  const totalPeriodDebit = balances.reduce((s, b) => s + b.periodDebit, 0);
-  const totalPeriodCredit = balances.reduce((s, b) => s + b.periodCredit, 0);
-  const totalClosingDebit = balances.reduce((s, b) => s + b.closingDebit, 0);
-  const totalClosingCredit = balances.reduce((s, b) => s + b.closingCredit, 0);
-
-  const columns = [
-    { title: 'Số TK', dataIndex: 'accountNumber', key: 'accountNumber', width: 100 },
-    { title: 'Dư Nợ ĐK', dataIndex: 'openingDebit', key: 'openingDebit', width: 130, align: 'right' as const,
-      render: (v: number) => v?.toLocaleString(),
-    },
-    { title: 'Dư Có ĐK', dataIndex: 'openingCredit', key: 'openingCredit', width: 130, align: 'right' as const,
-      render: (v: number) => v?.toLocaleString(),
-    },
-    { title: 'PS Nợ', dataIndex: 'periodDebit', key: 'periodDebit', width: 130, align: 'right' as const,
-      render: (v: number) => v?.toLocaleString(),
-    },
-    { title: 'PS Có', dataIndex: 'periodCredit', key: 'periodCredit', width: 130, align: 'right' as const,
-      render: (v: number) => v?.toLocaleString(),
-    },
-    { title: 'Dư Nợ CK', dataIndex: 'closingDebit', key: 'closingDebit', width: 130, align: 'right' as const,
-      render: (v: number) => <strong>{v?.toLocaleString()}</strong>,
-    },
-    { title: 'Dư Có CK', dataIndex: 'closingCredit', key: 'closingCredit', width: 130, align: 'right' as const,
-      render: (v: number) => <strong>{v?.toLocaleString()}</strong>,
-    },
-  ];
+  const totalDebit = data.reduce((s, r: any) => s + (r.debitBalance || 0), 0);
+  const totalCredit = data.reduce((s, r: any) => s + (r.creditBalance || 0), 0);
 
   return (
-    <div>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 style={{ margin: 0 }}>Bảng cân đối tài khoản</h2>
-        <Select
-          style={{ width: 200 }}
-          value={selectedPeriod || undefined}
-          onChange={setSelectedPeriod}
-          options={periods.map((p) => ({ value: p.id, label: p.periodName }))}
-          placeholder="Chọn kỳ"
-        />
-      </div>
-      <Table
-        dataSource={balances}
-        columns={columns}
-        rowKey="accountId"
-        loading={loading}
-        size="small"
-        scroll={{ x: 900 }}
-        summary={() => (
-          <Table.Summary.Row>
-            <Table.Summary.Cell index={0}><strong>Tổng cộng</strong></Table.Summary.Cell>
-            <Table.Summary.Cell index={1} align="right"><strong>{totalOpeningDebit.toLocaleString()}</strong></Table.Summary.Cell>
-            <Table.Summary.Cell index={2} align="right"><strong>{totalOpeningCredit.toLocaleString()}</strong></Table.Summary.Cell>
-            <Table.Summary.Cell index={3} align="right"><strong>{totalPeriodDebit.toLocaleString()}</strong></Table.Summary.Cell>
-            <Table.Summary.Cell index={4} align="right"><strong>{totalPeriodCredit.toLocaleString()}</strong></Table.Summary.Cell>
-            <Table.Summary.Cell index={5} align="right"><strong>{totalClosingDebit.toLocaleString()}</strong></Table.Summary.Cell>
-            <Table.Summary.Cell index={6} align="right"><strong>{totalClosingCredit.toLocaleString()}</strong></Table.Summary.Cell>
-          </Table.Summary.Row>
-        )}
-      />
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">Bảng cân đối phát sinh</h1>
+      <Select value={periodId} onValueChange={setPeriodId}>
+        <SelectTrigger className="w-48"><SelectValue placeholder="Kỳ kế toán" /></SelectTrigger>
+        <SelectContent>
+          {periods.map((p: any) => <SelectItem key={p.id} value={String(p.id)}>{p.year}/{p.month}</SelectItem>)}
+        </SelectContent>
+      </Select>
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Mã TK</TableHead>
+                <TableHead>Tên TK</TableHead>
+                <TableHead className="text-right">Dư nợ</TableHead>
+                <TableHead className="text-right">Dư có</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.map((r: any, i: number) => (
+                <TableRow key={i}>
+                  <TableCell className="font-mono">{r.accountCode}</TableCell>
+                  <TableCell>{r.accountName}</TableCell>
+                  <TableCell className="text-right">{r.debitBalance?.toLocaleString()}</TableCell>
+                  <TableCell className="text-right">{r.creditBalance?.toLocaleString()}</TableCell>
+                </TableRow>
+              ))}
+              <TableRow className="font-bold border-t-2">
+                <TableCell colSpan={2}>Tổng cộng</TableCell>
+                <TableCell className="text-right">{totalDebit.toLocaleString()}</TableCell>
+                <TableCell className="text-right">{totalCredit.toLocaleString()}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import type {
   Account, JournalEntry, FiscalPeriod, LedgerEntry, AccountBalance,
   UserListItem, UserGroup, Department, UserDepartment,
   TaxType, TaxPeriod, TaxDeclaration, TaxCalendarEvent, AutoFillPreview, AuditTrailEntry, VatInputLine,
+  OpeningBalanceHeader, OpeningBalanceLine, CreateOBLineInput,
 } from '../types';
 
 const BASE = '/api';
@@ -28,11 +29,21 @@ export function clearTokens(): void {
   localStorage.removeItem('token');
   localStorage.removeItem('refreshToken');
   localStorage.removeItem('user');
+  localStorage.removeItem('companyId');
 }
 
 export function getUser(): { id: number; username: string; fullName: string } | null {
   const raw = localStorage.getItem('user');
   return raw ? JSON.parse(raw) : null;
+}
+
+export function getCompanyId(): number | null {
+  const raw = localStorage.getItem('companyId');
+  return raw ? Number(raw) : null;
+}
+
+function setCompanyId(id: number): void {
+  localStorage.setItem('companyId', String(id));
 }
 
 function setUser(user: { id: number; username: string; fullName: string }): void {
@@ -143,6 +154,7 @@ export const api = {
     setToken(data.token!);
     setRefreshToken(data.refreshToken);
     setUser(data.user);
+    setCompanyId(companyId);
     return data;
   },
 
@@ -445,6 +457,51 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ asOfDate, periodId }),
     }),
+
+  // ─── Opening Balance ──────────────────────────────────
+
+  createOB: (data: {
+    companyId: number; periodId: number; entryDate: string; userId: number;
+    lines: CreateOBLineInput[]; description?: string; importSource?: string;
+  }) => request<{ header: OpeningBalanceHeader; lines: OpeningBalanceLine[] }>('/opening-balance', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+
+  getOBDetail: (id: number) =>
+    request<{ header: OpeningBalanceHeader; lines: OpeningBalanceLine[] }>(`/opening-balance/${id}`),
+
+  listOBByCompany: (companyId: number) =>
+    request<OpeningBalanceHeader[]>(`/opening-balance/company/${companyId}`),
+
+  listOBByPeriod: (companyId: number, periodId: number) =>
+    request<OpeningBalanceHeader[]>(`/opening-balance/company/${companyId}/period/${periodId}`),
+
+  lockOB: (id: number, userId: number) =>
+    request<OpeningBalanceHeader>(`/opening-balance/${id}/lock`, {
+      method: 'POST', body: JSON.stringify({ userId }),
+    }),
+
+  unlockOB: (id: number, userId: number, reason?: string) =>
+    request<OpeningBalanceHeader>(`/opening-balance/${id}/unlock`, {
+      method: 'POST', body: JSON.stringify({ userId, reason }),
+    }),
+
+  submitOB: (id: number) =>
+    request<OpeningBalanceHeader>(`/opening-balance/${id}/submit`, { method: 'POST' }),
+
+  approveOB: (id: number, userId: number) =>
+    request<OpeningBalanceHeader>(`/opening-balance/${id}/approve`, {
+      method: 'POST', body: JSON.stringify({ userId }),
+    }),
+
+  rejectOB: (id: number, userId: number, reason: string) =>
+    request<OpeningBalanceHeader>(`/opening-balance/${id}/reject`, {
+      method: 'POST', body: JSON.stringify({ userId, reason }),
+    }),
+
+  deleteOB: (id: number) =>
+    request<void>(`/opening-balance/${id}`, { method: 'DELETE' }),
 };
 
 // Standalone exports for direct imports

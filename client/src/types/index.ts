@@ -479,3 +479,88 @@ export interface AuditTrailEntry {
   changedAt: string;
   comment?: string;
 }
+
+// ─── Opening Balance Types ──────────────────────────────────
+
+export enum OBStatus {
+  Draft = 0,
+  PendingApproval = 1,
+  Approved = 2,
+  Locked = 3,
+  PeriodClosed = 4,
+}
+
+export enum OBImportSource {
+  Manual = 'manual',
+  Excel = 'excel',
+  CarryForward = 'carry_forward',
+  TT99Conversion = 'tt99_conversion',
+}
+
+export interface OpeningBalanceHeader {
+  id: number;
+  companyId: number;
+  periodId: number;
+  batchNumber: string;
+  entryDate: string;
+  description?: string;
+  totalDebit: number;
+  totalCredit: number;
+  status: OBStatus;
+  importSource: OBImportSource;
+  sourceDbName?: string;
+  sourceDbVersion?: string;
+  isLocked: boolean;
+  lockedAt?: string;
+  lockedByUserId?: number;
+  createdByUserId: number;
+  createdAt: string;
+  updatedAt?: string;
+  approvedByUserId?: number;
+  approvedAt?: string;
+  rejectionReason?: string;
+}
+
+export interface OpeningBalanceLine {
+  id: number;
+  headerId: number;
+  companyId: number;
+  accountId: number;
+  accountNumber: string;
+  accountName: string;
+  debitAmount: number;
+  creditAmount: number;
+  foreignCurrencyCode?: string;
+  foreignDebitAmount?: number;
+  foreignCreditAmount?: number;
+  exchangeRate?: number;
+  bankAccountId?: number;
+  customerId?: number;
+  supplierId?: number;
+  employeeId?: number;
+  inventoryItemId?: number;
+  fixedAssetId?: number;
+  toolId?: number;
+  prepaidExpenseId?: number;
+  createdAt: string;
+}
+
+export interface CreateOBLineInput {
+  accountId: number;
+  accountNumber: string;
+  accountName: string;
+  debitAmount?: number;
+  creditAmount?: number;
+  foreignCurrencyCode?: string;
+  foreignDebitAmount?: number;
+  foreignCreditAmount?: number;
+  exchangeRate?: number;
+  bankAccountId?: number;
+  customerId?: number;
+  supplierId?: number;
+  employeeId?: number;
+  inventoryItemId?: number;
+  fixedAssetId?: number;
+  toolId?: number;
+  prepaidExpenseId?: number;
+}

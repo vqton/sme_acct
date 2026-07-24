@@ -1,41 +1,56 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ConfigProvider, App as AntApp, theme } from 'antd';
-import { AuthProvider, useAuth } from './hooks/useAuth';
-import { I18nProvider } from './i18n';
-import ProtectedRoute from './components/ProtectedRoute';
-import CompanySelector from './components/CompanySelector';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import TwoFactorSetupPage from './pages/TwoFactorSetupPage';
-import TwoFactorVerifyPage from './pages/TwoFactorVerifyPage';
-import DashboardPage from './pages/DashboardPage';
-import CompaniesPage from './pages/CompaniesPage';
-import CompanyDetailPage from './pages/CompanyDetailPage';
-import CompanyFormPage from './pages/CompanyFormPage';
-import SessionsPage from './pages/SessionsPage';
-import Layout from './components/Layout';
-import ChartOfAccountsPage from './pages/ChartOfAccountsPage';
-import JournalEntryListPage from './pages/JournalEntryListPage';
-import JournalEntryFormPage from './pages/JournalEntryFormPage';
-import LedgerPage from './pages/LedgerPage';
-import TrialBalancePage from './pages/TrialBalancePage';
-import FinancialStatementPage from './pages/FinancialStatementPage';
-import PeriodClosePage from './pages/PeriodClosePage';
-import UsersPage from './pages/UsersPage';
-import UserDetailPage from './pages/UserDetailPage';
-import UserFormPage from './pages/UserFormPage';
-import UserGroupsPage from './pages/UserGroupsPage';
-import DepartmentsPage from './pages/DepartmentsPage';
-import DepartmentDetailPage from './pages/DepartmentDetailPage';
-import ModuleStub from './pages/ModuleStub';
-import TaxListPage from './pages/TaxListPage';
-import TaxDeclarationFormPage from './pages/TaxDeclarationFormPage';
-import TaxDeclarationDetailPage from './pages/TaxDeclarationDetailPage';
-import TaxCalendarPage from './pages/TaxCalendarPage';
-import TaxPeriodManagementPage from './pages/TaxPeriodManagementPage';
+import { Routes, Route } from "react-router-dom";
+import { useAuth } from "./hooks/useAuth";
+import ProtectedRoute from "./components/ProtectedRoute";
+import Layout from "./components/Layout";
+import CompanySelector from "./components/CompanySelector";
 
-function AppRoutes() {
+// Auth pages
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import TwoFactorVerifyPage from "./pages/TwoFactorVerifyPage";
+import TwoFactorSetupPage from "./pages/TwoFactorSetupPage";
+
+// Core pages
+import DashboardPage from "./pages/DashboardPage";
+import CompaniesPage from "./pages/CompaniesPage";
+import CompanyFormPage from "./pages/CompanyFormPage";
+import CompanyDetailPage from "./pages/CompanyDetailPage";
+import SessionsPage from "./pages/SessionsPage";
+
+// Accounting pages
+import ChartOfAccountsPage from "./pages/ChartOfAccountsPage";
+import JournalEntryListPage from "./pages/JournalEntryListPage";
+import JournalEntryFormPage from "./pages/JournalEntryFormPage";
+import LedgerPage from "./pages/LedgerPage";
+import TrialBalancePage from "./pages/TrialBalancePage";
+import FinancialStatementPage from "./pages/FinancialStatementPage";
+import PeriodClosePage from "./pages/PeriodClosePage";
+import OpeningBalanceListPage from "./pages/OpeningBalanceListPage";
+import OpeningBalanceFormPage from "./pages/OpeningBalanceFormPage";
+import OpeningBalanceDetailPage from "./pages/OpeningBalanceDetailPage";
+
+// Tax pages
+import TaxListPage from "./pages/TaxListPage";
+import TaxDeclarationFormPage from "./pages/TaxDeclarationFormPage";
+import TaxDeclarationDetailPage from "./pages/TaxDeclarationDetailPage";
+import TaxCalendarPage from "./pages/TaxCalendarPage";
+import TaxPeriodManagementPage from "./pages/TaxPeriodManagementPage";
+
+// User management pages
+import UsersPage from "./pages/UsersPage";
+import UserFormPage from "./pages/UserFormPage";
+import UserDetailPage from "./pages/UserDetailPage";
+import UserGroupsPage from "./pages/UserGroupsPage";
+
+// Department pages
+import DepartmentsPage from "./pages/DepartmentsPage";
+import DepartmentDetailPage from "./pages/DepartmentDetailPage";
+
+// Stub
+import ModuleStub from "./pages/ModuleStub";
+
+export default function App() {
   const { pendingCompanies } = useAuth();
 
   if (pendingCompanies.length > 0) {
@@ -44,10 +59,13 @@ function AppRoutes() {
 
   return (
     <Routes>
+      {/* Public routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/2fa/verify" element={<TwoFactorVerifyPage />} />
+
+      {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
           <Route path="/" element={<DashboardPage />} />
@@ -58,42 +76,47 @@ function AppRoutes() {
           <Route path="/sessions" element={<SessionsPage />} />
           <Route path="/2fa/setup" element={<TwoFactorSetupPage />} />
 
-          {/* Accounting Core */}
+          {/* Accounting */}
           <Route path="/accounting/accounts" element={<ChartOfAccountsPage />} />
           <Route path="/accounting/journal-entries" element={<JournalEntryListPage />} />
           <Route path="/accounting/journal-entries/new" element={<JournalEntryFormPage />} />
           <Route path="/accounting/ledger" element={<LedgerPage />} />
           <Route path="/accounting/trial-balance" element={<TrialBalancePage />} />
+          <Route path="/accounting/reports" element={<FinancialStatementPage />} />
+          <Route path="/accounting/period-close" element={<PeriodClosePage />} />
+          <Route path="/accounting/opening-balance" element={<OpeningBalanceListPage />} />
+          <Route path="/accounting/opening-balance/new" element={<OpeningBalanceFormPage />} />
+          <Route path="/accounting/opening-balance/:id" element={<OpeningBalanceDetailPage />} />
 
-          {/* Stub modules — next version */}
+          {/* Stubs */}
           <Route path="/accounting/contacts" element={<ModuleStub name="Danh mục đối tượng" description="Quản lý khách hàng, nhà cung cấp" />} />
-          <Route path="/accounting/cash" element={<ModuleStub name="Sổ quỹ tiền mặt" description="Quản lý thu chi tiền mặt, phiếu thu, phiếu chi" />} />
-          <Route path="/accounting/bank" element={<ModuleStub name="Tiền gửi ngân hàng" description="Quản lý giao dịch ngân hàng, giấy báo Nợ/Có" />} />
-          <Route path="/accounting/purchasing" element={<ModuleStub name="Hóa đơn mua hàng" description="Quản lý hóa đơn mua hàng, chi phí" />} />
-          <Route path="/accounting/ap" element={<ModuleStub name="Công nợ phải trả" description="Quản lý công nợ nhà cung cấp" />} />
-          <Route path="/accounting/sales" element={<ModuleStub name="Hóa đơn bán hàng" description="Quản lý hóa đơn bán hàng, doanh thu" />} />
-          <Route path="/accounting/ar" element={<ModuleStub name="Công nợ phải thu" description="Quản lý công nợ khách hàng, đối chiếu công nợ" />} />
-          <Route path="/accounting/inventory" element={<ModuleStub name="Hàng tồn kho" description="Quản lý nhập xuất tồn, định giá hàng tồn kho" />} />
-          <Route path="/accounting/fa" element={<ModuleStub name="Tài sản cố định" description="Quản lý TSCĐ, tính khấu hao" />} />
-          <Route path="/accounting/ccdc" element={<ModuleStub name="Công cụ dụng cụ" description="Quản lý CCDC, phân bổ" />} />
+          <Route path="/accounting/cash" element={<ModuleStub name="Sổ quỹ tiền mặt" description="Quản lý thu chi tiền mặt" />} />
+          <Route path="/accounting/bank" element={<ModuleStub name="Tiền gửi ngân hàng" description="Quản lý giao dịch ngân hàng" />} />
+          <Route path="/accounting/purchasing" element={<ModuleStub name="Hóa đơn mua hàng" description="Quản lý hóa đơn mua hàng" />} />
+          <Route path="/accounting/ap" element={<ModuleStub name="Công nợ phải trả" description="Quản lý công nợ NCC" />} />
+          <Route path="/accounting/sales" element={<ModuleStub name="Hóa đơn bán hàng" description="Quản lý hóa đơn bán hàng" />} />
+          <Route path="/accounting/ar" element={<ModuleStub name="Công nợ phải thu" description="Quản lý công nợ khách hàng" />} />
+          <Route path="/accounting/inventory" element={<ModuleStub name="Hàng tồn kho" description="Quản lý nhập xuất tồn" />} />
+          <Route path="/accounting/fa" element={<ModuleStub name="Tài sản cố định" description="Quản lý TSCĐ, khấu hao" />} />
+          <Route path="/accounting/ccdc" element={<ModuleStub name="Công cụ dụng cụ" description="Quản lý CCDC" />} />
+          <Route path="/accounting/einvoice" element={<ModuleStub name="Hóa đơn điện tử" description="Quản lý HĐĐT" />} />
+          <Route path="/accounting/costing" element={<ModuleStub name="Giá thành" description="Tính giá thành" />} />
+          <Route path="/accounting/payroll" element={<ModuleStub name="Tiền lương" description="Quản lý bảng lương" />} />
+          <Route path="/accounting/recurring" element={<ModuleStub name="Định kỳ" description="Bút toán định kỳ" />} />
+          <Route path="/accounting/system" element={<ModuleStub name="Tham số hệ thống" description="Cấu hình hệ thống" />} />
+
+          {/* Tax */}
           <Route path="/accounting/tax" element={<TaxListPage />} />
           <Route path="/accounting/tax/new" element={<TaxDeclarationFormPage />} />
           <Route path="/accounting/tax/:id" element={<TaxDeclarationDetailPage />} />
           <Route path="/accounting/tax/calendar" element={<TaxCalendarPage />} />
           <Route path="/accounting/tax/periods" element={<TaxPeriodManagementPage />} />
-          <Route path="/accounting/einvoice" element={<ModuleStub name="Hóa đơn điện tử" description="Quản lý hóa đơn điện tử, ký số, phát hành" />} />
-          <Route path="/accounting/costing" element={<ModuleStub name="Giá thành" description="Tính giá thành sản phẩm, dịch vụ" />} />
-          <Route path="/accounting/payroll" element={<ModuleStub name="Tiền lương" description="Quản lý bảng lương, BHXH, BHYT, BHTN" />} />
-          <Route path="/accounting/reports" element={<FinancialStatementPage />} />
-          <Route path="/accounting/period-close" element={<PeriodClosePage />} />
-          <Route path="/accounting/recurring" element={<ModuleStub name="Định kỳ" description="Quản lý bút toán định kỳ, khấu hao, phân bổ" />} />
-          <Route path="/accounting/system" element={<ModuleStub name="Tham số hệ thống" description="Cấu hình hệ thống, tham số kế toán" />} />
 
-          {/* Departments (company-scoped) */}
+          {/* Departments */}
           <Route path="/companies/:companyId/departments" element={<DepartmentsPage />} />
           <Route path="/companies/:companyId/departments/:id" element={<DepartmentDetailPage />} />
 
-          {/* User Management */}
+          {/* Users */}
           <Route path="/users" element={<UsersPage />} />
           <Route path="/users/new" element={<UserFormPage />} />
           <Route path="/users/:id" element={<UserDetailPage />} />
@@ -102,30 +125,5 @@ function AppRoutes() {
         </Route>
       </Route>
     </Routes>
-  );
-}
-
-export default function App() {
-  return (
-    <ConfigProvider
-      theme={{
-        algorithm: theme.defaultAlgorithm,
-        token: {
-          colorPrimary: '#003366',
-          borderRadius: 6,
-          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-        },
-      }}
-    >
-      <AntApp>
-        <I18nProvider>
-          <AuthProvider>
-            <BrowserRouter>
-              <AppRoutes />
-            </BrowserRouter>
-          </AuthProvider>
-        </I18nProvider>
-      </AntApp>
-    </ConfigProvider>
   );
 }

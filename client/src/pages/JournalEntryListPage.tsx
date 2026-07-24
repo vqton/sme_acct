@@ -1,121 +1,84 @@
-import { useState, useEffect } from 'react';
-import { Table, Button, Space, Tag, App, Modal } from 'antd';
-import { PlusOutlined, CheckCircleOutlined, SwapOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
-import { getJournalEntries, postJournalEntry, reverseJournalEntry, deleteJournalEntry } from '../services/api';
-
-const entryTypeLabels: Record<number, string> = {
-  1: 'Phiếu thu', 2: 'Phiếu chi', 3: 'Báo Có', 4: 'Báo Nợ',
-  5: 'Mua hàng', 6: 'Bán hàng', 7: 'KH TSCĐ', 8: 'Phân bổ CCDC',
-  9: 'Tổng hợp', 10: 'Điều chỉnh', 11: 'Kết chuyển', 12: 'Khóa sổ', 99: 'Khác',
-};
-
-const entryTypeColors: Record<number, string> = {
-  1: 'green', 2: 'red', 3: 'blue', 4: 'orange', 5: 'purple',
-  6: 'cyan', 9: 'geekblue', 10: 'gold', 11: 'magenta',
-};
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { api } from "@/services/api";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Send, RotateCcw, Trash2 } from "lucide-react";
 
 export default function JournalEntryListPage() {
+  const { companyId } = useAuth();
   const [entries, setEntries] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { message } = App.useApp();
-  const companyId = Number(localStorage.getItem('currentCompanyId'));
 
-  const fetchEntries = async () => {
-    if (!companyId) return;
-    setLoading(true);
-    try {
-      setEntries(await getJournalEntries(companyId));
-    } finally {
-      setLoading(false);
-    }
+  const load = () => {
+    if (companyId) api.getJournalEntries(companyId).then(setEntries).finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchEntries(); }, [companyId]);
+  useEffect(() => { load(); }, [companyId]);
 
   const handlePost = async (id: number) => {
-    try {
-      await postJournalEntry(id);
-      message.success('Đã ghi sổ');
-      fetchEntries();
-    } catch (e: any) {
-      message.error(e.message);
-    }
+    await api.postJournalEntry(id);
+    load();
   };
 
-  const handleReverse = (id: number) => {
-    Modal.confirm({
-      title: 'Đảo ngược chứng từ?',
-      content: 'Sẽ tạo chứng từ đảo ngược với số tiền đối ứng.',
-      onOk: async () => {
-        await reverseJournalEntry(id);
-        message.success('Đã đảo ngược');
-        fetchEntries();
-      },
-    });
+  const handleReverse = async (id: number) => {
+    if (!confirm("Đảo bút toán này?")) return;
+    await api.reverseJournalEntry(id);
+    load();
   };
 
-  const handleDelete = (id: number) => {
-    Modal.confirm({
-      title: 'Xóa chứng từ?',
-      content: 'Chỉ xóa được chứng từ chưa ghi sổ.',
-      onOk: async () => {
-        await deleteJournalEntry(id);
-        message.success('Đã xóa');
-        fetchEntries();
-      },
-    });
+  const handleDelete = async (id: number) => {
+    if (!confirm("Xóa bút toán?")) return;
+    await api.deleteJournalEntry(id);
+    load();
   };
-
-  const columns = [
-    { title: 'Số CT', dataIndex: 'entryNumber', key: 'entryNumber', width: 150 },
-    { title: 'Ngày', dataIndex: 'entryDate', key: 'entryDate', width: 110 },
-    { title: 'Loại', dataIndex: 'entryType', key: 'entryType', width: 100,
-      render: (v: number) => <Tag color={entryTypeColors[v]}>{entryTypeLabels[v] || v}</Tag>,
-    },
-    { title: 'Diễn giải', dataIndex: 'description', key: 'description', ellipsis: true },
-    { title: 'PS Nợ', dataIndex: 'totalDebit', key: 'totalDebit', width: 130, align: 'right' as const,
-      render: (v: number) => v?.toLocaleString(),
-    },
-    { title: 'PS Có', dataIndex: 'totalCredit', key: 'totalCredit', width: 130, align: 'right' as const,
-      render: (v: number) => v?.toLocaleString(),
-    },
-    { title: 'Trạng thái', key: 'status', width: 110,
-      render: (_: any, r: any) => r.isReversed
-        ? <Tag color="default">Đã đảo ngược</Tag>
-        : r.isPosted
-        ? <Tag color="success">Đã ghi sổ</Tag>
-        : <Tag color="warning">Chưa ghi sổ</Tag>,
-    },
-    { title: '', key: 'actions', width: 160,
-      render: (_: any, r: any) => (
-        <Space>
-          <Button type="link" icon={<EyeOutlined />} onClick={() => navigate(`/accounting/journal-entries/${r.id}`)} />
-          {!r.isPosted && (
-            <>
-              <Button type="link" icon={<CheckCircleOutlined />} onClick={() => handlePost(r.id)} />
-              <Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDelete(r.id)} />
-            </>
-          )}
-          {r.isPosted && !r.isReversed && (
-            <Button type="link" icon={<SwapOutlined />} onClick={() => handleReverse(r.id)} />
-          )}
-        </Space>
-      ),
-    },
-  ];
 
   return (
-    <div>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 style={{ margin: 0 }}>Chứng từ kế toán</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/accounting/journal-entries/new')}>
-          Thêm chứng từ
-        </Button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Bút toán</h1>
+        <Button onClick={() => navigate("/accounting/journal-entries/new")}><Plus className="mr-2 h-4 w-4" />Thêm mới</Button>
       </div>
-      <Table dataSource={entries} columns={columns} rowKey="id" loading={loading}
-        size="small" scroll={{ x: 1000 }} />
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Số CT</TableHead>
+                <TableHead>Ngày</TableHead>
+                <TableHead>Diễn giải</TableHead>
+                <TableHead>Tổng nợ</TableHead>
+                <TableHead>Tổng có</TableHead>
+                <TableHead>Trạng thái</TableHead>
+                <TableHead></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {entries.map((e: any) => (
+                <TableRow key={e.id}>
+                  <TableCell className="font-mono">{e.referenceNumber}</TableCell>
+                  <TableCell>{new Date(e.entryDate).toLocaleDateString("vi-VN")}</TableCell>
+                  <TableCell className="max-w-xs truncate">{e.description}</TableCell>
+                  <TableCell className="text-right">{e.totalDebit?.toLocaleString()}</TableCell>
+                  <TableCell className="text-right">{e.totalCredit?.toLocaleString()}</TableCell>
+                  <TableCell><Badge variant={e.status === "Posted" ? "default" : "secondary"}>{e.status}</Badge></TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      {e.status === "Draft" && <Button variant="ghost" size="icon" onClick={() => handlePost(e.id)}><Send className="h-4 w-4" /></Button>}
+                      {e.status === "Posted" && <Button variant="ghost" size="icon" onClick={() => handleReverse(e.id)}><RotateCcw className="h-4 w-4" /></Button>}
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(e.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

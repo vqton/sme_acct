@@ -1,24 +1,23 @@
-import { Card, Typography, Tag } from 'antd';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Construction } from "lucide-react";
 
 interface Props {
   name: string;
-  description?: string;
+  description: string;
 }
 
 export default function ModuleStub({ name, description }: Props) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-      <Card style={{ maxWidth: 500, textAlign: 'center' }}>
-        <div style={{ fontSize: 48, marginBottom: 16, color: '#d9d9d9' }}>
-          🏗️
-        </div>
-        <Typography.Title level={3}>{name}</Typography.Title>
-        <Tag color="orange">Sẽ phát triển trong phiên bản tiếp theo</Tag>
-        {description && (
-          <Typography.Paragraph type="secondary" style={{ marginTop: 12 }}>
-            {description}
-          </Typography.Paragraph>
-        )}
+    <div className="flex items-center justify-center min-h-[50vh]">
+      <Card className="w-full max-w-md text-center">
+        <CardHeader>
+          <Construction className="mx-auto h-12 w-12 text-muted-foreground" />
+          <CardTitle className="mt-2">{name}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">{description}</p>
+          <p className="mt-4 text-sm text-muted-foreground">模块正在开发中...</p>
+        </CardContent>
       </Card>
     </div>
   );

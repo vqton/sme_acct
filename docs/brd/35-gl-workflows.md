@@ -1,53 +1,56 @@
 # GL Module — Workflows & Processes
 
-**Version:** 1.0
-**Date:** 2026-07-23
+**Version:** 2.0
+**Date:** 2026-07-24
 
 ---
 
 ## Workflow W-G01: Monthly GL Close Cycle
+
+**Implementation Status:** ⚠️ PARTIAL. Journal entry → posting → reversal cycle works. Auto-steps (depreciation, prepayment, FX) and close checklist UI missing.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    MONTHLY CLOSE CYCLE                          │
 └─────────────────────────────────────────────────────────────────┘
 
-Day 1-5:   Sub-ledger posting
-           ├── Cash receipts/payments posted to GL
-           ├── Bank transactions posted to GL
-           ├── AR/AP invoices posted to GL
-           ├── Inventory movements posted to GL
-           └── Payroll posted to GL
+Day 1-5:   Sub-ledger posting         ❌ All manual — no auto-posting
+            ├── Cash receipts/payments
+            ├── Bank transactions
+            ├── AR/AP invoices
+            ├── Inventory movements
+            └── Payroll
 
-Day 5-10:  Automated entries
-           ├── Depreciation run
-           ├── Prepayment amortization
-           ├── Accrued expenses
-           └── FX revaluation (if multi-currency)
+Day 5-10:  Automated entries           ❌ Missing
+            ├── Depreciation run
+            ├── Prepayment amortization
+            ├── Accrued expenses
+            └── FX revaluation
 
-Day 10-15: Review & adjustment
-           ├── Trial balance review
-           ├── Adjusting entries (if needed)
-           ├── Review draft entries
-           └── Chief accountant approval
+Day 10-15: Review & adjustment         ✅ Supported
+            ├── Trial balance review     ✅ (TrialBalancePage)
+            ├── Adjusting entries        ✅ (JE create/post)
+            ├── Review draft entries     ✅ (JournalEntryListPage)
+            └── Chief accountant approval ⚠️ (user-manual)
 
-Day 15-20: Close period
-           ├── Verify trial balance (debit = credit)
-           ├── Verify BCTC (if month-end is quarter)
-           ├── Close fiscal period
-           ├── Carry forward balances
-           └── Archive period data
+Day 15-20: Close period                ⚠️ Backend exists, no UI
+            ├── Verify trial balance     ✅ (enforced in closeFiscalPeriod)
+            ├── Close fiscal period      ✅ (backend)
+            ├── Carry forward balances   ✅ (carryForwardBalances)
+            └── Archive period data      ❌ Missing
 
-Day 20-25: Reporting
-           ├── Generate BCTC (quarterly/yearly)
-           ├── Generate management reports
-           ├── Tax declaration preparation
-           └── Submit tax returns (if applicable)
+Day 20-25: Reporting                   ✅ Partial
+            ├── Generate B01-DN/B02-DN   ✅ (FinancialStatementPage)
+            ├── B03-DN/B09-DN            ❌ Missing
+            ├── Management reports       ❌ Missing
+            └── Tax declaration          ❌ Missing
 ```
 
 ---
 
-## Workflow W-G02: Journal Entry Lifecycle
+## Workflow W-G02: Journal Entry Lifecycle ✅
+
+**Implementation Status:** ✅ FULLY BUILT. All states and transitions implemented.
 
 ```
                     ┌─────────────┐
@@ -88,7 +91,7 @@ States:
   DRAFT → POSTED → REVERSED
   DRAFT → DELETED
 
-Rules:
+Rules (all enforced):
 - Only DRAFT entries can be edited or deleted
 - Only POSTED entries can be reversed
 - REVERSED entries cannot be modified
@@ -99,53 +102,27 @@ Rules:
 
 ## Workflow W-G03: Year-End Closing Process
 
+**Implementation Status:** ⚠️ PARTIAL. TK 911 close and balance carry-forward exist. Annual BCTC and audit prep missing.
+
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                      YEAR-END CLOSING                               │
 └─────────────────────────────────────────────────────────────────────┘
 
-Step 1: Verify December period close
-        ├── All monthly periods Jan-Nov must be closed
-        └── December must have all entries posted
-
-Step 2: Run year-end adjustments
-        ├── Full year depreciation
-        ├── Full year prepayment amortization
-        ├── Inventory count adjustments
-        ├── Bad debt provision
-        └── FX revaluation (full year)
-
-Step 3: Calculate annual tax
-        ├── CIT provisional vs actual
-        ├── VAT reconciliation
-        └── PIT annual settlement
-
-Step 4: Close revenue/expense accounts (TK 911)
-        ├── Close revenue accounts → TK 911
-        ├── Close expense accounts → TK 911
-        └── Transfer TK 911 balance → TK 421 (retained earnings)
-
-Step 5: Generate annual BCTC
-        ├── B01-DN: Báo cáo tình hình tài chính
-        ├── B02-DN: Báo cáo KQHĐKD
-        ├── B03-DN: Báo cáo lưu chuyển tiền tệ
-        └── B09-DN: Thuyết minh BCTC
-
-Step 6: Audit preparation
-        ├── Export GL for auditor
-        ├── Export account balance confirmations
-        └── Generate supporting schedules
-
-Step 7: Lock fiscal year
-        ├── Close December period
-        ├── Lock all periods
-        ├── Open new fiscal year periods
-        └── Set opening balances for new year
+Step 1: Verify December period close    ✅ Supported
+Step 2: Run year-end adjustments        ❌ Auto-steps missing
+Step 3: Calculate annual tax            ❌ Missing
+Step 4: Close revenue/expense (TK 911)  ✅ Backend exists
+Step 5: Generate annual BCTC            ⚠️ B01/B02 ✅, B03/B09 ❌
+Step 6: Audit preparation               ❌ Missing
+Step 7: Lock fiscal year                ✅ Backend exists
 ```
 
 ---
 
 ## Workflow W-G04: Correction & Adjustment Process
+
+**Implementation Status:** ✅ BUILT for same-period corrections (reversal). Cross-year adjustment (TK 4211) is manual.
 
 ```
                     ┌─────────────────────┐
@@ -171,20 +148,19 @@ Step 7: Lock fiscal year
          └─────────┘     └─────────┘     └───────────┘
 
 Vietnamese practice:
-- Same period, same month: Red ink reversal (bút toán đảo đỏ) 
-  → negative amounts in original entry to net to zero, then create correct entry
-- Same period, different month: Create reversal entry + new correct entry
-- Previous period, same year: Adjusting entry in current period
-- Prior year: Adjustment to retained earnings (TK 4211)
+- Same period, same month: ✅ Reverse + re-post supported
+- Same period, different month: ✅ Reverse + new entry supported
+- Previous period, same year: ✅ Reverse + new entry supported
+- Prior year: ❌ TK 4211 adjustment not automated
 ```
 
 ---
 
-## Process P-G01: Sub-ledger to GL Posting
+## Process P-G01: Sub-ledger → GL Posting
+
+**Implementation Status:** ❌ NOT BUILT. GL posting API exists but no sub-ledger modules to call it.
 
 ```
-Sub-ledger modules produce transactions → GL integration service:
-
 Each sub-ledger defines "posting rules":
   Cash Receipt:    Dr Bank/Cash     Cr Revenue/AR
   Cash Payment:    Dr Expense/AP     Cr Bank/Cash
@@ -200,22 +176,19 @@ Integration pattern:
   4. GL posts entry, updates ledger balances
   5. GL returns journal entry ID to sub-ledger
   6. Sub-ledger stores journal entry reference
-
-For PROD: at minimum, a GL posting API must exist that:
-  - Accepts: companyId, entryDate, entryType, description, lines[]
-  - Validates: period open, accounts valid, balanced
-  - Returns: journal entry with ID
 ```
 
 ---
 
-## Process P-G02: Account Balance Calculation
+## Process P-G02: Account Balance Calculation ✅
+
+**Implementation Status:** ✅ BUILT in `calculateBalance()` and `postToLedger()`.
 
 ```
 Balance computation algorithm per account per period:
 
 1. Read closing balance from PREVIOUS period → opening balance for current period
-   - If first period: opening balances from company setup (opening_debit, opening_credit)
+   - If first period: opening balances from company setup
 
 2. Sum all ledger entries for current period:
    period_debit  = SUM(debit_amount)  WHERE period_id = current
@@ -224,7 +197,7 @@ Balance computation algorithm per account per period:
 3. Compute closing:
    If nature = DuNo:  closing = opening_debit - opening_credit + period_debit - period_credit
    If nature = DuCo:  closing = opening_credit - opening_debit + period_credit - period_debit
-   If nature = Lưỡng tính: closing_debit or closing_credit whichever applies per account balance sign
+   If nature = Lưỡng tính: closing_debit or closing_credit per sign
 
 4. Store in account_balances:
    closing_debit  = closing > 0 ? (nature=DuNo ? closing : 0) : 0

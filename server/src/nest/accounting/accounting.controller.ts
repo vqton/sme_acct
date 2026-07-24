@@ -9,7 +9,7 @@ import { Permissions } from '../common/guards/permissions.decorator.js';
 import { TenantGuard } from '../common/guards/tenant.guard.js';
 import { AccountCategory } from '../../domain/enums/AccountEnums.js';
 
-@Controller('accounts')
+@Controller('accounting/accounts')
 @UseGuards(AuthGuard, PermissionGuard, TenantGuard)
 export class AccountingController {
   constructor(@Inject(AccountingService) private readonly accountingService: AccountingService) {}

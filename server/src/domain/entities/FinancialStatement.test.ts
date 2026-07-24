@@ -4,6 +4,8 @@ import {
   resolveFormulaLines,
   getB01TTSMapping,
   getB02KQHDMapping,
+  getB03LCTTMapping,
+  generateCashFlowStatementLine,
   generateAllLines,
   FinancialStatementType,
 } from './FinancialStatement.js';
@@ -179,6 +181,102 @@ describe('FinancialStatement', () => {
 
       expect(result.type).toBe(FinancialStatementType.B02_DN);
       expect(result.lines.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('B03-DN (cash flow) mapping', () => {
+    it('returns mapping with operating, investing, financing sections', () => {
+      const rules = getB03LCTTMapping();
+      expect(rules.length).toBeGreaterThan(0);
+      const op = rules.find((r) => r.code === '20');
+      expect(op).toBeDefined();
+      expect(op!.name).toContain('HĐKD');
+      const inv = rules.find((r) => r.code === '30');
+      expect(inv).toBeDefined();
+      const fin = rules.find((r) => r.code === '40');
+      expect(fin).toBeDefined();
+    });
+
+    it('computes working capital change for AR decrease as cash inflow', () => {
+      const current = [makeBal('131', 100000000, 0)];
+      const previous = [makeBal('131', 150000000, 0)];
+      const rules = getB03LCTTMapping();
+      const arRule = rules.find((r) => r.code === '09')!;
+      const line = generateCashFlowStatementLine(arRule, current, previous, []);
+      expect(line.currentPeriod).toBe(50000000);
+    });
+
+    it('computes working capital change for AR increase as cash outflow', () => {
+      const current = [makeBal('131', 200000000, 0)];
+      const previous = [makeBal('131', 150000000, 0)];
+      const rules = getB03LCTTMapping();
+      const arRule = rules.find((r) => r.code === '09')!;
+      const line = generateCashFlowStatementLine(arRule, current, previous, []);
+      expect(line.currentPeriod).toBe(-50000000);
+    });
+
+    it('computes inventory decrease as cash inflow', () => {
+      const current = [makeBal('156', 300000000, 0)];
+      const previous = [makeBal('156', 400000000, 0)];
+      const rules = getB03LCTTMapping();
+      const invRule = rules.find((r) => r.code === '10')!;
+      const line = generateCashFlowStatementLine(invRule, current, previous, []);
+      expect(line.currentPeriod).toBe(100000000);
+    });
+
+    it('computes AP increase as cash inflow', () => {
+      const current = [makeBal('331', 0, 80000000)];
+      const previous = [makeBal('331', 0, 50000000)];
+      const rules = getB03LCTTMapping();
+      const apRule = rules.find((r) => r.code === '11')!;
+      const line = generateCashFlowStatementLine(apRule, current, previous, []);
+      expect(line.currentPeriod).toBe(30000000);
+    });
+
+    it('computes depreciation add-back from accumulated depreciation change', () => {
+      const current = [makeBal('214', 0, 80000000)];
+      const previous = [makeBal('214', 0, 50000000)];
+      const rules = getB03LCTTMapping();
+      const deprRule = rules.flatMap((r) => [r, ...(r.children ?? [])]).find((r) => r.code === '03')!;
+      const line = generateCashFlowStatementLine(deprRule, current, previous, []);
+      expect(line.currentPeriod).toBe(30000000);
+    });
+
+    it('computes net profit from P&L accounts', () => {
+      const current = [
+        makeBal('511', 0, 500000000),
+        makeBal('632', 300000000, 0),
+        makeBal('642', 50000000, 0),
+        makeBal('8211', 25000000, 0),
+      ];
+      const previous: AccountBalance[] = [];
+      const rules = getB03LCTTMapping();
+      const profitRule = rules.find((r) => r.code === '01')!;
+      const line = generateCashFlowStatementLine(profitRule, current, previous, []);
+      expect(line.currentPeriod).toBe(125000000);
+    });
+
+    it('computes opening cash from 111+112 opening balances', () => {
+      const current = [makeBal('111', 100000000, 0)];
+      const previous = [makeBal('111', 50000000, 0)];
+      const rules = getB03LCTTMapping();
+      const openCashRule = rules.find((r) => r.code === '51')!;
+      const line = generateCashFlowStatementLine(openCashRule, current, previous, []);
+      expect(line.currentPeriod).toBe(50000000);
+    });
+
+    it('computes closing cash as net flow + opening + FX', () => {
+      const profit = { code: '01', name: 'LNTT', currentPeriod: 100000, previousPeriod: 0 } as FinancialStatementLine;
+      const operating = { code: '20', name: 'HĐKD', currentPeriod: 60000, previousPeriod: 0 } as FinancialStatementLine;
+      const investing = { code: '30', name: 'HĐĐT', currentPeriod: 30000, previousPeriod: 0 } as FinancialStatementLine;
+      const financing = { code: '40', name: 'HĐTC', currentPeriod: 10000, previousPeriod: 0 } as FinancialStatementLine;
+      const openCash = { code: '51', name: 'Tien dau ky', currentPeriod: 50000, previousPeriod: 0 } as FinancialStatementLine;
+      const fx = { code: '52', name: 'TG', currentPeriod: 0, previousPeriod: 0 } as FinancialStatementLine;
+      const netFlow = { code: '50', name: 'LCT trong ky', currentPeriod: 0, previousPeriod: 0 } as FinancialStatementLine;
+      const closing = { code: '60', name: 'Tien cuoi ky', currentPeriod: 0, previousPeriod: 0 } as FinancialStatementLine;
+      const lines = [profit, openCash, fx, operating, investing, financing, netFlow, closing];
+      resolveFormulaLines(lines, FinancialStatementType.B03_DN);
+      expect(closing.currentPeriod).toBe(150000);
     });
   });
 });

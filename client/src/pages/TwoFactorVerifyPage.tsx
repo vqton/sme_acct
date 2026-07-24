@@ -1,100 +1,66 @@
-import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
 
 export default function TwoFactorVerifyPage() {
-  const [searchParams] = useSearchParams();
-  const tempToken = searchParams.get('tempToken') || '';
-  const [code, setCode] = useState('');
-  const [error, setError] = useState('');
+  const [code, setCode] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const tempToken = searchParams.get("tempToken");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-
-    if (!code.trim() || code.length !== 6) {
-      setError('Mã xác thực phải gồm 6 chữ số');
-      return;
-    }
-
+    if (!tempToken) return;
+    setError("");
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/2fa/verify-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tempToken, code: code.trim() }),
+      const res = await fetch("/api/auth/2fa/verify-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tempToken, code }),
       });
-
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Verification failed');
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Xác minh thất bại");
       }
-
-      const data = await res.json();
-      // Store tokens and navigate
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('refreshToken', data.refreshToken);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      navigate('/');
+      navigate("/");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Mã xác thực không đúng');
+      setError(err instanceof Error ? err.message : "Xác minh thất bại");
     } finally {
       setLoading(false);
     }
   };
 
-  if (!tempToken) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f5f5f5' }}>
-        <div style={{ padding: 32, background: '#fff', borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.1)', margin: 16, textAlign: 'center' }}>
-          <p style={{ color: '#c33' }}>Phiên xác thực không hợp lệ. Vui lòng đăng nhập lại.</p>
-          <a href="/login" style={{ color: '#2563eb', marginTop: 12, display: 'inline-block' }}>Đăng nhập</a>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f5f5f5', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
-      <div style={{ width: '100%', maxWidth: 400, padding: 32, background: '#fff', borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.1)', margin: 16 }}>
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Xác thực 2 lớp</h1>
-          <p style={{ fontSize: 14, color: '#666', marginTop: 8 }}>Nhập mã từ ứng dụng authenticator</p>
-        </div>
-
-        {error && (
-          <div style={{ padding: '10px 14px', marginBottom: 16, background: '#fee', border: '1px solid #fcc', borderRadius: 6, color: '#c33', fontSize: 14 }}>
-            {error}
-          </div>
-        )}
-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">Xác minh 2FA</CardTitle>
+          <CardDescription>Nhập mã 6 chữ số từ ứng dụng authenticator</CardDescription>
+        </CardHeader>
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: 20 }}>
-            <label htmlFor="totp" style={{ display: 'block', fontSize: 14, fontWeight: 500, marginBottom: 4, color: '#333' }}>Mã xác thực</label>
-            <input
-              id="totp"
-              type="text"
-              maxLength={6}
-              placeholder="000000"
-              autoComplete="one-time-code"
-              value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-              disabled={loading}
-              autoFocus
-              style={{ width: '100%', padding: '12px', fontSize: 24, letterSpacing: 6, textAlign: 'center', border: '1px solid #ddd', borderRadius: 6, boxSizing: 'border-box' }}
-            />
-          </div>
-
-          <button type="submit" disabled={loading || code.length !== 6} style={{ width: '100%', padding: '12px', fontSize: 16, fontWeight: 600, color: '#fff', background: loading ? '#94a3b8' : '#2563eb', border: 'none', borderRadius: 6, cursor: loading ? 'not-allowed' : 'pointer' }}>
-            {loading ? 'Đang xác minh...' : 'Xác minh'}
-          </button>
+          <CardContent className="space-y-4">
+            {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
+            <div className="space-y-2">
+              <Label htmlFor="code">Mã xác minh</Label>
+              <Input id="code" placeholder="000000" maxLength={6} value={code} onChange={(e) => setCode(e.target.value)} disabled={loading} className="text-center text-lg tracking-widest" />
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button type="submit" className="w-full" disabled={loading || code.length !== 6}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Xác minh
+            </Button>
+          </CardFooter>
         </form>
-
-        <div style={{ textAlign: 'center', marginTop: 16, fontSize: 14 }}>
-          <a href="/login" style={{ color: '#666', textDecoration: 'none' }}>Quay lại đăng nhập</a>
-        </div>
-      </div>
+      </Card>
     </div>
   );
 }

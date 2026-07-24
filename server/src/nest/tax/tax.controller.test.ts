@@ -59,7 +59,7 @@ describe('TaxController', () => {
     const result = controller.createPeriods({ companyId, year: 2026, type: 'monthly' });
     expect(result.length).toBe(12);
 
-    const periods = controller.getPeriods(companyId, 2026);
+    const periods = controller.getPeriods(String(companyId), '2026');
     expect(periods.length).toBeGreaterThanOrEqual(12);
   });
 
@@ -70,23 +70,23 @@ describe('TaxController', () => {
   });
 
   it('GET /tax/declarations lists by company', () => {
-    const list = controller.listDeclarations(companyId, periodId);
+    const list = controller.listDeclarations(String(companyId), String(periodId));
     expect(list.length).toBeGreaterThanOrEqual(1);
   });
 
   it('GET /tax/calendar/:companyId/:year returns calendar', () => {
-    const cal = controller.getCalendar(companyId, 2026);
+    const cal = controller.getCalendar(String(companyId), '2026');
     expect(cal.length).toBeGreaterThanOrEqual(12);
   });
 
   it('GET /tax/declarations/:id gets single declaration', () => {
     const d = controller.createDeclaration({ companyId, periodId, taxType: TaxType.VAT });
-    const fetched = controller.getDeclaration(d.id);
-    expect(fetched.id).toBe(d.id);
+    const fetched = controller.getDeclaration(String(d.id));
+    expect(fetched!.id).toBe(d.id);
   });
 
   it('POST /tax/declarations/vat computes and saves VAT', () => {
-    const result = controller.createVatDeclaration(companyId, {
+    const result = controller.createVatDeclaration(String(companyId), {
       periodId,
       outputLines: [{ rate: 10, taxableAmount: 100_000_000 }],
       inputLines: [{ rate: 10, taxableAmount: 30_000_000 }],
@@ -96,20 +96,20 @@ describe('TaxController', () => {
 
   it('POST /tax/declarations/:id/submit submits declaration', () => {
     const d = controller.createDeclaration({ companyId, periodId, taxType: TaxType.VAT });
-    const sub = controller.submitDeclaration(d.id);
+    const sub = controller.submitDeclaration(String(d.id));
     expect(sub.status).toBe(4);
   });
 
   it('GET /tax/calendar/:companyId/:year/upcoming returns upcoming deadlines', () => {
-    const upcoming = controller.getUpcomingDeadlines(companyId, 2026, 30);
+    const upcoming = controller.getUpcomingDeadlines(String(companyId), '2026', '30');
     expect(Array.isArray(upcoming)).toBe(true);
   });
 
   describe('auto-fill', () => {
     beforeAll(() => {
       const savedAccounts = [
-        { id: 0, companyId, accountNumber: '1331', name: 'VAT input', category: 3, nature: 1, type: 2, isActive: true, isSystem: true, allowTransactions: true, openingDebit: 0, openingCredit: 0, debitAmount: 0, creditAmount: 0, closingDebit: 0, closingCredit: 0, createdAt: new Date() },
-        { id: 0, companyId, accountNumber: '33311', name: 'VAT output', category: 6, nature: 2, type: 2, isActive: true, isSystem: true, allowTransactions: true, openingDebit: 0, openingCredit: 0, debitAmount: 0, creditAmount: 0, closingDebit: 0, closingCredit: 0, createdAt: new Date() },
+        { id: 0, companyId, accountNumber: '1331', name: 'VAT input', category: 3, nature: 1, type: 2, isActive: true, isSystem: true, allowTransactions: true, openingDebit: 0, openingCredit: 0, debitAmount: 0, creditAmount: 0, closingDebit: 0, closingCredit: 0, currency: 'VND', createdAt: new Date() },
+        { id: 0, companyId, accountNumber: '33311', name: 'VAT output', category: 6, nature: 2, type: 2, isActive: true, isSystem: true, allowTransactions: true, openingDebit: 0, openingCredit: 0, debitAmount: 0, creditAmount: 0, closingDebit: 0, closingCredit: 0, currency: 'VND', createdAt: new Date() },
       ].map(a => accountRepo.save(a));
 
       const insert = db.prepare(`INSERT INTO account_balances (account_id, account_number, company_id, period_id, opening_debit, opening_credit, period_debit, period_credit, closing_debit, closing_credit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
@@ -118,13 +118,13 @@ describe('TaxController', () => {
     });
 
     it('auto-fills VAT from ledger', () => {
-      const result = controller.autoFillVat(companyId, periodId);
+      const result = controller.autoFillVat(String(companyId), String(periodId));
       expect(result.outputVat).toBe(15_000_000);
       expect(result.inputVat).toBe(5_000_000);
     });
 
     it('auto-fills CIT from ledger', () => {
-      const result = controller.autoFillCit(companyId, periodId);
+      const result = controller.autoFillCit(String(companyId), String(periodId));
       expect(result.revenue).toBe(0);
     });
   });
@@ -132,15 +132,15 @@ describe('TaxController', () => {
   describe('audit trail', () => {
     it('logs and retrieves audit entries', () => {
       const d = controller.createDeclaration({ companyId, periodId, taxType: TaxType.VAT });
-      const sub = controller.submitDeclaration(d.id);
-      const audit = controller.getDeclarationAudit(d.id);
+      const sub = controller.submitDeclaration(String(d.id));
+      const audit = controller.getDeclarationAudit(String(d.id));
       expect(audit.length).toBe(1);
       expect(audit[0].fromStatus).toBe(DeclarationStatus.Draft);
       expect(audit[0].toStatus).toBe(DeclarationStatus.Submitted);
     });
 
     it('retrieves company audit trail', () => {
-      const companyAudit = controller.getCompanyAudit(companyId);
+      const companyAudit = controller.getCompanyAudit(String(companyId));
       expect(companyAudit.length).toBeGreaterThanOrEqual(1);
     });
   });

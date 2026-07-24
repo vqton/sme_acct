@@ -45,7 +45,6 @@ export function createTaxPeriod(data: TaxPeriodInput): TaxPeriod {
   return {
     id: 0,
     status: TaxPeriodStatus.Open,
-    vatMethod: data.vatMethod,
     citRate: data.citRate ?? 20,
     isLockable: false,
     createdAt: new Date(),

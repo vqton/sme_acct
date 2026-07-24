@@ -1,97 +1,94 @@
-import { useState, useEffect } from 'react';
-import { Table, Select, Button, Space, Card, Tag, Modal, App } from 'antd';
-import { getFiscalPeriods, validateClose, closePeriodWithValidation, carryForwardBalances } from '../services/api';
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { api } from "@/services/api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
 
 export default function PeriodClosePage() {
+  const { companyId, user } = useAuth();
   const [periods, setPeriods] = useState<any[]>([]);
-  const [periodId, setPeriodId] = useState<number>();
+  const [periodId, setPeriodId] = useState<string>("");
   const [validation, setValidation] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const { message } = App.useApp();
-  const companyId = Number(localStorage.getItem('currentCompanyId'));
-  const userId = Number(localStorage.getItem('userId'));
 
   useEffect(() => {
-    if (!companyId) return;
-    getFiscalPeriods(companyId).then(setPeriods).catch(() => {});
+    if (companyId) api.getFiscalPeriods(companyId).then(setPeriods);
   }, [companyId]);
 
-  const runValidation = () => {
-    if (!companyId || !periodId) return;
+  const handleValidate = async () => {
+    if (!periodId || !companyId) return;
     setLoading(true);
-    validateClose(companyId, periodId)
-      .then(setValidation)
-      .catch((e: any) => message.error(e.message))
-      .finally(() => setLoading(false));
+    try {
+      const result = await api.validateClose(companyId, Number(periodId));
+      setValidation(result);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const doClose = () => {
-    if (!companyId || !periodId) return;
-    Modal.confirm({
-      title: 'Xác nhận khóa sổ?',
-      content: 'Sau khi khóa sổ, kỳ này sẽ không thể thực hiện thêm nghiệp vụ nào.',
-      onOk: async () => {
-        try {
-          const nextPeriod = periods.find((p: any) =>
-            p.year > periodId || (p.year === periodId && p.month > (periods.find((x: any) => x.id === periodId)?.month ?? 0))
-          );
-          const result = await closePeriodWithValidation(companyId, periodId, userId, {
-            skipValidation: true,
-            carryForwardToPeriodId: nextPeriod?.id,
-            transferNetIncome: true,
-          });
-          message.success('Khóa sổ thành công');
-          setValidation(null);
-          getFiscalPeriods(companyId).then(setPeriods);
-        } catch (e: any) {
-          message.error(e.message);
-        }
-      },
-    });
+  const handleClose = async () => {
+    if (!periodId || !validation?.valid || !companyId) return;
+    setLoading(true);
+    try {
+      await api.closePeriodWithValidation(companyId, Number(periodId), user?.id ?? 0);
+      alert("Đóng kỳ thành công");
+    api.getFiscalPeriods(companyId).then(setPeriods);
+      setValidation(null);
+      setPeriodId("");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Lỗi");
+    } finally {
+      setLoading(false);
+    }
   };
-
-  const checksColumns = [
-    { title: 'Kiểm tra', dataIndex: 'name', key: 'name' },
-    {
-      title: 'Kết quả', dataIndex: 'passed', key: 'passed',
-      render: (v: boolean) => <Tag color={v ? 'green' : 'red'}>{v ? 'Đạt' : 'Không đạt'}</Tag>,
-    },
-    { title: 'Chi tiết', dataIndex: 'message', key: 'message' },
-  ];
 
   return (
-    <Card title="Khóa sổ kế toán">
-      <Space style={{ marginBottom: 16 }}>
-        <Select
-          placeholder="Chọn kỳ cần khóa"
-          style={{ width: 250 }}
-          value={periodId}
-          onChange={(v) => { setPeriodId(v); setValidation(null); }}
-          options={periods.filter((p: any) => p.status === 1).map((p: any) => ({ value: p.id, label: p.periodName }))}
-        />
-        <Button onClick={runValidation} disabled={!periodId} loading={loading}>Kiểm tra</Button>
-        <Button type="primary" onClick={doClose} disabled={!periodId || validation?.valid === false}>
-          Khóa sổ
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">Kết kỳ</h1>
+      <div className="flex gap-4 items-end">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Kỳ kế toán</label>
+          <Select value={periodId} onValueChange={setPeriodId}>
+            <SelectTrigger className="w-48"><SelectValue placeholder="Chọn kỳ" /></SelectTrigger>
+            <SelectContent>
+              {periods.filter((p: any) => p.status === 1).map((p: any) => (
+                <SelectItem key={p.id} value={String(p.id)}>{p.year}/{p.month}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Button onClick={handleValidate} disabled={!periodId || loading}>
+          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Kiểm tra
         </Button>
-      </Space>
+        {validation?.valid && (
+          <Button variant="destructive" onClick={handleClose} disabled={loading}>Đóng kỳ</Button>
+        )}
+      </div>
 
       {validation && (
-        <>
-          <h4>
-            Kết quả kiểm tra:{' '}
-            <Tag color={validation.valid ? 'green' : 'red'}>
-              {validation.valid ? 'Đạt yêu cầu' : 'Không đạt'}
-            </Tag>
-          </h4>
-          <Table
-            dataSource={validation.checks}
-            columns={checksColumns}
-            pagination={false}
-            size="small"
-            rowKey="name"
-          />
-        </>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              {validation.valid ? <CheckCircle2 className="h-5 w-5 text-green-500" /> : <AlertTriangle className="h-5 w-5 text-yellow-500" />}
+              Kết quả kiểm tra
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {validation.valid ? (
+              <p className="text-green-600">Đủ điều kiện đóng kỳ. Bạn có thể đóng kỳ an toàn.</p>
+            ) : (
+              <ul className="list-disc list-inside text-destructive space-y-1">
+                {validation.errors?.map((e: string, i: number) => <li key={i}>{e}</li>)}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
       )}
-    </Card>
+    </div>
   );
 }

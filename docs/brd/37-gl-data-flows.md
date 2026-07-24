@@ -1,11 +1,14 @@
 # GL Module — Data Flows
 
-**Version:** 1.0
-**Date:** 2026-07-23
+**Version:** 2.0
+**Date:** 2026-07-24
 
 ---
 
-## DF-G01: Journal Entry Creation → Posting Flow
+## DF-G01: Journal Entry Creation → Posting Flow ✅
+
+**Implementation Status:** ✅ FULLY BUILT
+**Files:** `JournalEntryFormPage.tsx` → `AccountingService.createJournalEntry()` → `SQLiteJournalEntryRepository`
 
 ```
 User Input                    System Process                    Database
@@ -43,7 +46,10 @@ Journal Entry Form            │                                  │
 
 ---
 
-## DF-G02: Trial Balance Generation
+## DF-G02: Trial Balance Generation ✅
+
+**Implementation Status:** ✅ FULLY BUILT
+**Files:** `TrialBalancePage.tsx` → `AccountingService.getTrialBalance()` → `SQLiteLedgerRepository.getAccountBalances()`
 
 ```
 User Request                   System Process                    Database
@@ -63,45 +69,44 @@ Select Period                  │                                  │
          │                       Total Debit = Total Credit ?     │
          │                           ↓                            │
          ↓                     Display trial balance table        │
-         │                     ├── Account # | Name               │
-         │                     ├── Opening Debit | Credit         │
-         │                     ├── Period Debit | Credit          │
-         │                     ├── Closing Debit | Credit         │
-         │                     └── Totals row                     │
 ```
 
 ---
 
-## DF-G03: Financial Statement Generation (B01-DN)
+## DF-G03: Financial Statement Generation (B01-DN, B02-DN) ✅
+
+**Implementation Status:** ✅ B01-DN + B02-DN BUILT. B03-DN + B09-DN MISSING.
+**Files:** `FinancialStatementPage.tsx` → `FinancialStatementService` → `FinancialStatement.ts` (TT99 mappings)
 
 ```
 Account Balances                  Mapping Rules                    B01-DN Line Items
-────────────────                  ─────────────                    ─────────────────
-period_balances[]                  TT 99 Phụ lục IV                B01-DN Report
+───────────────                   ─────────────                    ─────────────────
+period_balances[]                  TT 99 Phụ lục IV (getB01TTSMapping)   B01-DN Report
 │                                                                  
 ├── TK 111, 112 ─────────────────→ 100. Tiền                      
 ├── TK 121, 128 ─────────────────→ 110. Đầu tư TC ngắn hạn        
 ├── TK 131 ─────────────────────→ 130. Phải thu KH                 
-├── TK 133 ─────────────────────→ 140. Thuế GTGT được khấu trừ    
-├── TK 138 ─────────────────────→ 150. Phải thu khác              
-├── TK 141 ─────────────────────→ 151. Tạm ứng                     
-├── TK 152-158 ─────────────────→ 160. Hàng tồn kho               
-├── TK 211 ─────────────────────→ 220. TSCĐ                          
-├── TK 213 ─────────────────────→ 227. TSCĐ vô hình                
-├── TK 214 ─────────────────────→ 229. Hao mòn lũy kế (−)         
+├── TK 152-158 ─────────────────→ 140. Hàng tồn kho               
+├── TK 211 ─────────────────────→ 210. TSCĐ                          
+├── TK 214 ─────────────────────→ 220. Hao mòn lũy kế (−)         
 ├── TK 331 ─────────────────────→ 310. Phải trả người bán         
 ├── TK 333 ─────────────────────→ 320. Thuế và phải nộp NN        
-├── TK 334 ─────────────────────→ 330. Phải trả NLĐ                
-├── TK 341 ─────────────────────→ 340. Vay và nợ thuê TC          
 ├── TK 411 ─────────────────────→ 410. Vốn góp CSH                 
-├── TK 412 ─────────────────────→ 411. Thặng dư vốn CP            
 ├── TK 421 ─────────────────────→ 420. LNST chưa phân phối        
-└── Others                      
+
+B02-DN mapping (getB02KQHDMapping):
+├── TK 511 ─────────────────────→ 01. Doanh thu BH
+├── TK 632 ─────────────────────→ 11. Giá vốn hàng bán
+├── Formula: 01+11 ─────────────→ 20. Lợi nhuận gộp (computed)
+├── TK 641, 642 ────────────────→ 23, 24. CPBH, CPQLDN
+├── Formula chain ──────────────→ 60. LNST (computed)
 ```
 
 ---
 
-## DF-G04: Sub-ledger → GL Integration
+## DF-G04: Sub-ledger → GL Integration ❌
+
+**Implementation Status:** ❌ NOT BUILT. No sub-ledger modules exist to integrate.
 
 ```
 Sub-ledger                    GL Integration Service              GL Database
@@ -119,56 +124,38 @@ Cash Module                    │                                    │
 │                               ↓                                  │
 │                             Post to GL ─────────────────────────→ ...
 
-Bank Module                    │                                    │
-├── Transfer ─────────────────→ Dr 112 (Bank) / Cr 111 (Cash)     │
-├── Interest ─────────────────→ Dr 112 / Cr 515 (Interest income) │
-
-AR Module                      │                                    │
-├── Invoice ──────────────────→ Dr 131 / Cr 511 (Revenue) + 3331  │
-├── Receipt ──────────────────→ Dr 111/112 / Cr 131                │
-
-AP Module                      │                                    │
-├── Purchase ─────────────────→ Dr 152/156/642 / Cr 331            │
-├── Payment ──────────────────→ Dr 331 / Cr 111/112                 │
-
-FA Module                      │                                    │
-├── Depreciation ─────────────→ Dr 627/641/642 / Cr 214            │
-
-Payroll Module                 │                                    │
-├── Salary ───────────────────→ Dr 622/627/641/642 / Cr 334        │
-├── Insurance ────────────────→ Dr 334 / Cr 3383 (SI), 3384 (HI)  │
-
-Inventory Module               │                                    │
-├── Goods issue ──────────────→ Dr 632 / Cr 152/156                │
-├── Goods receipt ────────────→ Dr 152/156 / Cr 331                 │
+Bank, AR, AP, FA, Payroll, Inventory — same pattern
 ```
 
 ---
 
-## DF-G05: Period-End Closing Flow
+## DF-G05: Period-End Closing Flow ⚠️
+
+**Implementation Status:** ⚠️ PARTIAL. Backend close + carry-forward exist. No checklist UI.
 
 ```
 Pre-Close                     Close Execution                   Post-Close
 ───────────                   ──────────────                    ──────────
 │                              │                                  │
-Run checklist:                 Validate:                         Lock period:
-├── Depreciation ─────────────→ All entries posted? ────────────→ status = CLOSED
-├── Prepayment ───────────────→ Trial balance balanced?           │
-├── Accruals ─────────────────→ Sub-ledgers reconciled?           Carry forward:
-├── FX revaluation ───────────→                                    │
-├── Revenue/Expense close ────→ Execute close:                    Insert next period
-│   (year-end only)             │                                  with opening balances
-│                               ├── UPDATE fiscal_periods        │
-│                               │   SET status = 2               Archive:
-│                               ├── INSERT period_closing_log    │
-│                               └── INSERT audit_log             Compute period stats
+Run checklist (❌ no UI):     Validate:                         Lock period:
+├── Depreciation  ❌           All entries posted? ✅            status = CLOSED ✅
+├── Prepayment    ❌           Trial balance balanced? ✅         │
+├── Accruals      ❌           Sub-ledgers reconciled? ❌        Carry forward: ✅
+├── FX            ❌                                              │
+│                              Execute close:                    Insert next period ✅
+│                              ├── UPDATE fiscal_periods        │
+│                              │   SET status = 2               Archive: ❌
+│                              ├── INSERT period_closing_log    │
+│                              └── INSERT audit_log             Compute period stats
 │                                                                 │
-└── (manual review) ──────────→ ─── (auto) ────────────────────→ (auto)
+└── (manual) ──────────────── → (auto) ──────────────────────── → (auto)
 ```
 
 ---
 
-## DF-G06: Multi-Currency Transaction Flow
+## DF-G06: Multi-Currency Transaction Flow ❌
+
+**Implementation Status:** ❌ NOT BUILT. Schema has `exchange_rate` and `currency_code` columns but they are unused.
 
 ```
 Transaction                    Posting                           Period-End
@@ -186,17 +173,9 @@ Record in DB:                  │                                  │
 ├── currency_code = 'USD'      │                                  │
 ├── original_amount = 1000     │                                  │
 ├── exchange_rate = 25500      │                                  │
-                               │                                  │
-                               │                                  │
-Payment (later):               At period end:                     │
-├── Rate: 25,800               ├── Rate: 25,700                   │
-├── Dr 331 (AP) USD 1,000     ├── Outstanding AP USD 0           │
-│   = VND 25,800,000           ├── (already paid)                  │
-├── Cr 112 (Bank)              ├── No unrealized gain/loss        │
-│   = VND 25,800,000           │                                  │
-├── Dr 635 (FX loss)          │  But if open:                     │
-│   = VND 300,000              │  Unrealized gain =               │
-└── (realized FX loss)         │  (25,700 - 25,500) × 1,000       │
-                               │  = VND 200,000                   │
-                               │  Dr 635 / Cr 413 (or vice versa) │
+
+Payment (later):               At period end:
+├── Dr 331 (AP) USD 1,000     ├── Compute unrealized FX
+├── Cr 112 (Bank)              ├── Post to TK 413/635/515
+├── Dr/Cr 635 (FX gain/loss)  └── Auto-adjustment entry
 ```

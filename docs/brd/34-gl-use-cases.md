@@ -1,20 +1,22 @@
 # GL Module — Use Cases
 
-**Version:** 1.0
-**Date:** 2026-07-23
+**Version:** 2.0
+**Date:** 2026-07-24
+**Note:** UC-G01 through UC-G06 are ✅ IMPLEMENTED in current codebase. UC-G07 through UC-G10 are 📋 PLANNED.
 
 ---
 
-## UC-G01: Create Journal Entry
+## UC-G01: Create Journal Entry ✅
 
 **Actor:** Accountant (Kế toán viên)
 **Precondition:** User logged in, company selected, at least one fiscal period OPEN, COA populated
+**Implementation:** `JournalEntryFormPage.tsx` + `AccountingService.createJournalEntry()`
 
 **Main Flow:**
 1. User navigates to Journal Entry > Create
 2. System displays journal entry form with fields: Date, Entry Type, Description, Reference #
 3. User selects date → system auto-determines fiscal period
-4. User adds lines: Account, Debit, Credit, optional Description, Department/Cost Center
+4. User adds lines: Account, Debit, Credit, optional Description
 5. System validates each line: account exists, account active, account allows transactions
 6. System validates total debit = total credit (within 0.001 tolerance)
 7. User clicks Save (Draft) or Save & Post
@@ -28,14 +30,14 @@
 - AF-03: Account is parent/control account → error "Account XXXX is a control account; select a detail account"
 - AF-04: Debit ≠ Credit → error "Total debit must equal total credit (diff: X)"
 - AF-05: Save as Draft → system saves but does NOT post to ledger
-- AF-06: Entry type not relevant for period → system auto-selects based on common patterns
 
 ---
 
-## UC-G02: Post Journal Entry
+## UC-G02: Post Journal Entry ✅
 
 **Actor:** Accountant / Chief Accountant
 **Precondition:** Journal entry exists in DRAFT status
+**Implementation:** `JournalEntryFormPage.tsx` post button + `AccountingService.postJournalEntry()`
 
 **Main Flow:**
 1. User opens draft journal entry
@@ -53,10 +55,11 @@
 
 ---
 
-## UC-G03: Reverse Journal Entry
+## UC-G03: Reverse Journal Entry ✅
 
 **Actor:** Chief Accountant (Kế toán trưởng)
 **Precondition:** Posted journal entry exists
+**Implementation:** `AccountingService.reverseJournalEntry()`
 
 **Main Flow:**
 1. User opens posted journal entry
@@ -72,24 +75,23 @@
 - Can only reverse a posted entry (not a draft)
 - Reversal gets current date, not original date
 - Reversal must be in same fiscal year (cross-year reversal needs manual adjustment)
-- Reversal entry number: RR-{original_entry_number}
 
 ---
 
-## UC-G04: View General Ledger (Sổ Cái)
+## UC-G04: View General Ledger (Sổ Cái) ✅
 
 **Actor:** Accountant, Chief Accountant, Manager
 **Precondition:** Company selected, accounts exist
+**Implementation:** `LedgerPage.tsx` + `AccountingService.getLedgerEntries()`
 
 **Main Flow:**
 1. User navigates to Reports > General Ledger
-2. User selects: Account, Date Range / Period, optional Department/Cost Center
+2. User selects: Account, Period (optional filter)
 3. System displays ledger table:
    - Opening balance (debit/credit)
-   - Each transaction: Date, Entry #, Description, Debit, Credit, Running Debit, Running Credit, Running Balance
+   - Each transaction: Date, Entry #, Description, Debit, Credit, Running Balance
    - Closing balance
-4. User can filter by account number/name, date range
-5. User can export to Excel/PDF
+4. User can filter by account, period
 
 **Alternative Flows:**
 - AF-01: All accounts → display multi-ledger view with account summary
@@ -97,10 +99,11 @@
 
 ---
 
-## UC-G05: View Trial Balance (Bảng Cân Đối Tài Khoản)
+## UC-G05: View Trial Balance (Bảng Cân Đối Tài Khoản) ✅
 
 **Actor:** Accountant, Chief Accountant
 **Precondition:** Period selected
+**Implementation:** `TrialBalancePage.tsx` + `AccountingService.getTrialBalance()`
 
 **Main Flow:**
 1. User navigates to Reports > Trial Balance
@@ -111,50 +114,42 @@
    - Period Debit, Period Credit
    - Closing Debit, Closing Credit
 4. System shows totals row with debit = credit verification
-5. User can drill down on any account → see ledger detail
-6. User can filter by account category, active accounts only
-7. User can export to Excel/PDF
 
 ---
 
-## UC-G06: Generate Financial Statements (BCTC)
+## UC-G06: Generate Financial Statements (BCTC) ✅ (Partial)
 
 **Actor:** Chief Accountant
-**Precondition:** Period closed, all entries posted
+**Precondition:** Period selected, entries posted
+**Implementation:** `FinancialStatementPage.tsx` + `FinancialStatementService`
 
 **Main Flow:**
 1. User navigates to Reports > Financial Statements
-2. User selects: Report Type (B01-DN, B02-DN, B03-DN, B09-DN), Period, Regime (TT 99 / TT 133)
+2. User selects: Report Type (B01-DN, B02-DN), Period
 3. System generates report from ledger and account balances:
-   - B01-DN: Map account balances to statement line items per TT 99 template
-   - B02-DN: Map revenue/expense accounts from period activity
-   - B03-DN: Compute from balance sheet changes + cash transactions
-   - B09-DN: Compile notes from system configuration and period data
-4. User can preview, print, export to PDF/Excel/XML-for-tax
-5. System logs report generation to audit trail
+   - B01-DN: Map account balances to statement line items per TT 99 (✅ built)
+   - B02-DN: Map revenue/expense accounts from period activity (✅ built)
+4. User can preview
+
+**Missing:**
+- B03-DN (Cash Flow Statement) — not implemented
+- B09-DN (Notes to Financial Statements) — not implemented
+- Export (PDF/Excel) — not implemented
+- TT 133 regime — not implemented
 
 **Alternative Flows:**
 - AF-01: Period not closed → warning "Period not closed. Statements are provisional."
-- AF-02: Missing configuration → error "Company settings incomplete: fiscal year start, tax method"
-- AF-03: TT 133 regime → use simplified BCTC templates per TT 133
 
 ---
 
-## UC-G07: Period-End Closing
+## UC-G07: Period-End Closing 📋 Planned
 
 **Actor:** Chief Accountant (Kế toán trưởng)
 **Precondition:** All entries for period posted, no unposted drafts
 
 **Main Flow:**
 1. User navigates to Period > Close
-2. System displays closing checklist:
-   - [ ] Verify all sub-ledgers posted to GL
-   - [ ] Run depreciation for period
-   - [ ] Run prepayment amortization
-   - [ ] Post accrued entries
-   - [ ] Run FX revaluation
-   - [ ] Verify trial balance (debit = credit)
-   - [ ] Verify BCTC
+2. System displays closing checklist with verification steps
 3. User checks off each step (or system auto-verifies)
 4. User clicks "Close Period"
 5. System locks period: status → Closed
@@ -162,14 +157,11 @@
 7. System logs closure with user, timestamp
 8. System opens next period if exists
 
-**Alternative Flows:**
-- AF-01: Trial balance not equal → block with detail "Total debit ≠ Total credit (diff: X)"
-- AF-02: Unposted drafts exist → warning "X draft entries not posted"
-- AF-03: Year-end closing → system calculates retained earnings (TK 911, 421)
+**Note:** `closeFiscalPeriod()` and `carryForwardBalances()` exist in backend. Missing: close checklist UI, balance verification UI, rollback.
 
 ---
 
-## UC-G08: Manage Recurring Entries
+## UC-G08: Manage Recurring Entries 📋 Planned
 
 **Actor:** Accountant
 **Precondition:** COA populated, at least one template needed
@@ -181,13 +173,9 @@
 4. On schedule, system generates journal entry from template
 5. User reviews generated entry, posts or modifies
 
-**Alternative Flows:**
-- AF-01: On-demand run → user runs template manually for current period
-- AF-02: Account deactivated → system flags template as needing update
-
 ---
 
-## UC-G09: Multi-Currency Journal Entry
+## UC-G09: Multi-Currency Journal Entry 📋 Planned
 
 **Actor:** Accountant
 **Precondition:** Company enables multi-currency, exchange rate configured
@@ -202,7 +190,7 @@
 
 ---
 
-## UC-G10: Budget vs Actual Analysis
+## UC-G10: Budget vs Actual Analysis 📋 Planned
 
 **Actor:** Chief Accountant, Manager
 **Precondition:** Budget entered for period

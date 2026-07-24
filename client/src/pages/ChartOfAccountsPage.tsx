@@ -1,272 +1,112 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { Table, Button, Space, Tag, Modal, Form, Input, Select, App, Tooltip } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, ApartmentOutlined, SearchOutlined, CheckCircleOutlined, StopOutlined } from '@ant-design/icons';
-import { getAccounts, createAccount, updateAccount, deleteAccount, deactivateAccount, reactivateAccount, seedAccounts } from '../services/api';
+import { useState, useEffect } from "react";
+import { api } from "@/services/api";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Plus, Search, Trash2, Sprout } from "lucide-react";
 
 const categoryLabels: Record<number, string> = {
-  1: 'Tài sản', 2: 'Nợ phải trả', 3: 'Vốn chủ sở hữu',
-  4: 'Doanh thu', 5: 'Chi phí', 6: 'Xác định KQKD',
+  1: "Tài sản", 2: "Nợ phải trả", 3: "Vốn chủ sở hữu",
+  4: "Doanh thu", 5: "Chi phí", 6: "Xác định KQ",
 };
-
-const categoryColors: Record<number, string> = {
-  1: 'blue', 2: 'orange', 3: 'green', 4: 'cyan', 5: 'red', 6: 'purple',
-};
-
-const natureLabels: Record<number, string> = { 1: 'Dư Nợ', 2: 'Dư Có', 3: 'Lưỡng tính' };
-const currencyList = ['VND', 'USD', 'EUR', 'JPY', 'CNY', 'GBP', 'AUD', 'SGD', 'THB', 'KRW'];
 
 export default function ChartOfAccountsPage() {
+  const { companyId } = useAuth();
   const [accounts, setAccounts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<any>(null);
-  const [searchText, setSearchText] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<number | undefined>();
-  const [activeFilter, setActiveFilter] = useState<string>('all');
-  const [form] = Form.useForm();
-  const { message } = App.useApp();
-  const companyId = Number(localStorage.getItem('currentCompanyId'));
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [form, setForm] = useState({ accountNumber: "", name: "", category: 1 });
 
-  const fetchAccounts = useCallback(async (query?: string, category?: number, activeOnly?: string) => {
+  const load = () => {
+    if (!companyId) { setLoading(false); return; }
+    api.getAccounts(companyId, { query: search || undefined }).then((data: any) => setAccounts(data.data || data)).finally(() => setLoading(false));
+  };
+
+  useEffect(() => { load(); }, [search, companyId]);
+
+  const handleCreate = async () => {
     if (!companyId) return;
-    setLoading(true);
-    try {
-      const params: any = {};
-      if (query) params.query = query;
-      if (category !== undefined) params.category = category;
-      if (activeOnly === 'active') params.activeOnly = true;
-      if (activeOnly === 'inactive') params.activeOnly = false;
-      const data = await getAccounts(companyId, query || category !== undefined || activeOnly !== 'all' ? params : undefined);
-      setAccounts(Array.isArray(data) ? data : data.data ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, [companyId]);
-
-  useEffect(() => { fetchAccounts(); }, [fetchAccounts, companyId]);
-
-  const onSearchChange = (value: string) => {
-    setSearchText(value);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      fetchAccounts(value || undefined, categoryFilter, activeFilter);
-    }, 300);
+    await api.createAccount({ ...form, companyId });
+    setDialogOpen(false);
+    setForm({ accountNumber: "", name: "", category: 1 });
+    load();
   };
 
-  const onCategoryChange = (value: number | undefined) => {
-    setCategoryFilter(value);
-    fetchAccounts(searchText || undefined, value, activeFilter);
-  };
-
-  const onActiveChange = (value: string) => {
-    setActiveFilter(value);
-    fetchAccounts(searchText || undefined, categoryFilter, value);
+  const handleDelete = async (id: number) => {
+    if (!confirm("Xóa tài khoản?")) return;
+    await api.deleteAccount(id);
+    load();
   };
 
   const handleSeed = async () => {
-    try {
-      await seedAccounts(companyId);
-      await fetchAccounts();
-      message.success('Đã tạo hệ thống tài khoản chuẩn');
-    } catch (e: any) {
-      message.error(e.message || 'Seed failed');
-    }
+    if (!companyId || !confirm("Seed chart of accounts mặc định?")) return;
+    await api.seedAccounts(companyId);
+    load();
   };
-
-  const handleDelete = (id: number) => {
-    Modal.confirm({
-      title: 'Xóa tài khoản?',
-      content: 'Hành động này không thể hoàn tác.',
-      onOk: async () => {
-        try {
-          await deleteAccount(id);
-          message.success('Đã xóa');
-          fetchAccounts();
-        } catch (e: any) {
-          message.error(e.message || 'Lỗi');
-        }
-      },
-    });
-  };
-
-  const handleToggleActive = async (record: any) => {
-    try {
-      if (record.isActive) {
-        await deactivateAccount(record.id);
-        message.success('Đã vô hiệu hóa tài khoản');
-      } else {
-        await reactivateAccount(record.id);
-        message.success('Đã kích hoạt lại tài khoản');
-      }
-      fetchAccounts();
-    } catch (e: any) {
-      message.error(e.message || 'Lỗi');
-    }
-  };
-
-  const columns = [
-    { title: 'Số TK', dataIndex: 'accountNumber', key: 'accountNumber', width: 90, fixed: 'left' as const,
-      render: (v: string) => <strong>{v}</strong>,
-    },
-    { title: 'Tên tài khoản', dataIndex: 'name', key: 'name', width: 260 },
-    { title: 'Trạng thái', dataIndex: 'isActive', key: 'isActive', width: 100,
-      render: (v: boolean) => v
-        ? <Tag icon={<CheckCircleOutlined />} color="success">Đang dùng</Tag>
-        : <Tag icon={<StopOutlined />} color="error">Ngừng dùng</Tag>,
-    },
-    { title: 'Loại', dataIndex: 'category', key: 'category', width: 130,
-      render: (v: number) => <Tag color={categoryColors[v]}>{categoryLabels[v] || v}</Tag>,
-    },
-    { title: 'Tính chất', dataIndex: 'nature', key: 'nature', width: 90,
-      render: (v: number) => natureLabels[v] || v,
-    },
-    { title: 'NT', dataIndex: 'currency', key: 'currency', width: 60,
-      render: (v: string) => <Tag>{v || 'VND'}</Tag>,
-    },
-    { title: 'Dư Nợ ĐK', dataIndex: 'openingDebit', key: 'openingDebit', width: 100, align: 'right' as const,
-      render: (v: number) => v?.toLocaleString(),
-    },
-    { title: 'Dư Có ĐK', dataIndex: 'openingCredit', key: 'openingCredit', width: 100, align: 'right' as const,
-      render: (v: number) => v?.toLocaleString(),
-    },
-    { title: 'PS Nợ', dataIndex: 'debitAmount', key: 'debitAmount', width: 100, align: 'right' as const,
-      render: (v: number) => v?.toLocaleString(),
-    },
-    { title: 'PS Có', dataIndex: 'creditAmount', key: 'creditAmount', width: 100, align: 'right' as const,
-      render: (v: number) => v?.toLocaleString(),
-    },
-    { title: '', key: 'actions', width: 120, fixed: 'right' as const,
-      render: (_: any, record: any) => (
-        <Space size="small">
-          <Tooltip title={record.isActive ? 'Vô hiệu hóa' : 'Kích hoạt'}>
-            <Button
-              type="link"
-              size="small"
-              icon={record.isActive ? <StopOutlined /> : <CheckCircleOutlined />}
-              onClick={() => handleToggleActive(record)}
-            />
-          </Tooltip>
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => {
-            setEditing(record);
-            form.setFieldsValue(record);
-            setModalOpen(true);
-          }} />
-          {!record.isSystem && (
-            <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)} />
-          )}
-        </Space>
-      ),
-    },
-  ];
 
   return (
-    <div>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 style={{ margin: 0 }}>Hệ thống tài khoản kế toán</h2>
-        <Space>
-          <Button icon={<ApartmentOutlined />} onClick={handleSeed} loading={loading}>
-            Tạo tài khoản chuẩn
-          </Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => {
-            setEditing(null);
-            form.resetFields();
-            setModalOpen(true);
-          }}>
-            Thêm tài khoản
-          </Button>
-        </Space>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Chart of Accounts</h1>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleSeed}><Sprout className="mr-2 h-4 w-4" />Seed</Button>
+          <Button onClick={() => setDialogOpen(true)}><Plus className="mr-2 h-4 w-4" />Thêm</Button>
+        </div>
       </div>
-
-      <div style={{ marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center' }}>
-        <Input.Search
-          placeholder="Tìm kiếm tài khoản..."
-          prefix={<SearchOutlined />}
-          allowClear
-          onChange={(e) => onSearchChange(e.target.value)}
-          onSearch={(v) => fetchAccounts(v || undefined, categoryFilter, activeFilter)}
-          style={{ width: 320 }}
-        />
-        <Select
-          placeholder="Loại tài khoản"
-          allowClear
-          style={{ width: 180 }}
-          value={categoryFilter}
-          onChange={onCategoryChange}
-          options={Object.entries(categoryLabels).map(([v, l]) => ({ value: Number(v), label: l }))}
-        />
-        <Select
-          style={{ width: 140 }}
-          value={activeFilter}
-          onChange={onActiveChange}
-          options={[
-            { value: 'all', label: 'Tất cả' },
-            { value: 'active', label: 'Đang dùng' },
-            { value: 'inactive', label: 'Ngừng dùng' },
-          ]}
-        />
+      <div className="flex items-center gap-2">
+        <Search className="h-4 w-4 text-muted-foreground" />
+        <Input placeholder="Tìm kiếm..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-sm" />
       </div>
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Mã</TableHead>
+                <TableHead>Tên</TableHead>
+                <TableHead>Loại</TableHead>
+                <TableHead className="w-12"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Đang tải...</TableCell></TableRow>
+              ) : accounts.length === 0 ? (
+                <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Chưa có tài khoản nào. Nhấn "Seed" để tạo mặc định.</TableCell></TableRow>
+              ) : accounts.map((a: any) => (
+                <TableRow key={a.id}>
+                  <TableCell className="font-mono">{a.accountNumber}</TableCell>
+                  <TableCell>{a.name}</TableCell>
+                  <TableCell><Badge variant="outline">{categoryLabels[a.category] || a.category}</Badge></TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(a.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-      <Table
-        dataSource={accounts}
-        columns={columns}
-        rowKey="id"
-        loading={loading}
-        size="small"
-        pagination={false}
-        scroll={{ x: 1300 }}
-        expandable={{
-          defaultExpandAllRows: false,
-          rowExpandable: (r) => !!r.parentId,
-        }}
-      />
-
-      <Modal
-        title={editing ? 'Sửa tài khoản' : 'Thêm tài khoản'}
-        open={modalOpen}
-        onCancel={() => setModalOpen(false)}
-        onOk={() => form.submit()}
-        destroyOnClose
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={async (values) => {
-            try {
-              const payload = { ...values, companyId };
-              if (editing) {
-                await updateAccount(editing.id, payload);
-              } else {
-                await createAccount(payload);
-              }
-              message.success(editing ? 'Đã cập nhật' : 'Đã tạo');
-              setModalOpen(false);
-              fetchAccounts();
-            } catch (e: any) {
-              message.error(e.message || 'Lỗi');
-            }
-          }}
-        >
-          <Form.Item name="accountNumber" label="Số tài khoản" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="name" label="Tên tài khoản" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="category" label="Loại" rules={[{ required: true }]}>
-            <Select options={Object.entries(categoryLabels).map(([v, l]) => ({ value: Number(v), label: l }))} />
-          </Form.Item>
-          <Form.Item name="nature" label="Tính chất" rules={[{ required: true }]}>
-            <Select options={Object.entries(natureLabels).map(([v, l]) => ({ value: Number(v), label: l }))} />
-          </Form.Item>
-          <Form.Item name="currency" label="Loại tiền" initialValue="VND">
-            <Select options={currencyList.map((c) => ({ value: c, label: c }))} />
-          </Form.Item>
-          <Form.Item name="description" label="Diễn giải">
-            <Input.TextArea rows={2} />
-          </Form.Item>
-        </Form>
-      </Modal>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Thêm tài khoản mới</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2"><Label>Mã tài khoản</Label><Input value={form.accountNumber} onChange={(e) => setForm({ ...form, accountNumber: e.target.value })} /></div>
+            <div className="space-y-2"><Label>Tên tài khoản</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Hủy</Button>
+            <Button onClick={handleCreate}>Tạo</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

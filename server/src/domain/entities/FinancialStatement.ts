@@ -35,7 +35,7 @@ export interface StatementMappingRule {
   isFormula?: boolean;
   formula?: string;
   children?: StatementMappingRule[];
-  balanceType?: 'net' | 'debit' | 'credit';
+  balanceType?: 'net' | 'debit' | 'credit' | 'change' | 'previousPeriod';
 }
 
 export function getB01TTSMapping(): StatementMappingRule[] {
@@ -114,6 +114,41 @@ export function getB02KQHDMapping(): StatementMappingRule[] {
   ];
 }
 
+export function getB03LCTTMapping(): StatementMappingRule[] {
+  return [
+    { code: '01', name: 'Lợi nhuận kế toán trước thuế', accountNumbers: ['511', '515', '711', '632', '635', '641', '642', '811', '821'], sign: -1 },
+    { code: '02', name: 'Điều chỉnh cho các khoản', sign: 1, bold: true, children: [
+      { code: '03', name: 'Khấu hao TSCĐ', accountNumbers: ['214'], sign: -1, balanceType: 'change' },
+      { code: '04', name: 'Các khoản dự phòng', accountNumbers: ['229'], sign: -1, balanceType: 'change' },
+      { code: '05', name: 'Lãi/lỗ chênh lệch tỷ giá', accountNumbers: ['413'], sign: -1, balanceType: 'change' },
+      { code: '06', name: 'Lãi/lỗ từ hoạt động đầu tư', accountNumbers: ['515', '635'], sign: -1, balanceType: 'change' },
+      { code: '07', name: 'Chi phí lãi vay', accountNumbers: ['635'], sign: -1, balanceType: 'change' },
+    ]},
+    { code: '08', name: 'Lợi nhuận từ HĐKD trước thay đổi VLĐ', isFormula: true, formula: '01+02', sign: 1, bold: true },
+    { code: '09', name: 'Thay đổi khoản phải thu', accountNumbers: ['131', '136', '138', '141'], sign: -1, balanceType: 'change' },
+    { code: '10', name: 'Thay đổi hàng tồn kho', accountNumbers: ['151', '152', '153', '154', '155', '156', '157', '158'], sign: -1, balanceType: 'change' },
+    { code: '11', name: 'Thay đổi khoản phải trả', accountNumbers: ['331', '333', '334', '338'], sign: -1, balanceType: 'change' },
+    { code: '12', name: 'Thay đổi chi phí trả trước', accountNumbers: ['242'], sign: -1, balanceType: 'change' },
+    { code: '13', name: 'Tiền lãi vay đã trả', accountNumbers: ['635'], sign: -1, balanceType: 'change' },
+    { code: '14', name: 'Thuế TNDN đã nộp', accountNumbers: ['3334'], sign: 1, balanceType: 'change' },
+    { code: '20', name: 'Lưu chuyển tiền thuần từ HĐKD', isFormula: true, formula: '08+09+10+11+12+13+14', sign: 1, bold: true },
+    { code: '21', name: 'Mua sắm TSCĐ', accountNumbers: ['211', '213', '217', '241'], sign: -1, balanceType: 'change' },
+    { code: '22', name: 'Thu thanh lý TSCĐ', accountNumbers: ['711', '811'], sign: -1, balanceType: 'change' },
+    { code: '25', name: 'Đầu tư góp vốn đơn vị khác', accountNumbers: ['121', '128', '221', '222', '228'], sign: -1, balanceType: 'change' },
+    { code: '27', name: 'Thu lãi tiền gửi, cổ tức', accountNumbers: ['515'], sign: -1, balanceType: 'change' },
+    { code: '30', name: 'Lưu chuyển tiền thuần từ HĐĐT', isFormula: true, formula: '21+22+25+27', sign: 1, bold: true },
+    { code: '31', name: 'Nhận vốn góp CSH', accountNumbers: ['411', '412'], sign: -1, balanceType: 'change' },
+    { code: '33', name: 'Vay nhận được', accountNumbers: ['341'], sign: -1, balanceType: 'change' },
+    { code: '34', name: 'Trả nợ vay', accountNumbers: ['341'], sign: 1, balanceType: 'change' },
+    { code: '36', name: 'Cổ tức đã trả', accountNumbers: ['421'], sign: -1, balanceType: 'change' },
+    { code: '40', name: 'Lưu chuyển tiền thuần từ HĐTC', isFormula: true, formula: '31+33+34+36', sign: 1, bold: true },
+    { code: '50', name: 'Lưu chuyển tiền thuần trong kỳ', isFormula: true, formula: '20+30+40', sign: 1, bold: true },
+    { code: '51', name: 'Tiền và tương đương tiền đầu kỳ', accountNumbers: ['111', '112'], sign: 1, balanceType: 'previousPeriod' },
+    { code: '52', name: 'Ảnh hưởng của tỷ giá hối đoái', accountNumbers: ['413'], sign: -1, balanceType: 'change' },
+    { code: '60', name: 'Tiền và tương đương tiền cuối kỳ', isFormula: true, formula: '50+51+52', sign: 1, bold: true },
+  ];
+}
+
 function balanceValue(bal: AccountBalance, rule: StatementMappingRule): number {
   if (rule.balanceType === 'debit') return bal.closingDebit;
   if (rule.balanceType === 'credit') return bal.closingCredit;
@@ -157,7 +192,74 @@ export function generateFinancialStatementLine(
   };
 }
 
-export function resolveFormulaLines(lines: FinancialStatementLine[]): FinancialStatementLine[] {
+export function generateCashFlowStatementLine(
+  rule: StatementMappingRule,
+  balances: AccountBalance[],
+  prevBalances: AccountBalance[],
+  incomeStatementLines?: FinancialStatementLine[],
+): FinancialStatementLine {
+  if (rule.isFormula && rule.formula) {
+    return {
+      code: rule.code,
+      name: rule.name,
+      currentPeriod: 0,
+      previousPeriod: 0,
+      isBold: rule.bold,
+    };
+  }
+
+  if (rule.balanceType === 'change') {
+    let currentPeriod = 0;
+    for (const acct of rule.accountNumbers ?? []) {
+      const bal = balances.find((b) => b.accountNumber === acct || b.accountNumber.startsWith(acct));
+      const prev = prevBalances.find((b) => b.accountNumber === acct || b.accountNumber.startsWith(acct));
+      const curVal = bal ? bal.closingDebit - bal.closingCredit : 0;
+      const prevVal = prev ? prev.closingDebit - prev.closingCredit : 0;
+      currentPeriod += (curVal - prevVal) * rule.sign;
+    }
+    return {
+      code: rule.code,
+      name: rule.name,
+      currentPeriod: Math.round(currentPeriod),
+      previousPeriod: 0,
+      isBold: rule.bold,
+      children: rule.children?.map((c) => generateCashFlowStatementLine(c, balances, prevBalances, incomeStatementLines)),
+    };
+  }
+
+  if (rule.balanceType === 'previousPeriod') {
+    let currentPeriod = 0;
+    for (const acct of rule.accountNumbers ?? []) {
+      const prev = prevBalances.find((b) => b.accountNumber === acct || b.accountNumber.startsWith(acct));
+      if (prev) {
+        currentPeriod += (prev.closingDebit - prev.closingCredit) * rule.sign;
+      }
+    }
+    return {
+      code: rule.code,
+      name: rule.name,
+      currentPeriod: Math.round(currentPeriod),
+      previousPeriod: 0,
+      isBold: rule.bold,
+    };
+  }
+
+  let currentPeriod = 0;
+  for (const acct of rule.accountNumbers ?? []) {
+    const bal = balances.find((b) => b.accountNumber === acct || b.accountNumber.startsWith(acct));
+    if (bal) currentPeriod += (bal.closingDebit - bal.closingCredit) * rule.sign;
+  }
+  return {
+    code: rule.code,
+    name: rule.name,
+    currentPeriod: Math.round(currentPeriod),
+    previousPeriod: 0,
+    isBold: rule.bold,
+    children: rule.children?.map((c) => generateCashFlowStatementLine(c, balances, prevBalances, incomeStatementLines)),
+  };
+}
+
+export function resolveFormulaLines(lines: FinancialStatementLine[], type?: FinancialStatementType): FinancialStatementLine[] {
   const map = new Map(lines.map((l) => [l.code, l]));
 
   const resolve = (code: string): number => {
@@ -172,9 +274,13 @@ export function resolveFormulaLines(lines: FinancialStatementLine[]): FinancialS
     return line.previousPeriod;
   };
 
+  const rules = type === FinancialStatementType.B03_DN
+    ? getB03LCTTMapping()
+    : [...getB02KQHDMapping(), ...getB01TTSMapping()];
+
   for (const line of lines) {
-    const rule = [...getB02KQHDMapping(), ...getB01TTSMapping()].find((r) => r.code === line.code);
-    if (rule?.isFormula && rule.formula) {
+    const rule = rules.find((r) => r.code === line.code);
+    if (rule?.isFormula && rule.formula && line.currentPeriod === 0 && line.previousPeriod === 0) {
       const parts = rule.formula.split(/([+-])/);
       let current = 0;
       let prev = 0;
@@ -190,7 +296,7 @@ export function resolveFormulaLines(lines: FinancialStatementLine[]): FinancialS
       line.previousPeriod = prev;
     }
     if (line.children) {
-      line.children = resolveFormulaLines(line.children);
+      line.children = resolveFormulaLines(line.children, type);
     }
   }
   return lines;
@@ -203,12 +309,21 @@ export function generateAllLines(
   companyName: string,
   periodLabel: string,
 ): FinancialStatement {
-  const rules = type === FinancialStatementType.B02_DN
-    ? getB02KQHDMapping()
-    : getB01TTSMapping();
+  let rules: StatementMappingRule[];
+  let lineGenerator: (rule: StatementMappingRule) => FinancialStatementLine;
+  if (type === FinancialStatementType.B03_DN) {
+    rules = getB03LCTTMapping();
+    lineGenerator = (r) => generateCashFlowStatementLine(r, balances, prevBalances);
+  } else if (type === FinancialStatementType.B02_DN) {
+    rules = getB02KQHDMapping();
+    lineGenerator = (r) => generateFinancialStatementLine(r, balances, prevBalances);
+  } else {
+    rules = getB01TTSMapping();
+    lineGenerator = (r) => generateFinancialStatementLine(r, balances, prevBalances);
+  }
 
-  const raw = rules.map((r) => generateFinancialStatementLine(r, balances, prevBalances));
-  const resolved = resolveFormulaLines(raw);
+  const raw = rules.map(lineGenerator);
+  const resolved = resolveFormulaLines(raw, type);
 
   return {
     type,

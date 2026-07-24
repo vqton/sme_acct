@@ -1,90 +1,74 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { api } from '../services/api';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { api } from "@/services/api";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, CheckCircle2 } from "lucide-react";
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError('Vui lòng nhập email hợp lệ');
-      return;
-    }
-
+    setError("");
     setLoading(true);
     try {
-      await api.forgotPassword(email.trim().toLowerCase());
-      setSuccess(true);
-    } catch {
-      setError('Không thể gửi yêu cầu đặt lại mật khẩu. Vui lòng thử lại.');
+      await api.forgotPassword(email);
+      setSent(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gửi thất bại");
     } finally {
       setLoading(false);
     }
   };
 
-  if (success) {
+  if (sent) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f5f5f5', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
-        <div style={{ width: '100%', maxWidth: 400, padding: 32, background: '#fff', borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.1)', margin: 16, textAlign: 'center' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>&#9993;</div>
-          <h2 style={{ fontSize: 20, color: '#2563eb', marginBottom: 8 }}>Kiểm tra email của bạn</h2>
-          <p style={{ fontSize: 14, color: '#666', marginBottom: 20 }}>
-            Nếu tài khoản tồn tại, hướng dẫn đặt lại mật khẩu đã được gửi đến <strong>{email}</strong>.
-          </p>
-          <Link to="/login" style={{ display: 'inline-block', padding: '10px 24px', fontSize: 14, fontWeight: 600, color: '#fff', background: '#2563eb', border: 'none', borderRadius: 6, textDecoration: 'none' }}>
-            Quay lại đăng nhập
-          </Link>
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
+        <Card className="w-full max-w-sm">
+          <CardHeader className="text-center">
+            <CheckCircle2 className="mx-auto h-12 w-12 text-green-500" />
+            <CardTitle className="mt-2">Đã gửi email</CardTitle>
+            <CardDescription>Vui lòng kiểm tra email để đặt lại mật khẩu.</CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Link to="/login" className="w-full"><Button variant="outline" className="w-full">Quay lại đăng nhập</Button></Link>
+          </CardFooter>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f5f5f5', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
-      <div style={{ width: '100%', maxWidth: 400, padding: 32, background: '#fff', borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.1)', margin: 16 }}>
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Quên mật khẩu</h1>
-          <p style={{ fontSize: 14, color: '#666', marginTop: 8 }}>Nhập email để nhận hướng dẫn đặt lại mật khẩu</p>
-        </div>
-
-        {error && (
-          <div style={{ padding: '10px 14px', marginBottom: 16, background: '#fee', border: '1px solid #fcc', borderRadius: 6, color: '#c33', fontSize: 14 }}>
-            {error}
-          </div>
-        )}
-
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">Quên mật khẩu</CardTitle>
+          <CardDescription>Nhập email để nhận liên kết đặt lại mật khẩu</CardDescription>
+        </CardHeader>
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: 20 }}>
-            <label htmlFor="email" style={{ display: 'block', fontSize: 14, fontWeight: 500, marginBottom: 4, color: '#333' }}>Email</label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              placeholder="email@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={loading}
-              style={{ width: '100%', padding: '10px 12px', fontSize: 14, border: '1px solid #ddd', borderRadius: 6, boxSizing: 'border-box', opacity: loading ? 0.6 : 1 }}
-            />
-          </div>
-
-          <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', fontSize: 16, fontWeight: 600, color: '#fff', background: loading ? '#94a3b8' : '#2563eb', border: 'none', borderRadius: 6, cursor: loading ? 'not-allowed' : 'pointer' }}>
-            {loading ? 'Đang gửi...' : 'Gửi hướng dẫn đặt lại'}
-          </button>
+          <CardContent className="space-y-4">
+            {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" placeholder="Nhập email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={loading} />
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-4">
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Gửi liên kết
+            </Button>
+            <Link to="/login" className="text-sm text-primary hover:underline">Quay lại đăng nhập</Link>
+          </CardFooter>
         </form>
-
-        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: '#666' }}>
-          <Link to="/login" style={{ color: '#2563eb', textDecoration: 'none', fontWeight: 500 }}>
-            &larr; Quay lại đăng nhập
-          </Link>
-        </div>
-      </div>
+      </Card>
     </div>
   );
 }

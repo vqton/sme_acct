@@ -1,58 +1,49 @@
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function CompanySelector() {
   const { pendingCompanies, selectCompany } = useAuth();
+  const navigate = useNavigate();
 
   if (pendingCompanies.length === 0) return null;
 
-  return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f5f5f5', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
-      <div style={{ width: '100%', maxWidth: 440, padding: 32, background: '#fff', borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.1)', margin: 16 }}>
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Chọn công ty</h1>
-          <p style={{ fontSize: 14, color: '#666', marginTop: 8 }}>Bạn có nhiều công ty. Vui lòng chọn công ty để đăng nhập.</p>
-        </div>
+  const handleSelect = async (companyId: number) => {
+    await selectCompany(companyId);
+    navigate("/");
+  };
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-xl">Chọn công ty</CardTitle>
+          <CardDescription>
+            Bạn có nhiều công ty. Vui lòng chọn công ty để đăng nhập.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
           {pendingCompanies.map((company) => (
-            <button
+            <Button
               key={company.id}
-              onClick={() => selectCompany(company.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                padding: '14px 16px',
-                fontSize: 15,
-                fontWeight: 500,
-                color: '#1a1a2e',
-                background: '#f9fafb',
-                border: '1px solid #e5e7eb',
-                borderRadius: 8,
-                cursor: 'pointer',
-                textAlign: 'left',
-                transition: 'background 0.15s, border-color 0.15s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#eff6ff';
-                e.currentTarget.style.borderColor = '#2563eb';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#f9fafb';
-                e.currentTarget.style.borderColor = '#e5e7eb';
-              }}
+              variant="outline"
+              className="w-full justify-start gap-3 h-auto py-3"
+              onClick={() => handleSelect(company.id)}
             >
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, flexShrink: 0 }}>
+              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground text-sm font-bold shrink-0">
                 {company.name.charAt(0).toUpperCase()}
               </div>
-              <div>
-                <div style={{ fontWeight: 600 }}>{company.name}</div>
-                {company.role && <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>Vai trò: {company.role}</div>}
+              <div className="text-left">
+                <div className="font-medium">{company.name}</div>
+                {company.role && (
+                  <div className="text-xs text-muted-foreground">Vai trò: {company.role}</div>
+                )}
               </div>
-            </button>
+            </Button>
           ))}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

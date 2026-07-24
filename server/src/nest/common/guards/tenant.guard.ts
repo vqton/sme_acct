@@ -5,7 +5,7 @@ import type Database from 'better-sqlite3';
 
 export interface TenantRequest extends Request {
   user?: { userId: number; username: string; companyId?: number; roles: string[] };
-  companyId?: string;
+  companyId?: number;
   userCompanyIds?: number[];
 }
 
@@ -25,14 +25,14 @@ export class TenantGuard implements CanActivate {
     const rows = this.stmt.all(user.userId) as { company_id: number }[];
     req.userCompanyIds = rows.map((r) => r.company_id);
 
-    const companyId = (req.params as Record<string, string>).companyId
-      ?? (req.params as Record<string, string>).id;
+    const companyId = Number((req.params as Record<string, string>).companyId
+      ?? (req.params as Record<string, string>).id);
 
     if (companyId) {
-      if (!req.userCompanyIds.includes(+companyId)) {
+      if (!req.userCompanyIds.includes(companyId)) {
         throw new ForbiddenException('Access to this company is not allowed');
       }
-      if (user.companyId !== undefined && user.companyId !== +companyId) {
+      if (user.companyId !== undefined && user.companyId !== companyId) {
         throw new ForbiddenException('Token company mismatch: cannot access this company');
       }
       req.companyId = companyId;

@@ -1,193 +1,127 @@
-import { useState, useEffect } from 'react';
-import { Form, Input, DatePicker, Select, Button, InputNumber, Space, Table, App, Card, Divider, Tag } from 'antd';
-import { PlusOutlined, DeleteOutlined, SaveOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
-import { getAccounts, createJournalEntry } from '../services/api';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { api } from "@/services/api";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 
-const entryTypeOptions = [
-  { value: 1, label: 'Phiếu thu' }, { value: 2, label: 'Phiếu chi' },
-  { value: 3, label: 'Báo Có' }, { value: 4, label: 'Báo Nợ' },
-  { value: 5, label: 'Mua hàng' }, { value: 6, label: 'Bán hàng' },
-  { value: 9, label: 'Tổng hợp' }, { value: 10, label: 'Điều chỉnh' },
-  { value: 11, label: 'Kết chuyển' }, { value: 99, label: 'Khác' },
-];
+interface Line {
+  accountId: number;
+  debit: string;
+  credit: string;
+  description: string;
+}
 
 export default function JournalEntryFormPage() {
-  const [form] = Form.useForm();
-  const [accounts, setAccounts] = useState<any[]>([]);
-  const [lines, setLines] = useState<Array<{ accountId?: number; accountNumber?: string; debitAmount: number; creditAmount: number; description?: string }>>([{ accountId: undefined, accountNumber: undefined, debitAmount: 0, creditAmount: 0 }]);
-
-  function updateLine(i: number, patch: Partial<{ accountId: number; accountNumber: string; debitAmount: number; creditAmount: number; description: string }>) {
-    const next = lines.map((l, idx) => idx === i ? { ...l, debitAmount: 0, creditAmount: 0, ...patch } : l);
-    setLines(next);
-  }
-  const [submitting, setSubmitting] = useState(false);
+  const { companyId } = useAuth();
   const navigate = useNavigate();
-  const { message } = App.useApp();
-  const companyId = Number(localStorage.getItem('currentCompanyId'));
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [form, setForm] = useState({ entryDate: new Date().toISOString().split("T")[0], description: "" });
+  const [lines, setLines] = useState<Line[]>([
+    { accountId: 0, debit: "", credit: "", description: "" },
+    { accountId: 0, debit: "", credit: "", description: "" },
+  ]);
 
   useEffect(() => {
-    getAccounts(companyId).then(setAccounts).catch(() => {});
+    if (companyId) api.getAccounts(companyId).then((data: any) => setAccounts(data.data || data));
   }, [companyId]);
 
-  const accountOptions = accounts
-    .filter((a) => a.allowTransactions)
-    .map((a) => ({ value: a.id, label: `${a.accountNumber} - ${a.name}`, number: a.accountNumber }));
-
-  const totalDebit = lines.reduce((s, l) => s + (l.debitAmount || 0), 0);
-  const totalCredit = lines.reduce((s, l) => s + (l.creditAmount || 0), 0);
-  const balanced = Math.abs(totalDebit - totalCredit) < 0.01;
-
-  const addLine = () => setLines([...lines, { accountId: undefined, accountNumber: undefined, debitAmount: 0, creditAmount: 0 }]);
-  const removeLine = (i: number) => lines.length > 1 && setLines(lines.filter((_, idx) => idx !== i));
-
-  const handleSubmit = async () => {
-    const values = await form.validateFields();
-    if (!balanced) { message.error('Tổng Nợ và Tổng Có không cân bằng'); return; }
-    if (lines.some((l) => !l.accountId)) { message.error('Chọn tài khoản cho tất cả dòng'); return; }
-
-    setSubmitting(true);
-    try {
-      const linesData = lines.map((l) => ({
-        accountId: l.accountId || '',
-        accountNumber: l.accountNumber || '',
-        debitAmount: l.debitAmount || 0,
-        creditAmount: l.creditAmount || 0,
-        description: l.description || '',
-      }));
-      const entry = await createJournalEntry({
-        companyId,
-        entryDate: values.entryDate.format('YYYY-MM-DD'),
-        entryType: values.entryType,
-        description: values.description,
-        lines: linesData,
-      });
-      message.success('Đã tạo chứng từ: ' + entry.entryNumber);
-      navigate('/accounting/journal-entries');
-    } catch (e: any) {
-      message.error(e.message);
-    } finally {
-      setSubmitting(false);
-    }
+  const updateLine = (i: number, field: keyof Line, value: string | number) => {
+    const next = [...lines];
+    (next[i] as any)[field] = value;
+    setLines(next);
   };
 
-  const lineColumns = [
-    { title: 'Tài khoản', dataIndex: 'accountId', key: 'accountId', width: 300,
-      render: (_: any, __: any, i: number) => {
-        const line = lines[i];
-        if (!line) return null;
-        return (
-        <Select
-          showSearch
-          style={{ width: '100%' }}
-          options={accountOptions}
-          value={line.accountId || undefined}
-          onChange={(val) => {
-            const opt = accountOptions.find((o) => o.value === val);
-            updateLine(i, { accountId: val, accountNumber: opt?.number || '' });
-          }}
-          filterOption={(input, option) => (option?.label as string || '').toLowerCase().includes(input.toLowerCase())}
-          placeholder="Chọn tài khoản"
-        />
-        );
-      },
-    },
-    { title: 'PS Nợ', dataIndex: 'debitAmount', key: 'debitAmount', width: 150,
-      render: (_: any, __: any, i: number) => {
-        const line = lines[i];
-        if (!line) return null;
-        return (
-        <InputNumber
-          style={{ width: '100%' }}
-          value={line.debitAmount}
-          onChange={(v) => {
-            updateLine(i, { debitAmount: v || 0, creditAmount: (v && v > 0) ? 0 : line.creditAmount });
-          }}
-          min={0}
-        />
-        );
-      },
-    },
-    { title: 'PS Có', dataIndex: 'creditAmount', key: 'creditAmount', width: 150,
-      render: (_: any, __: any, i: number) => {
-        const line = lines[i];
-        if (!line) return null;
-        return (
-        <InputNumber
-          style={{ width: '100%' }}
-          value={line.creditAmount}
-          onChange={(v) => {
-            updateLine(i, { creditAmount: v || 0, debitAmount: (v && v > 0) ? 0 : line.debitAmount });
-          }}
-          min={0}
-        />
-        );
-      },
-    },
-    { title: 'Diễn giải', dataIndex: 'description', key: 'description', width: 200,
-      render: (_: any, __: any, i: number) => {
-        const line = lines[i];
-        if (!line) return null;
-        return (
-        <Input value={line.description} onChange={(e) => {
-          updateLine(i, { description: e.target.value });
-        }} />
-        );
-      },
-    },
-    { title: '', key: 'actions', width: 50,
-      render: (_: any, __: any, i: number) => (
-        <Button type="text" danger icon={<DeleteOutlined />} onClick={() => removeLine(i)} disabled={lines.length <= 1} />
-      ),
-    },
-  ];
+  const addLine = () => setLines([...lines, { accountId: 0, debit: "", credit: "", description: "" }]);
+  const removeLine = (i: number) => setLines(lines.filter((_, idx) => idx !== i));
+
+  const totalDebit = lines.reduce((s, l) => s + (Number(l.debit) || 0), 0);
+  const totalCredit = lines.reduce((s, l) => s + (Number(l.credit) || 0), 0);
+  const balanced = totalDebit === totalCredit && totalDebit > 0;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!balanced) return;
+    await api.createJournalEntry({
+      companyId: companyId!,
+      entryDate: form.entryDate,
+      description: form.description,
+      lines: lines.filter(l => l.accountId > 0).map(l => ({
+        accountId: l.accountId,
+        debit: Number(l.debit) || 0,
+        credit: Number(l.credit) || 0,
+        description: l.description,
+      })),
+    });
+    navigate("/accounting/journal-entries");
+  };
 
   return (
-    <div style={{ maxWidth: 1000 }}>
-      <h2>Thêm chứng từ kế toán</h2>
-      <Card>
-        <Form form={form} layout="vertical">
-          <Space style={{ width: '100%' }} size="large" wrap>
-            <Form.Item name="entryDate" label="Ngày chứng từ" rules={[{ required: true }]} style={{ width: 200 }}>
-              <DatePicker style={{ width: '100%' }} />
-            </Form.Item>
-            <Form.Item name="entryType" label="Loại chứng từ" rules={[{ required: true }]} style={{ width: 200 }}>
-              <Select options={entryTypeOptions} />
-            </Form.Item>
-          </Space>
-          <Form.Item name="description" label="Diễn giải" rules={[{ required: true }]}>
-            <Input.TextArea rows={2} />
-          </Form.Item>
-        </Form>
-      </Card>
-
-      <Divider>Chi tiết định khoản</Divider>
-
-      <Table
-        dataSource={lines.map((l, i) => ({ ...l, key: i }))}
-        columns={lineColumns}
-        pagination={false}
-        size="small"
-        footer={() => (
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Button type="dashed" icon={<PlusOutlined />} onClick={addLine}>Thêm dòng</Button>
-            <Space>
-              <strong>Tổng Nợ: {totalDebit.toLocaleString()}</strong>
-              <strong>Tổng Có: {totalCredit.toLocaleString()}</strong>
-              <Tag color={balanced ? 'success' : 'error'}>{balanced ? 'Cân bằng' : 'Mất cân bằng'}</Tag>
-            </Space>
-          </div>
-        )}
-      />
-
-      <div style={{ marginTop: 16, textAlign: 'right' }}>
-        <Space>
-          <Button onClick={() => navigate('/accounting/journal-entries')}>Hủy</Button>
-          <Button type="primary" icon={<SaveOutlined />} onClick={handleSubmit} loading={submitting}>
-            Lưu chứng từ
-          </Button>
-        </Space>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate("/accounting/journal-entries")}><ArrowLeft className="h-5 w-5" /></Button>
+        <h1 className="text-2xl font-bold">Tạo bút toán mới</h1>
       </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <Card>
+          <CardContent className="pt-6 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label>Ngày hạch toán</Label><Input type="date" value={form.entryDate} onChange={(e) => setForm({ ...form, entryDate: e.target.value })} /></div>
+              <div className="space-y-2"><Label>Diễn giải chung</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Hạch toán</CardTitle>
+            <Button type="button" variant="outline" size="sm" onClick={addLine}><Plus className="mr-2 h-4 w-4" />Thêm dòng</Button>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {lines.map((line, i) => (
+              <div key={i} className="grid grid-cols-[1fr_120px_120px_1fr_auto] gap-2 items-end">
+                <div className="space-y-1">
+                  {i === 0 && <Label className="text-xs">Tài khoản</Label>}
+                  <Select value={String(line.accountId)} onValueChange={(v) => updateLine(i, "accountId", Number(v))}>
+                    <SelectTrigger><SelectValue placeholder="Chọn TK" /></SelectTrigger>
+                    <SelectContent>
+                      {accounts.map((a: any) => <SelectItem key={a.id} value={String(a.id)}>{a.code} - {a.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  {i === 0 && <Label className="text-xs">Nợ</Label>}
+                  <Input type="number" placeholder="0" value={line.debit} onChange={(e) => updateLine(i, "debit", e.target.value)} />
+                </div>
+                <div className="space-y-1">
+                  {i === 0 && <Label className="text-xs">Có</Label>}
+                  <Input type="number" placeholder="0" value={line.credit} onChange={(e) => updateLine(i, "credit", e.target.value)} />
+                </div>
+                <div className="space-y-1">
+                  {i === 0 && <Label className="text-xs">Diễn giải</Label>}
+                  <Input value={line.description} onChange={(e) => updateLine(i, "description", e.target.value)} />
+                </div>
+                <Button type="button" variant="ghost" size="icon" onClick={() => removeLine(i)} className="mb-0.5"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+              </div>
+            ))}
+            <div className="flex justify-end gap-8 text-sm font-medium pt-2 border-t">
+              <span>Tổng nợ: {totalDebit.toLocaleString()}</span>
+              <span>Tổng có: {totalCredit.toLocaleString()}</span>
+              <span className={balanced ? "text-green-600" : "text-destructive"}>{balanced ? "Cân bằng" : "Không cân bằng"}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={() => navigate("/accounting/journal-entries")}>Hủy</Button>
+          <Button type="submit" disabled={!balanced}>Tạo bút toán</Button>
+        </div>
+      </form>
     </div>
   );
 }

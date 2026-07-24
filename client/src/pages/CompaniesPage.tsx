@@ -1,127 +1,74 @@
-import { useEffect, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { api } from '../services/api';
-import type { Company } from '../types';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { api } from "@/services/api";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Trash2 } from "lucide-react";
+import type { Company } from "@/types";
 
-const STATUS_LABELS: Record<number, string> = {
-  1: 'Đang hoạt động',
-  2: 'Tạm ngừng',
-  3: 'Đã giải thể',
-  4: 'Phá sản',
-  5: 'Đã sáp nhập',
-  6: 'Đang chuyển đổi',
+const statusMap: Record<number, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  1: { label: "Hoạt động", variant: "default" },
+  2: { label: "Tạm đình chỉ", variant: "secondary" },
+  3: { label: "Đã giải thể", variant: "destructive" },
+  4: { label: "Phá sản", variant: "destructive" },
+  5: { label: "Sáp nhập", variant: "outline" },
+  6: { label: "Đang chuyển đổi", variant: "outline" },
 };
-
-const STATUS_COLORS: Record<number, string> = {
-  1: '#16a34a',
-  2: '#ca8a04',
-  3: '#dc2626',
-  4: '#991b1b',
-  5: '#6b7280',
-  6: '#2563eb',
-};
-
-function fmt(n?: number): string {
-  if (n == null) return '—';
-  return n.toLocaleString('vi-VN');
-}
 
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-  const fetch = useCallback(async () => {
-    try {
-      const data = await api.getCompanies();
-      setCompanies(data);
-    } catch {
-      setError('Không thể tải danh sách công ty');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const load = () => {
+    api.getCompanies().then(setCompanies).finally(() => setLoading(false));
+  };
 
-  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => { load(); }, []);
 
-  async function handleDelete(c: Company) {
-    if (!confirm(`Xóa công ty "${c.name}"?`)) return;
-    try {
-      await api.deleteCompany(c.id);
-      setCompanies((prev) => prev.filter((x) => x.id !== c.id));
-    } catch {
-      setError('Không thể xóa công ty');
-    }
-  }
-
-  if (loading) return <div style={{ padding: 24, textAlign: 'center', color: '#666' }}>Đang tải...</div>;
+  const handleDelete = async (id: number) => {
+    if (!confirm("Xóa công ty này?")) return;
+    await api.deleteCompany(id);
+    load();
+  };
 
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Công ty</h1>
-        <Link to="/companies/new" style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, color: '#fff', background: '#2563eb', border: 'none', borderRadius: 6, cursor: 'pointer', textDecoration: 'none' }}>
-          + Thêm công ty
-        </Link>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Công ty</h1>
+        <Button onClick={() => navigate("/companies/new")}><Plus className="mr-2 h-4 w-4" />Thêm mới</Button>
       </div>
-
-      {error && (
-        <div style={{ padding: '10px 14px', marginBottom: 16, background: '#fee', border: '1px solid #fcc', borderRadius: 6, color: '#c33', fontSize: 14 }}>
-          {error}
-        </div>
-      )}
-
-      {companies.length === 0 ? (
-        <p style={{ color: '#888' }}>Chưa có công ty nào.</p>
-      ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-          <thead>
-            <tr>
-              <th style={{ textAlign: 'left', borderBottom: '2px solid #ddd', padding: 10, color: '#555', fontWeight: 600 }}>Tên công ty</th>
-              <th style={{ textAlign: 'left', borderBottom: '2px solid #ddd', padding: 10, color: '#555', fontWeight: 600 }}>MST</th>
-              <th style={{ textAlign: 'left', borderBottom: '2px solid #ddd', padding: 10, color: '#555', fontWeight: 600 }}>Trạng thái</th>
-              <th style={{ textAlign: 'right', borderBottom: '2px solid #ddd', padding: 10, color: '#555', fontWeight: 600 }}>Vốn điều lệ</th>
-              <th style={{ textAlign: 'center', borderBottom: '2px solid #ddd', padding: 10, color: '#555', fontWeight: 600 }}>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {companies.map((c) => (
-              <tr key={c.id} style={{ transition: 'background 0.1s' }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = '#f9fafb'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-              >
-                <td style={{ padding: 10, borderBottom: '1px solid #eee', fontWeight: 500 }}>
-                  <Link to={`/companies/${c.id}`} style={{ color: '#2563eb', textDecoration: 'none' }}>
-                    {c.name}
-                  </Link>
-                </td>
-                <td style={{ padding: 10, borderBottom: '1px solid #eee', color: '#888' }}>{c.taxCode || '—'}</td>
-                <td style={{ padding: 10, borderBottom: '1px solid #eee' }}>
-                  <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600, color: '#fff', background: STATUS_COLORS[c.status] || '#6b7280' }}>
-                    {STATUS_LABELS[c.status] || `Unknown (${c.status})`}
-                  </span>
-                </td>
-                <td style={{ padding: 10, borderBottom: '1px solid #eee', textAlign: 'right', color: '#1a1a2e' }}>
-                  {c.charterCapital ? `${fmt(c.charterCapital)} đ` : '—'}
-                </td>
-                <td style={{ padding: 10, borderBottom: '1px solid #eee', textAlign: 'center' }}>
-                  <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-                    <Link to={`/companies/${c.id}`} style={{ padding: '4px 10px', fontSize: 11, color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 4, cursor: 'pointer', textDecoration: 'none' }}>
-                      Xem
-                    </Link>
-                    <Link to={`/companies/${c.id}/edit`} style={{ padding: '4px 10px', fontSize: 11, color: '#ca8a04', background: '#fefce8', border: '1px solid #fde68a', borderRadius: 4, cursor: 'pointer', textDecoration: 'none' }}>
-                      Sửa
-                    </Link>
-                    <button onClick={() => handleDelete(c)} style={{ padding: '4px 10px', fontSize: 11, color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 4, cursor: 'pointer' }}>
-                      Xóa
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tên công ty</TableHead>
+                <TableHead>Mã số thuế</TableHead>
+                <TableHead>Trạng thái</TableHead>
+                <TableHead className="w-12"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {companies.map((c) => (
+                <TableRow key={c.id}>
+                  <TableCell className="font-medium cursor-pointer hover:underline" onClick={() => navigate(`/companies/${c.id}`)}>{c.name}</TableCell>
+                  <TableCell>{c.taxCode}</TableCell>
+                  <TableCell><Badge variant={statusMap[c.status]?.variant ?? "outline"}>{statusMap[c.status]?.label ?? c.status}</Badge></TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {!loading && companies.length === 0 && (
+                <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Chưa có công ty nào</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

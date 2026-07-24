@@ -1,258 +1,259 @@
-import { useState, useCallback, useEffect } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useState } from "react";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
 import {
-  Layout, Menu, Button, Typography, Space, Dropdown, theme, Modal, Input, Breadcrumb, Tag
-} from 'antd';
+  LayoutDashboard,
+  Building2,
+  BookOpen,
+  FileText,
+  Calculator,
+  BarChart3,
+  CalendarDays,
+  Users,
+  UserCog,
+  Landmark,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  ChevronDown,
+  Receipt,
+  Wallet,
+  PiggyBank,
+  CreditCard,
+  TrendingUp,
+  Clock,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import {
-  BankOutlined, TeamOutlined, SafetyOutlined,
-  MenuFoldOutlined, MenuUnfoldOutlined, LogoutOutlined, UserOutlined,
-  AccountBookOutlined, FileTextOutlined, BookOutlined,
-  DollarOutlined, ToolOutlined,
-  CarOutlined, CalculatorOutlined, AuditOutlined,
-  KeyOutlined, ApartmentOutlined, SearchOutlined, BarcodeOutlined,
-  DatabaseOutlined, SettingOutlined, FileProtectOutlined,
-} from '@ant-design/icons';
-import { useAuth } from '../hooks/useAuth';
-import { useTranslation } from '../i18n';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-const { Header, Sider, Content } = Layout;
+interface NavItem {
+  label: string;
+  icon: React.ElementType;
+  path?: string;
+  children?: { label: string; path: string }[];
+}
 
-const MODULE_ROUTES: Record<string, { label: string; group: string }> = {
-  '/accounting/accounts': { label: 'Hệ thống TK', group: 'Tổng hợp' },
-  '/accounting/journal-entries': { label: 'Chứng từ', group: 'Tổng hợp' },
-  '/accounting/journal-entries/new': { label: 'Thêm chứng từ', group: 'Tổng hợp' },
-  '/accounting/ledger': { label: 'Sổ cái', group: 'Tổng hợp' },
-  '/accounting/trial-balance': { label: 'Bảng CĐTK', group: 'Tổng hợp' },
-  '/accounting/cash': { label: 'Sổ quỹ tiền mặt', group: 'Quỹ' },
-  '/accounting/bank': { label: 'Tiền gửi NH', group: 'Ngân hàng' },
-  '/accounting/sales': { label: 'Hóa đơn bán hàng', group: 'Bán hàng' },
-  '/accounting/ar': { label: 'Công nợ phải thu', group: 'Bán hàng' },
-  '/accounting/purchasing': { label: 'Hóa đơn mua hàng', group: 'Mua hàng' },
-  '/accounting/ap': { label: 'Công nợ phải trả', group: 'Mua hàng' },
-  '/accounting/fa': { label: 'Tài sản cố định', group: 'TSCĐ' },
-  '/accounting/ccdc': { label: 'CCDC', group: 'CCDC' },
-  '/accounting/inventory': { label: 'Hàng tồn kho', group: 'Kho' },
-  '/accounting/costing': { label: 'Giá thành', group: 'Giá thành' },
-  '/accounting/payroll': { label: 'Tiền lương', group: 'Tiền lương' },
-  '/accounting/tax': { label: 'Kê khai thuế', group: 'Thuế' },
-  '/accounting/tax/new': { label: 'Tạo tờ khai', group: 'Thuế' },
-  '/accounting/tax/calendar': { label: 'Lịch thuế', group: 'Thuế' },
-  '/accounting/tax/periods': { label: 'Kỳ tính thuế', group: 'Thuế' },
-  '/accounting/einvoice': { label: 'Hóa đơn điện tử', group: 'HĐĐT' },
-  '/accounting/contacts': { label: 'Đối tượng', group: 'Danh mục' },
-  '/accounting/reports': { label: 'Báo cáo tài chính', group: 'Báo cáo' },
-  '/accounting/system': { label: 'Tham số hệ thống', group: 'Hệ thống' },
-  '/users': { label: 'Người dùng', group: 'Hệ thống' },
-  '/user-groups': { label: 'Nhóm người dùng', group: 'Hệ thống' },
-  '/companies': { label: 'Công ty', group: 'Hệ thống' },
-  '/sessions': { label: 'Phiên đăng nhập', group: 'Hệ thống' },
-  '/2fa/setup': { label: 'Thiết lập 2FA', group: 'Hệ thống' },
-};
-
-const menuItems = [
+const navGroups: NavItem[] = [
   {
-    key: 'danhmuc', icon: <DatabaseOutlined />, label: 'Danh mục',
+    label: "Tổng quan",
+    icon: LayoutDashboard,
+    path: "/",
+  },
+  {
+    label: "Công ty",
+    icon: Building2,
     children: [
-      { key: '/accounting/accounts', icon: <BookOutlined />, label: 'Hệ thống TK' },
-      { key: '/accounting/contacts', icon: <TeamOutlined />, label: 'Đối tượng (KH, NCC)' },
+      { label: "Danh sách công ty", path: "/companies" },
+      { label: "Tạo công ty mới", path: "/companies/new" },
     ],
   },
   {
-    key: 'nghiepvu', icon: <FileTextOutlined />, label: 'Nghiệp vụ',
+    label: "Kế toán",
+    icon: BookOpen,
     children: [
-      { key: '/accounting/cash', icon: <DollarOutlined />, label: 'Quỹ' },
-      { key: '/accounting/bank', icon: <BankOutlined />, label: 'Ngân hàng' },
-      { key: '/accounting/purchasing', icon: <ApartmentOutlined />, label: 'Mua hàng' },
-      { key: '/accounting/sales', icon: <BarcodeOutlined />, label: 'Bán hàng' },
-      { key: '/accounting/inventory', icon: <BarcodeOutlined />, label: 'Kho' },
-      { key: '/accounting/fa', icon: <CarOutlined />, label: 'TSCĐ' },
-      { key: '/accounting/ccdc', icon: <ToolOutlined />, label: 'CCDC' },
-      { key: '/accounting/tax', icon: <SafetyOutlined />, label: 'Thuế',
-        children: [
-          { key: '/accounting/tax', label: 'Kê khai' },
-          { key: '/accounting/tax/calendar', label: 'Lịch thuế' },
-          { key: '/accounting/tax/periods', label: 'Kỳ tính thuế' },
-        ],
-      },
-      { key: '/accounting/einvoice', icon: <FileProtectOutlined />, label: 'HĐĐT' },
+      { label: "Chart of Accounts", path: "/accounting/accounts" },
+      { label: "Bút toán", path: "/accounting/journal-entries" },
+      { label: "Sổ cái", path: "/accounting/ledger" },
+      { label: "Bảng cân đối TK", path: "/accounting/trial-balance" },
+      { label: "Báo cáo tài chính", path: "/accounting/reports" },
+      { label: "Kết kỳ", path: "/accounting/period-close" },
+      { label: "Số dư đầu kỳ", path: "/accounting/opening-balance" },
     ],
   },
   {
-    key: 'tonghop', icon: <AccountBookOutlined />, label: 'Tổng hợp',
+    label: "Thuế",
+    icon: Receipt,
     children: [
-      { key: '/accounting/journal-entries', icon: <FileTextOutlined />, label: 'Chứng từ' },
-      { key: '/accounting/ledger', icon: <CalculatorOutlined />, label: 'Sổ cái' },
-      { key: '/accounting/trial-balance', icon: <AuditOutlined />, label: 'Bảng CĐTK' },
+      { label: "Khai thuế", path: "/accounting/tax" },
+      { label: "Lịch thuế", path: "/accounting/tax/calendar" },
+      { label: "Kỳ thuế", path: "/accounting/tax/periods" },
     ],
   },
   {
-    key: 'baocao', icon: <AuditOutlined />, label: 'Báo cáo',
+    label: "Người dùng",
+    icon: Users,
     children: [
-      { key: '/accounting/reports', icon: <FileTextOutlined />, label: 'BCTC' },
-      { key: '/accounting/tax', icon: <SafetyOutlined />, label: 'Báo cáo thuế' },
+      { label: "Danh sách", path: "/users" },
+      { label: "Nhóm quyền", path: "/user-groups" },
     ],
   },
   {
-    key: 'hethong', icon: <SettingOutlined />, label: 'Hệ thống',
-    children: [
-      { key: '/users', icon: <UserOutlined />, label: 'Người dùng' },
-      { key: '/user-groups', icon: <TeamOutlined />, label: 'Nhóm người dùng' },
-      { key: '/accounting/system', icon: <SettingOutlined />, label: 'Tham số' },
-      { key: '/companies', icon: <BankOutlined />, label: 'Công ty' },
-      { key: '/sessions', icon: <KeyOutlined />, label: 'Phiên đ.nhập' },
-      { key: '/2fa/setup', icon: <SafetyOutlined />, label: 'Xác thực 2 lớp' },
-    ],
+    label: "Phiên đăng nhập",
+    icon: Clock,
+    path: "/sessions",
   },
 ];
 
-const SEARCH_ITEMS = [
-  { key: '/accounting/accounts', label: 'Hệ thống tài khoản' },
-  { key: '/accounting/journal-entries', label: 'Chứng từ kế toán' },
-  { key: '/users', label: 'Người dùng' },
-  { key: '/user-groups', label: 'Nhóm người dùng' },
-  { key: '/accounting/contacts', label: 'Danh mục đối tượng' },
-  { key: '/accounting/cash', label: 'Sổ quỹ tiền mặt' },
-  { key: '/accounting/bank', label: 'Tiền gửi ngân hàng' },
-  { key: '/accounting/reports', label: 'Báo cáo tài chính' },
-  { key: '/accounting/tax', label: 'Kê khai thuế' },
-  { key: '/accounting/tax/calendar', label: 'Lịch thuế' },
-  { key: '/accounting/tax/periods', label: 'Kỳ tính thuế' },
-];
-
-export default function AppLayout() {
-  const [collapsed, setCollapsed] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [menuOpenKeys, setMenuOpenKeys] = useState<string[]>(['tonghop', 'nghiepvu']);
+export default function Layout() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [expandedGroups, setExpandedGroups] = useState<string[]>(["Kế toán", "Thuế", "Người dùng"]);
   const { user, logout } = useAuth();
-  const { t, locale, setLocale } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { token: { colorBgContainer, borderRadiusLG } } = theme.useToken();
 
-  useEffect(() => {
-    if (location.pathname.startsWith('/accounting/tax') && !menuOpenKeys.includes('/accounting/tax')) {
-      setMenuOpenKeys((prev) => [...new Set([...prev, '/accounting/tax'])]);
-    }
-  }, [location.pathname]);
+  const toggleGroup = (label: string) => {
+    setExpandedGroups((prev) =>
+      prev.includes(label) ? prev.filter((g) => g !== label) : [...prev, label]
+    );
+  };
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        setSearchOpen(true);
-      }
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, []);
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
 
-  const findRouteMeta = useCallback((path: string) => {
-    const exact = MODULE_ROUTES[path];
-    if (exact) return exact;
-    const parent = Object.entries(MODULE_ROUTES).find(([k]) => path.startsWith(k));
-    return parent?.[1] ?? null;
-  }, []);
-
-  const routeMeta = findRouteMeta(location.pathname);
-  const breadcrumbItems = routeMeta
-    ? [{ title: routeMeta.group }, { title: routeMeta.label }]
-    : [{ title: 'Dashboard' }];
-
-  const currentMonth = new Date().toLocaleDateString('vi-VN', { month: '2-digit', year: 'numeric' });
-
-  const filteredSearch = searchQuery
-    ? SEARCH_ITEMS.filter(i => i.label.toLowerCase().includes(searchQuery.toLowerCase()))
-    : SEARCH_ITEMS;
+  const isActive = (path: string) => {
+    if (path === "/") return location.pathname === "/";
+    return location.pathname.startsWith(path);
+  };
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Sider trigger={null} collapsible collapsed={collapsed} theme="dark"
-        style={{ background: '#001529' }}>
-        <div style={{ height: 40, margin: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {!collapsed && (
-            <Typography.Text strong style={{ color: 'white', fontSize: 16 }}>
-              Kế toán SME
-            </Typography.Text>
+    <div className="flex h-screen overflow-hidden bg-background">
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          "flex flex-col border-r bg-sidebar text-sidebar-foreground transition-all duration-300",
+          sidebarOpen ? "w-64" : "w-16"
+        )}
+      >
+        {/* Logo */}
+        <div className="flex h-14 items-center border-b px-4">
+          {sidebarOpen ? (
+            <span className="text-lg font-bold text-sidebar-primary">SME Accounting</span>
+          ) : (
+            <span className="text-lg font-bold text-sidebar-primary mx-auto">S</span>
           )}
         </div>
-        <Menu
-          theme="dark"
-          mode="inline"
-          selectedKeys={[location.pathname]}
-          openKeys={menuOpenKeys}
-          onOpenChange={(keys) => setMenuOpenKeys(keys)}
-          items={menuItems}
-          onClick={({ key }) => { navigate(key); }}
-        />
-      </Sider>
-      <Layout>
-        <Header style={{
-          padding: '0 16px', background: colorBgContainer,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          height: 56, borderBottom: '1px solid #f0f0f0'
-        }}>
-          <Space size="middle">
-            <Button type="text" icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-              onClick={() => setCollapsed(!collapsed)} />
-            <Tag color="blue" style={{ margin: 0 }}>Kỳ: T{currentMonth}</Tag>
-            <Tag icon={<BankOutlined />} style={{ margin: 0 }}>
-              Công ty mặc định
-            </Tag>
-            <Breadcrumb items={breadcrumbItems} />
-          </Space>
-          <Space>
-            <Button type="text" icon={<SearchOutlined />}
-              onClick={() => setSearchOpen(true)}
-            >
-              {!collapsed && 'Ctrl+K'}
-            </Button>
-            <Button type="text" onClick={() => setLocale(locale === 'vi' ? 'en' : 'vi')} size="small">
-              {locale === 'vi' ? 'EN' : 'VI'}
-            </Button>
-            <Dropdown menu={{
-              items: [
-                { key: 'user', label: `${user?.fullName} (@${user?.username})`, disabled: true },
-                { type: 'divider' },
-                { key: 'logout', icon: <LogoutOutlined />, label: t('nav.logout'), onClick: async () => { await logout(); navigate('/login'); } },
-              ],
-            }}>
-              <Button type="text" icon={<UserOutlined />}>{user?.fullName}</Button>
-            </Dropdown>
-          </Space>
-        </Header>
-        <Content style={{ margin: 16, padding: 16, background: colorBgContainer, borderRadius: borderRadiusLG, minHeight: 280 }}>
-          <Outlet />
-        </Content>
-      </Layout>
 
-      <Modal
-        title="Tìm kiếm nhanh"
-        open={searchOpen}
-        onCancel={() => { setSearchOpen(false); setSearchQuery(''); }}
-        footer={null}
-        width={480}
-      >
-        <Input
-          placeholder="Tìm kiếm module, chức năng..."
-          prefix={<SearchOutlined />}
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          autoFocus
-          style={{ marginBottom: 12 }}
-        />
-        {filteredSearch.map(item => (
-          <div
-            key={item.key}
-            style={{ padding: '8px 12px', cursor: 'pointer', borderRadius: 6 }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#f5f5f5')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-            onClick={() => { navigate(item.key); setSearchOpen(false); setSearchQuery(''); }}
-          >
-            {item.label}
+        {/* Navigation */}
+        <ScrollArea className="flex-1 py-2">
+          <nav className="space-y-1 px-2">
+            {navGroups.map((group) => (
+              <div key={group.label}>
+                {group.children ? (
+                  <>
+                    <button
+                      onClick={() => toggleGroup(group.label)}
+                      className={cn(
+                        "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                        expandedGroups.includes(group.label) && "bg-sidebar-accent"
+                      )}
+                    >
+                      <group.icon className="h-4 w-4 shrink-0" />
+                      {sidebarOpen && (
+                        <>
+                          <span className="flex-1 text-left">{group.label}</span>
+                          <ChevronDown
+                            className={cn(
+                              "h-4 w-4 transition-transform",
+                              expandedGroups.includes(group.label) && "rotate-180"
+                            )}
+                          />
+                        </>
+                      )}
+                    </button>
+                    {sidebarOpen && expandedGroups.includes(group.label) && (
+                      <div className="ml-4 mt-1 space-y-1">
+                        {group.children.map((child) => (
+                          <button
+                            key={child.path}
+                            onClick={() => navigate(child.path)}
+                            className={cn(
+                              "flex w-full items-center rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                              isActive(child.path) &&
+                                "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                            )}
+                          >
+                            {child.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <button
+                    onClick={() => group.path && navigate(group.path)}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                      isActive(group.path!) && "bg-sidebar-accent text-sidebar-accent-foreground"
+                    )}
+                  >
+                    <group.icon className="h-4 w-4 shrink-0" />
+                    {sidebarOpen && <span>{group.label}</span>}
+                  </button>
+                )}
+              </div>
+            ))}
+          </nav>
+        </ScrollArea>
+
+        {/* User section */}
+        <div className="border-t p-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground text-sm font-medium">
+              {user?.fullName?.charAt(0)?.toUpperCase() || "U"}
+            </div>
+            {sidebarOpen && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{user?.fullName}</p>
+                <p className="text-xs text-muted-foreground truncate">{user?.username}</p>
+              </div>
+            )}
           </div>
-        ))}
-      </Modal>
-    </Layout>
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Header */}
+        <header className="flex h-14 items-center justify-between border-b bg-background px-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="shrink-0"
+          >
+            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">
+                    {user?.fullName?.charAt(0)?.toUpperCase() || "U"}
+                  </div>
+                  <span className="hidden sm:inline">{user?.fullName}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => navigate("/sessions")}>
+                  <Clock className="mr-2 h-4 w-4" />
+                  Phiên đăng nhập
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Đăng xuất
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </header>
+
+        {/* Page content */}
+        <main className="flex-1 overflow-auto p-6">
+          <Outlet />
+        </main>
+      </div>
+    </div>
   );
 }

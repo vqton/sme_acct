@@ -1,10 +1,11 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
-import { api, getUser } from '../services/api';
+import { api, getUser, getCompanyId } from '../services/api';
 import type { CompanyOption } from '../types';
 
 export interface AuthState {
   isAuthenticated: boolean;
   user: { id: number; username: string; fullName: string } | null;
+  companyId: number | null;
   pendingCompanies: CompanyOption[];
   pending2FAToken: string | null;
   login: (username: string, password: string) => Promise<{ requiresCompanySelection: boolean; requires2FA: boolean; tempToken?: string; companies: CompanyOption[] }>;
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthState['user']>(getUser);
+  const [companyId, setCompanyIdState] = useState<AuthState['companyId']>(getCompanyId);
   const [pendingCompanies, setPendingCompanies] = useState<CompanyOption[]>([]);
   const [pending2FAToken, setPending2FAToken] = useState<string | null>(null);
 
@@ -40,12 +42,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const selectCompany = useCallback(async (companyId: number) => {
     const data = await api.selectCompany(companyId);
     setUser(data.user);
+    setCompanyIdState(companyId);
     setPendingCompanies([]);
   }, []);
 
   const logout = useCallback(async () => {
     await api.logout();
     setUser(null);
+    setCompanyIdState(null);
     setPendingCompanies([]);
   }, []);
 
@@ -54,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated: !!user, user, pendingCompanies, pending2FAToken, login, selectCompany, logout, register }}>
+    <AuthContext.Provider value={{ isAuthenticated: !!user, user, companyId, pendingCompanies, pending2FAToken, login, selectCompany, logout, register }}>
       {children}
     </AuthContext.Provider>
   );

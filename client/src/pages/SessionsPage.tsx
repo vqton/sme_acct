@@ -1,144 +1,64 @@
-import { useState, useEffect, useCallback } from 'react';
-
-interface Session {
-  id: string;
-  ipAddress?: string;
-  userAgent?: string;
-  deviceName?: string;
-  createdAt: string;
-  lastUsedAt?: string;
-}
-
-function parseDevice(ua?: string): string {
-  if (!ua) return 'Không rõ';
-  if (ua.includes('Chrome') && !ua.includes('Edg')) return 'Chrome';
-  if (ua.includes('Firefox')) return 'Firefox';
-  if (ua.includes('Safari') && !ua.includes('Chrome')) return 'Safari';
-  if (ua.includes('Edg')) return 'Edge';
-  if (ua.includes('OPR') || ua.includes('Opera')) return 'Opera';
-  return ua.slice(0, 40);
-}
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'Vừa xong';
-  if (mins < 60) return `${mins} phút trước`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} giờ trước`;
-  const days = Math.floor(hours / 24);
-  return `${days} ngày trước`;
-}
+import { useState, useEffect } from "react";
+import { api } from "@/services/api";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
 
 export default function SessionsPage() {
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
-  const fetchSessions = useCallback(async () => {
-    try {
-      const res = await fetch('/api/auth/sessions', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
-      if (!res.ok) throw new Error('Failed to load sessions');
-      const data = await res.json();
-      setSessions(data.sessions);
-    } catch {
-      setError('Không thể tải danh sách phiên đăng nhập');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const load = () => {
+    fetch("/api/auth/sessions").then(r => r.json()).then(setSessions).finally(() => setLoading(false));
+  };
 
-  useEffect(() => { fetchSessions(); }, [fetchSessions]);
+  useEffect(() => { load(); }, []);
 
-  const revokeSession = async (sessionId: string) => {
-    try {
-      const res = await fetch(`/api/auth/sessions/${sessionId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
-      if (!res.ok) throw new Error('Failed');
-      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
-    } catch {
-      setError('Không thể thu hồi phiên');
-    }
+  const revoke = async (id: number) => {
+    await fetch(`/api/auth/sessions/${id}`, { method: "DELETE" });
+    load();
   };
 
   const revokeAll = async () => {
-    try {
-      const res = await fetch('/api/auth/sessions', {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
-      if (!res.ok) throw new Error('Failed');
-      setSessions([]);
-    } catch {
-      setError('Không thể thu hồi tất cả phiên');
-    }
+    if (!confirm("Xóa tất cả phiên đăng nhập khác?")) return;
+    await fetch("/api/auth/sessions", { method: "DELETE" });
+    load();
   };
 
-  if (loading) {
-    return <div style={{ padding: 24, textAlign: 'center', color: '#666' }}>Đang tải...</div>;
-  }
-
   return (
-    <div style={{ maxWidth: 700, margin: '0 auto', padding: 24 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Phiên đăng nhập</h1>
-        {sessions.length > 1 && (
-          <button
-            onClick={revokeAll}
-            style={{ padding: '8px 16px', fontSize: 13, fontWeight: 500, color: '#fff', background: '#dc2626', border: 'none', borderRadius: 6, cursor: 'pointer' }}
-          >
-            Thu hồi tất cả
-          </button>
-        )}
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Phiên đăng nhập</h1>
+        <Button variant="destructive" onClick={revokeAll}>Xóa tất cả khác</Button>
       </div>
-
-      {error && (
-        <div style={{ padding: '10px 14px', marginBottom: 16, background: '#fee', border: '1px solid #fcc', borderRadius: 6, color: '#c33', fontSize: 14 }}>
-          {error}
-        </div>
-      )}
-
-      {sessions.length === 0 ? (
-        <p style={{ color: '#666', textAlign: 'center' }}>Không có phiên nào đang hoạt động.</p>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {sessions.map((session) => (
-            <div
-              key={session.id}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '14px 16px',
-                background: '#f9fafb',
-                border: '1px solid #e5e7eb',
-                borderRadius: 8,
-              }}
-            >
-              <div>
-                <div style={{ fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>
-                  {parseDevice(session.userAgent)}
-                  {session.ipAddress && <span style={{ fontWeight: 400, color: '#888', marginLeft: 8 }}>({session.ipAddress})</span>}
-                </div>
-                <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
-                  Đăng nhập {timeAgo(session.createdAt)}
-                  {session.lastUsedAt && ` · Hoạt động gần nhất ${timeAgo(session.lastUsedAt)}`}
-                </div>
-              </div>
-              <button
-                onClick={() => revokeSession(session.id)}
-                style={{ padding: '6px 12px', fontSize: 12, fontWeight: 500, color: '#dc2626', background: '#fff', border: '1px solid #fecaca', borderRadius: 4, cursor: 'pointer' }}
-              >
-                Thu hồi
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Thiết bị</TableHead>
+                <TableHead>IP</TableHead>
+                <TableHead>Đăng nhập lúc</TableHead>
+                <TableHead></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sessions.map((s: any) => (
+                <TableRow key={s.id}>
+                  <TableCell>{s.userAgent || "Unknown"}</TableCell>
+                  <TableCell>{s.ipAddress}</TableCell>
+                  <TableCell>{new Date(s.createdAt).toLocaleString("vi-VN")}</TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="icon" onClick={() => revoke(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }
