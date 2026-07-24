@@ -34,7 +34,10 @@ const MODULE_ROUTES: Record<string, { label: string; group: string }> = {
   '/accounting/inventory': { label: 'Hàng tồn kho', group: 'Kho' },
   '/accounting/costing': { label: 'Giá thành', group: 'Giá thành' },
   '/accounting/payroll': { label: 'Tiền lương', group: 'Tiền lương' },
-  '/accounting/tax': { label: 'Thuế', group: 'Thuế' },
+  '/accounting/tax': { label: 'Kê khai thuế', group: 'Thuế' },
+  '/accounting/tax/new': { label: 'Tạo tờ khai', group: 'Thuế' },
+  '/accounting/tax/calendar': { label: 'Lịch thuế', group: 'Thuế' },
+  '/accounting/tax/periods': { label: 'Kỳ tính thuế', group: 'Thuế' },
   '/accounting/einvoice': { label: 'Hóa đơn điện tử', group: 'HĐĐT' },
   '/accounting/contacts': { label: 'Đối tượng', group: 'Danh mục' },
   '/accounting/reports': { label: 'Báo cáo tài chính', group: 'Báo cáo' },
@@ -64,7 +67,13 @@ const menuItems = [
       { key: '/accounting/inventory', icon: <BarcodeOutlined />, label: 'Kho' },
       { key: '/accounting/fa', icon: <CarOutlined />, label: 'TSCĐ' },
       { key: '/accounting/ccdc', icon: <ToolOutlined />, label: 'CCDC' },
-      { key: '/accounting/tax', icon: <SafetyOutlined />, label: 'Thuế' },
+      { key: '/accounting/tax', icon: <SafetyOutlined />, label: 'Thuế',
+        children: [
+          { key: '/accounting/tax', label: 'Kê khai' },
+          { key: '/accounting/tax/calendar', label: 'Lịch thuế' },
+          { key: '/accounting/tax/periods', label: 'Kỳ tính thuế' },
+        ],
+      },
       { key: '/accounting/einvoice', icon: <FileProtectOutlined />, label: 'HĐĐT' },
     ],
   },
@@ -105,17 +114,27 @@ const SEARCH_ITEMS = [
   { key: '/accounting/cash', label: 'Sổ quỹ tiền mặt' },
   { key: '/accounting/bank', label: 'Tiền gửi ngân hàng' },
   { key: '/accounting/reports', label: 'Báo cáo tài chính' },
+  { key: '/accounting/tax', label: 'Kê khai thuế' },
+  { key: '/accounting/tax/calendar', label: 'Lịch thuế' },
+  { key: '/accounting/tax/periods', label: 'Kỳ tính thuế' },
 ];
 
 export default function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [menuOpenKeys, setMenuOpenKeys] = useState<string[]>(['tonghop', 'nghiepvu']);
   const { user, logout } = useAuth();
   const { t, locale, setLocale } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { token: { colorBgContainer, borderRadiusLG } } = theme.useToken();
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/accounting/tax') && !menuOpenKeys.includes('/accounting/tax')) {
+      setMenuOpenKeys((prev) => [...new Set([...prev, '/accounting/tax'])]);
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -161,7 +180,8 @@ export default function AppLayout() {
           theme="dark"
           mode="inline"
           selectedKeys={[location.pathname]}
-          defaultOpenKeys={['tonghop']}
+          openKeys={menuOpenKeys}
+          onOpenChange={(keys) => setMenuOpenKeys(keys)}
           items={menuItems}
           onClick={({ key }) => { navigate(key); }}
         />

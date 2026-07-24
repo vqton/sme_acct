@@ -820,6 +820,99 @@ export function runMigrations(db: Database): void {
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_tax_calendar_company ON tax_calendar_events(company_id, year)
   `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS opening_balance_headers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      period_id INTEGER NOT NULL REFERENCES fiscal_periods(id),
+      batch_number TEXT NOT NULL,
+      entry_date TEXT NOT NULL,
+      description TEXT,
+      total_debit REAL NOT NULL DEFAULT 0,
+      total_credit REAL NOT NULL DEFAULT 0,
+      status INTEGER NOT NULL DEFAULT 0,
+      import_source TEXT NOT NULL DEFAULT 'manual',
+      source_db_name TEXT,
+      source_db_version TEXT,
+      is_locked INTEGER NOT NULL DEFAULT 0,
+      locked_at TEXT,
+      locked_by_user_id INTEGER REFERENCES users(id),
+      created_by_user_id INTEGER NOT NULL REFERENCES users(id),
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT,
+      approved_by_user_id INTEGER REFERENCES users(id),
+      approved_at TEXT,
+      rejection_reason TEXT
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS opening_balance_lines (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      header_id INTEGER NOT NULL REFERENCES opening_balance_headers(id) ON DELETE CASCADE,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      account_id INTEGER NOT NULL REFERENCES accounts(id),
+      account_number TEXT NOT NULL,
+      account_name TEXT NOT NULL,
+      debit_amount REAL NOT NULL DEFAULT 0,
+      credit_amount REAL NOT NULL DEFAULT 0,
+      foreign_currency_code TEXT,
+      foreign_debit_amount REAL,
+      foreign_credit_amount REAL,
+      exchange_rate REAL DEFAULT 1,
+      bank_account_id INTEGER,
+      customer_id INTEGER,
+      supplier_id INTEGER,
+      employee_id INTEGER,
+      inventory_item_id INTEGER,
+      fixed_asset_id INTEGER,
+      tool_id INTEGER,
+      prepaid_expense_id INTEGER,
+      contract_id INTEGER,
+      project_id INTEGER,
+      cost_center_id TEXT,
+      department_id INTEGER,
+      notes TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS opening_balance_conversion_mappings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      old_account_number TEXT NOT NULL,
+      new_account_number TEXT NOT NULL,
+      conversion_type TEXT NOT NULL,
+      split_ratio REAL,
+      old_account_name TEXT,
+      new_account_name TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS opening_balance_audit_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      header_id INTEGER REFERENCES opening_balance_headers(id),
+      action TEXT NOT NULL,
+      old_value TEXT,
+      new_value TEXT,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      ip_address TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ob_header_company ON opening_balance_headers(company_id, period_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ob_header_status ON opening_balance_headers(status)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ob_lines_header ON opening_balance_lines(header_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ob_lines_account ON opening_balance_lines(account_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ob_audit_header ON opening_balance_audit_log(header_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ob_audit_company ON opening_balance_audit_log(company_id, action)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ob_mapping_company ON opening_balance_conversion_mappings(company_id)`);
 }
 
 export function initDatabase(): void {

@@ -12,6 +12,7 @@
 GL (General Ledger / Sổ Cái) module is the central hub of accounting. Every transaction from all sub-ledgers (cash, bank, AR, AP, inventory, FA, payroll) flows into GL. It manages journal entries, ledger posting, account balances, trial balance, financial statements, and period-end closing. In Vietnamese accounting, GL is called **Phân hệ Tổng hợp** — the integration point that produces Báo cáo Tài chính (BCTC).
 
 **Verdict: NOT PROD-READY — 8 CRITICAL + 15 MAJOR GAPS**
+**Linked modules:** [Opening Balance Module (42-ob-module-brd.md)](./42-ob-module-brd.md) — OB must be ready before GL can operate
 
 Current implementation provides solid foundation (LedgerEntry entity, LedgerRepository, AccountingService with posting logic, SQLite schema) but lacks client UI, financial statements, period-end closing workflow, multi-currency, cost center analytics, budget control, and full regulatory compliance with TT 99/2025/TT-BTC.
 

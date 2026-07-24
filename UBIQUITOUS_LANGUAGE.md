@@ -1,6 +1,6 @@
 # Ubiquitous Language — Company Domain
 
-> Vietnamese SME accounting system. Company module terminology.
+> Vietnamese SME accounting system. Company + Tax module terminology.
 > Regulatory base: Luật Doanh nghiệp 2024 (LDN 2024), NĐ 168/2025/NĐ-CP, TT 99/2025/TT-BTC.
 
 ---
@@ -207,6 +207,123 @@ Transitions:
 
 > **BA:** "When a **Chi nhánh** files its **Báo cáo thuế GTGT**, does it use its own **Mã số thuế** or the parent company's?"
 > **Domain Expert:** "The **Chi nhánh** has its own **Mã số thuế riêng** (branch tax code) and files its own **Báo cáo thuế GTGT** if it has independent accounting. If dependent, the parent consolidates. Per TT 99 Điều 34."
+
+## Tax Domain (Added 23/07/2026)
+
+| Term (VN) | Term (EN) | Definition | Regulatory Basis |
+|-----------|-----------|------------|------------------|
+| Thuế GTGT | VAT | Value Added Tax; rates 0%/5%/8%/10%; declaration (khấu trừ) or direct method | Luật 48/2024/QH15, NĐ 181/2025 |
+| Thuế TNDN | CIT | Corporate Income Tax; rates 15%/17%/20%/25-50% | Luật 67/2025/QH15, TT 20/2026 |
+| Thuế TNCN | PIT | Personal Income Tax; progressive 5-35% | Luật 109/2025/QH15 |
+| Thuế môn bài | License Tax | Annual business license tax; 0-3M VND | Pháp lệnh phí, lệ phí |
+| Thuế TTĐB | SCT | Special Consumption Tax; 10-150% on luxury goods | Luật TTĐB 2025 |
+| Thuế BVMT | Environmental Tax | Fixed rate on petrol, coal, etc. | Luật BVMT |
+| Thuế tài nguyên | Resource Tax | On natural resource extraction | Luật Thuế TN |
+| Phương pháp khấu trừ | Deduction Method | VAT payable = output - input (standard for >500M revenue) | NĐ 181 Điều 11-15 |
+| Phương pháp trực tiếp | Direct Method | VAT = revenue × deemed rate (for small businesses) | NĐ 181 Điều 16-17 |
+| Hóa đơn điện tử | E-invoice | Electronic invoice with GDT code; XML format per TCT | NĐ 70/2025, NĐ 254/2026 |
+| Chữ ký số | Digital Signature | PKI-based signature via Token or HSM | NĐ 23/2025 |
+| Thuế điện tử | eTax | Electronic tax declaration/payment portal | thuedientu.gdt.gov.vn |
+| Tạm tính thuế TNDN | CIT Provisional | Quarterly CIT estimate (payment only, no return per Luật TNDN 2025) | Luật TNDN 2025 Điều 17 |
+| Quyết toán thuế | Tax Finalization | Annual tax settlement | Luật Quản lý thuế |
+| Chuyển lỗ | Loss Carryforward | Offset losses against future profits (max 5 years) | TT 78/2014 Điều 9 |
+| Chi phí không hợp lý | Non-deductible Expense | Expenses disallowed for CIT; must add back | TT 20/2026 |
+| Khấu trừ thuế GTGT | VAT Input Deduction | Deduct input VAT if conditions met (≥5M requires bank transfer) | NĐ 181 Điều 26 |
+| Hoàn thuế GTGT | VAT Refund | Refund when input > output for 12 months (≥300M threshold) | NĐ 181 Điều 29-37 |
+| Chi phí lãi vay | Interest Expense Cap | Deductible ≤30% EBITDA (per transfer pricing) | NĐ 20/2026 |
+| Mã số thuế cá nhân | PIN | Personal Identification Number (12-digit, replaced TIN Jul 2025) | NĐ 69/2024 |
+| Định danh doanh nghiệp | Corporate e-ID | Electronic identity for company admin procedures | NĐ 69/2024 |
+| Thuế tối thiểu toàn cầu | Global Minimum Tax | Pillar 2; effective tax rate ≥15% for groups >750M EUR | OECD BEPS |
+| Tờ khai 01/GTGT | VAT Return 01/GTGT | Monthly/quarterly VAT declaration form per TT80 | TT 80/2026 |
+| Tờ khai 03/TNDN | CIT Return 03/TNDN | Annual CIT finalization form per TT80 | TT 80/2026 |
+| Tờ khai 05/QTT-TNCN | PIT Return 05/QTT-TNCN | Annual PIT finalization form | TT 80/2026 |
+| Báo cáo tình hình SD HĐ | Invoice Usage Report | Quarterly report on invoice usage to GDT | NĐ 70/2025 |
+| Chứng từ khấu trừ TNCN | PIT Deduction Certificate | Electronic certificate per NĐ 70/2025 | NĐ 70/2025 |
+| Hóa đơn từ máy tính tiền | POS-connected e-invoice | Real-time e-invoice from cash register to GDT | NĐ 254/2026 |
+
+## Tax State Machine
+
+```
+Tax Period Lifecycle:
+  OPEN → LOCKED (auto after 30 days) → FINALIZED → AMENDED (if correction needed)
+                        ↑                                 │
+                        └─────────────────────────────────┘
+
+Tax Declaration:
+  DRAFT → COMPUTED → REVIEWED → SIGNED → SUBMITTED → ADJUSTED (if error found)
+                                                         │
+                                                         ▼
+                                                      (amended return)
+
+VAT Position:
+  Output > Input  →  VAT Payable
+  Input > Output  →  VAT Credit (carryforward) or Refund (if ≥300M)
+```
+
+## Opening Balance Domain (Added 24/07/2026)
+
+| Term (VN) | Term (EN) | Definition | Regulatory Basis |
+|-----------|-----------|------------|------------------|
+| Số dư đầu kỳ | Opening Balance | Balance of each account at start of accounting period; equals closing balance of prior period | TT 99 Điều 4-5, Luật Kế toán Điều 13 |
+| Số dư ban đầu | Initial Balance | Opening balance entered when first using the system (new company or migration) | Practice standard |
+| Nhập số dư ban đầu | Opening Balance Entry | Process of entering initial balances for all accounts; first step before any transaction | MISA/Fast/Bravo standard |
+| Dư Nợ đầu kỳ | Opening Debit Balance | Debit-side opening balance (Dư Nợ) — typical for assets, expenses | TT 99 Phụ lục II |
+| Dư Có đầu kỳ | Opening Credit Balance | Credit-side opening balance (Dư Có) — typical for liabilities, equity, revenue | TT 99 Phụ lục II |
+| Kết chuyển số dư | Balance Carry-Forward | Auto-transfer of closing balances → opening balances of next period | Luật Kế toán Điều 13 |
+| Phiếu số dư đầu kỳ | Opening Balance Voucher | Document recording a batch of opening balance entries with unique batch number | Practice standard |
+| Chuyển đổi số dư | Balance Conversion | Process of converting balances from TT200 accounts to TT99 accounts | TT 99 Điều 30 |
+| Mapping tài khoản | Account Mapping | Mapping table: old account (TT200) → new account (TT99) with conversion type | TT 99 Phụ lục I→II |
+| Khóa số dư đầu kỳ | Opening Balance Lock | Preventing modification of opening balance after transactions are posted | Luật Kế toán Điều 13 |
+| Số dư chi tiết | Detail Balance | Opening balance broken down by sub-ledger: bank account, customer, supplier, item, asset | TT 53/2006 (quản trị) |
+| Số dư ngoại tệ | Foreign Currency Balance | Opening balance in foreign currency with exchange rate → VND equivalent | TT 99 Điều 6 |
+| Bảng cân đối tài khoản | Trial Balance | Report showing opening balance + period transactions = closing balance per account | TT 99 |
+| Sổ chi tiết số dư đầu kỳ | Opening Balance Detail Ledger | Detailed report of opening balances by account with sub-ledger breakdown | Practice standard |
+
+## Opening Balance State Machine
+
+```
+                    ┌──────────────┐
+                    │   Bản nháp   │
+                    │   (Draft)    │
+                    └──────┬───────┘
+                           │
+                    ┌──────▼───────┐
+            ┌──────▶│ Chờ duyệt    │
+            │       │ (Pending)    │
+            │       └──────┬───────┘
+            │              │
+            │       ┌──────▼───────┐
+            │       │ Đã duyệt     │
+            │       │ (Approved)   │
+            │       └──────┬───────┘
+            │              │
+            │       ┌──────▼───────┐
+            │       │ Đã khóa      │──────────────┐
+            │       │ (Locked)     │              │
+            │       └──────────────┘              │
+            │              ▲                      │
+            │              │  (mở khóa)            │
+            └──────────────┘                      │
+                                                  ▼
+                                           ┌──────────────┐
+                                           │ Đã đóng kỳ   │
+                                           │ (Period      │
+                                           │  Closed)     │
+                                           └──────────────┘
+```
+
+## OB Accounting Software Comparison
+
+| Feature | MISA SME 2026 | Fast Online 2026 | Bravo 8 | SmeAccounting Target |
+|---------|--------------|-------------------|---------|---------------------|
+| OB entry categories | 10 types | 8 types | 10 types | 10 types |
+| Excel import | ✅ | ✅ | ✅ | ✅ Phase 3 |
+| TT99 conversion | ✅ R3+ | ✅ | ✅ | ✅ Phase 4 |
+| Multi-currency OB | ✅ | ✅ | ✅ | ✅ Phase 6 |
+| OB lock | ✅ | ✅ | ✅ | ✅ Phase 5 |
+| OB approval | Partial | Partial | ✅ | ✅ Phase 5 |
+| OB audit trail | ✅ | ✅ | ✅ | ✅ Phase 7 |
+| Digital signature | Partial | ❌ | ✅ | ✅ Phase 7 |
 
 ## Flagged Ambiguities
 

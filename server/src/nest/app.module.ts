@@ -11,6 +11,8 @@ import { AppMetricsModule } from './integrations/metrics.module.js';
 import { AppSentryModule } from './integrations/sentry.module.js';
 import { DashboardModule } from './dashboard/dashboard.module.js';
 import { UserModule } from './user/user.module.js';
+import { TaxModule } from './tax/tax.module.js';
+import { OpeningBalanceModule } from './opening-balance/opening-balance.module.js';
 import { I18nModule } from './common/i18n.module.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 
@@ -28,6 +30,8 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
     DepartmentModule,
     UserModule,
     DashboardModule,
+    TaxModule,
+    OpeningBalanceModule,
   ],
   providers: [AppLifecycleHook, HttpExceptionFilter],
 })

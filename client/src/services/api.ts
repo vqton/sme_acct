@@ -464,6 +464,20 @@ export function getLedger(companyId: number, accountId?: number, periodId?: numb
 export function getTrialBalance(companyId: number, periodId: number) { return api.getTrialBalance(companyId, periodId); }
 export function getFiscalPeriods(companyId: number) { return api.getFiscalPeriods(companyId); }
 
+// ─── GL standalone exports ────────────────────────────────
+export function getBalanceSheet(companyId: number, periodId: number) { return api.getBalanceSheet(companyId, periodId); }
+export function getIncomeStatement(companyId: number, periodId: number) { return api.getIncomeStatement(companyId, periodId); }
+export function validateClose(companyId: number, periodId: number) { return api.validateClose(companyId, periodId); }
+export function closePeriodWithValidation(companyId: number, periodId: number, userId: number, opts?: any) { return api.closePeriodWithValidation(companyId, periodId, userId, opts); }
+export function carryForwardBalances(companyId: number, fromPeriodId: number, toPeriodId: number) { return api.carryForwardBalances(companyId, fromPeriodId, toPeriodId); }
+export function getFxAccounts(companyId: number) { return api.getFxAccounts(companyId); }
+export function previewFxRevaluation(companyId: number, periodId: number, currentRates: Record<string, number>, bookingRates?: Record<string, number>) { return api.previewFxRevaluation(companyId, periodId, currentRates, bookingRates); }
+export function getRecurringTemplates(companyId: number) { return api.getRecurringTemplates(companyId); }
+export function getRecurringTemplate(id: number) { return api.getRecurringTemplate(id); }
+export function createRecurringTemplate(data: any) { return api.createRecurringTemplate(data); }
+export function generateRecurringEntry(templateId: number, periodId: number, params?: Record<string, number>) { return api.generateRecurringEntry(templateId, periodId, params); }
+export function processDueRecurringEntries(asOfDate: string, periodId: number) { return api.processDueRecurringEntries(asOfDate, periodId); }
+
 // ─── Tax standalone exports ───────────────────────────────
 export function getTaxPeriods(companyId: number, year?: number) { return api.getTaxPeriods(companyId, year); }
 export function getCurrentTaxPeriod(companyId: number) { return api.getCurrentTaxPeriod(companyId); }

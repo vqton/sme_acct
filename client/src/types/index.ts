@@ -339,3 +339,143 @@ export interface AccountBalance {
   closingDebit: number;
   closingCredit: number;
 }
+
+// ─── Tax Types ────────────────────────────────────────────
+
+export enum TaxType {
+  Vat = 1,
+  Cit = 2,
+  Pit = 3,
+  License = 4,
+  Sct = 5,
+  ResourceTax = 6,
+  EnvironmentalTax = 7,
+  Fct = 8,
+}
+
+export enum VatRate {
+  Zero = 0,
+  Five = 5,
+  Ten = 10,
+}
+
+export enum TaxPeriodStatus {
+  Open = 1,
+  Locked = 2,
+  Finalized = 3,
+  Amended = 4,
+}
+
+export enum VATMethod {
+  KhauTru = 1,
+  TrucTiep = 2,
+  TrucTiepGTGT = 3,
+}
+
+export enum DeclarationStatus {
+  Draft = 1,
+  Submitted = 2,
+  Adjusted = 3,
+  Cancelled = 4,
+}
+
+export interface TaxPeriod {
+  id: number;
+  companyId: number;
+  type: string;
+  year: number;
+  month?: number;
+  quarter?: number;
+  periodName: string;
+  startDate: string;
+  endDate: string;
+  status: TaxPeriodStatus;
+  vatMethod: VATMethod;
+  citRate: number;
+  isLockable: boolean;
+  lockedAt?: string;
+  lockedByUserId?: number;
+  finalizedAt?: string;
+  finalizedByUserId?: number;
+  unlockReason?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface TaxDeclaration {
+  id: number;
+  companyId: number;
+  periodId: number;
+  taxType: TaxType;
+  status: DeclarationStatus;
+  declarationNumber: string;
+  declarationDate: string;
+  submittedAt?: string;
+  submittedByUserId?: number;
+  totalTaxPayable: number;
+  taxReduction?: number;
+  taxExemption?: number;
+  taxCredit?: number;
+  taxPayableAfterDeductions: number;
+  penalties?: number;
+  totalDue: number;
+  notes?: string;
+  isAdjustment: boolean;
+  originalDeclarationId?: number;
+  metadata?: string;
+  createdAt: string;
+  updatedAt?: string;
+
+  // Joined fields
+  periodName?: string;
+  periodStatus?: TaxPeriodStatus;
+}
+
+export interface TaxCalendarEvent {
+  id: number;
+  companyId: number;
+  taxType: TaxType;
+  periodLabel: string;
+  deadline: string;
+  eventType: string;
+  description: string;
+  isOverdue: boolean;
+  daysRemaining: number;
+}
+
+export interface VatInputLine {
+  rate: VatRate;
+  taxableAmount: number;
+}
+
+export interface VatOutputLine {
+  rate: VatRate;
+  taxableAmount: number;
+  vatAmount: number;
+}
+
+export interface VatResultKhauTru {
+  outputLines: VatOutputLine[];
+  outputVat: number;
+  inputVat: number;
+  vatPayable: number;
+  creditCarryForward: number;
+}
+
+export interface AutoFillPreview {
+  outputLines: VatInputLine[];
+  inputLines: VatInputLine[];
+  captions?: Record<string, string>;
+}
+
+export interface AuditTrailEntry {
+  id: number;
+  declarationId: number;
+  companyId: number;
+  taxType: TaxType;
+  fromStatus: DeclarationStatus;
+  toStatus: DeclarationStatus;
+  changedByUserId: number;
+  changedAt: string;
+  comment?: string;
+}
